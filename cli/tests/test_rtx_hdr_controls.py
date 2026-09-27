@@ -53,7 +53,9 @@ class RtxHdrAndQueueCompatibilityTests(unittest.TestCase):
         self.assertNotIn("root.SetBounds(0, 0, width, UpscaleContentHeight)", panel)
 
     def test_cli_validates_all_hdr_ranges_and_serializes_json_fields(self):
-        program = (CLI / "Program.cs").read_text(encoding="utf-8-sig")
+        program = (CLI / "Program.cs").read_text(encoding="utf-8-sig") + (
+            CLI / "CliArgumentParser.cs"
+        ).read_text(encoding="utf-8-sig")
         client = (CLI / "RtxVideoBackendClient.cs").read_text(encoding="utf-8-sig")
         ranges = {
             "rtxHdrContrast": "0 or > 200",

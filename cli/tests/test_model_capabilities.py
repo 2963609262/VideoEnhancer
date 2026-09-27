@@ -67,7 +67,9 @@ class ModelCapabilityManifestTests(unittest.TestCase):
         plugin = "\n".join(
             path.read_text(encoding="utf-8-sig") for path in panel_paths
         )
-        queue_hook = QUEUE_HOOK_SOURCE.read_text(encoding="utf-8-sig")
+        queue_hook = QUEUE_HOOK_SOURCE.read_text(encoding="utf-8-sig") + (
+            PLUGIN_ROOT / "QueueCommandBuilder.vb"
+        ).read_text(encoding="utf-8-sig")
         self.assertIn('backend is ("ncnn" or "cuda" or "tensorrt" or "onnx")', program)
         self.assertIn('o.Backend is not ("ncnn" or "cuda" or "tensorrt" or "onnx")', program)
         self.assertIn('String.Equals(_config.Backend, "onnx", StringComparison.OrdinalIgnoreCase)', plugin)

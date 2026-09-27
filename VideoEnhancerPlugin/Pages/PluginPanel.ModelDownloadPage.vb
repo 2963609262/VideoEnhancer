@@ -20,7 +20,6 @@ Namespace videoenhancer
 
         ' ── 模型下载页 ──
         Private Const DownloadActionColumn As Integer = 3
-        Private Const MaxParallelDownloads As Integer = 3
         Private ReadOnly _downloadList As New UltraDetailListView()
         Private ReadOnly _btnRefreshDownloads As New ModernButton()
         Private ReadOnly _btnDownloadPluginUpdate As New ModernButton()
@@ -35,11 +34,9 @@ Namespace videoenhancer
         Private ReadOnly _environmentCheckSync As New Object()
         Private _environmentCheckCancellation As System.Threading.CancellationTokenSource
         Private _environmentCheckTask As Task
-        Private _downloadActiveCount As Integer = 0
+        Private ReadOnly _downloadCoordinator As New ModelDownloadCoordinator()
         Private _downloadActionsEnabled As Boolean = True
         Private _downloadListConfigured As Boolean = False
-        Private ReadOnly _activeDownloadPaths As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
-        Private ReadOnly _activeDownloadGroups As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         Private ReadOnly _downloadItemsByPath As New Dictionary(Of String, UltraDetailListView.ListItem)(StringComparer.OrdinalIgnoreCase)
         Private ReadOnly _downloadGroupItems As New Dictionary(Of String, UltraDetailListView.ListItem)(StringComparer.OrdinalIgnoreCase)
         Private _downloadModelContextMenu As ModernContextMenu
@@ -199,7 +196,7 @@ Namespace videoenhancer
         End Sub
 
         Private Sub LoadDownloadModels(force As Boolean)
-            If _downloadsLoading OrElse _archiveCleanupBusy OrElse _downloadActiveCount > 0 OrElse
+            If _downloadsLoading OrElse _archiveCleanupBusy OrElse _downloadCoordinator.ActiveCount > 0 OrElse
                 (_downloadsLoaded AndAlso Not force) Then Return
             Dim exePath = DownloadExecutablePath()
             If String.IsNullOrWhiteSpace(exePath) Then
@@ -337,7 +334,7 @@ Namespace videoenhancer
                             Dim size = item.GetProperty("size").GetInt64()
                             Dim entry = New DownloadModelEntry With {
                                 .Name = If(name, relativePath), .RelativePath = If(relativePath, ""), .Size = size,
-                                .Installed = IsDownloadInstalled(If(relativePath, ""))
+                                .Installed = DownloadInstallStatus.IsDownloadInstalled(If(relativePath, ""), ResolveCoreRoot(), PluginConfig.ResolveInstalledExePath())
                             }
                             entry.IsBackend = DownloadCategory(entry.RelativePath).Equals("Backend", StringComparison.OrdinalIgnoreCase)
                             If entry.IsBackend Then ApplyBackendDownloadStatus(entry, backendStatus)
@@ -423,92 +420,6 @@ Namespace videoenhancer
             End Select
         End Function
 
-        Private Function IsDownloadInstalled(relativePath As String) As Boolean
-            If String.IsNullOrWhiteSpace(relativePath) Then Return False
-            Try
-                Dim normalized = relativePath.Replace("\"c, "/"c).TrimStart("/"c)
-                Dim slash = normalized.IndexOf("/"c)
-                If slash <= 0 Then Return False
-                Dim category = normalized.Substring(0, slash)
-                Dim suffix = normalized.Substring(slash + 1).Replace("/"c, Path.DirectorySeparatorChar)
-                Dim coreRoot = ResolveCoreRoot()
-                Dim resolvedExe = PluginConfig.ResolveInstalledExePath()
-                Dim destinationRoot = If(category.Equals("Plugin", StringComparison.OrdinalIgnoreCase),
-                    If(String.IsNullOrWhiteSpace(resolvedExe), coreRoot, Path.GetDirectoryName(resolvedExe)),
-                    If(category.Equals("Backend", StringComparison.OrdinalIgnoreCase),
-                        Path.Combine(coreRoot, "python"),
-                        If(category.Equals("Bin", StringComparison.OrdinalIgnoreCase),
-                            Path.Combine(coreRoot, "bin"), Path.Combine(coreRoot, "models", category))))
-                Dim downloaded = Path.Combine(destinationRoot, suffix)
-                If File.Exists(downloaded) Then Return True
-
-                ' 压缩包下载后会自动解压；刷新时用解压后的核心文件判断，清理压缩包后仍能保持“已存在”。
-                If Not String.Equals(Path.GetExtension(suffix), ".7z", StringComparison.OrdinalIgnoreCase) AndAlso
-                   Not String.Equals(Path.GetExtension(suffix), ".zip", StringComparison.OrdinalIgnoreCase) Then
-                    Return False
-                End If
-                If category.Equals("Backend", StringComparison.OrdinalIgnoreCase) Then
-                    Return File.Exists(Path.Combine(coreRoot, "python", "python", "python.exe"))
-                End If
-                If category.Equals("Bin", StringComparison.OrdinalIgnoreCase) Then
-                    Dim archiveName = Path.GetFileNameWithoutExtension(suffix)
-                    If archiveName.StartsWith("RTXVideoRuntime_", StringComparison.OrdinalIgnoreCase) Then
-                        Return File.Exists(Path.Combine(coreRoot, "bin", "rtx-video", "runtime", "vsr_backend.exe"))
-                    End If
-                    If archiveName.Equals("ffmpeg", StringComparison.OrdinalIgnoreCase) Then
-                        Return File.Exists(Path.Combine(coreRoot, "bin", "ffmpeg", "ffmpeg.exe"))
-                    End If
-                    If archiveName.Equals("mkvtoolnix", StringComparison.OrdinalIgnoreCase) Then
-                        Return Directory.Exists(Path.Combine(coreRoot, "bin", "mkvtoolnix"))
-                    End If
-                    If archiveName.Equals("PortableGit", StringComparison.OrdinalIgnoreCase) Then
-                        Return Directory.Exists(Path.Combine(coreRoot, "bin", "PortableGit"))
-                    End If
-                End If
-                If category.Equals("Frame-Interpolation", StringComparison.OrdinalIgnoreCase) Then
-                    Return IsDownloadArchive(suffix) AndAlso
-                        File.Exists(FrameInterpolationArchiveMarkerPath(coreRoot, normalized))
-                End If
-                If category.Equals("RIFE", StringComparison.OrdinalIgnoreCase) Then
-                    Return Directory.Exists(Path.Combine(coreRoot, "models", "RIFE")) AndAlso
-                        Directory.EnumerateFiles(Path.Combine(coreRoot, "models", "RIFE"), "*.param", SearchOption.AllDirectories).Any() AndAlso
-                        Directory.EnumerateFiles(Path.Combine(coreRoot, "models", "RIFE"), "*.bin", SearchOption.AllDirectories).Any()
-                End If
-                If category.Equals("Param-Bin", StringComparison.OrdinalIgnoreCase) Then
-                    Dim modelsRoot = Path.Combine(coreRoot, "models")
-                    Return Directory.Exists(modelsRoot) AndAlso
-                        Directory.EnumerateFiles(modelsRoot, "*.param", SearchOption.AllDirectories).Any() AndAlso
-                        Directory.EnumerateFiles(modelsRoot, "*.bin", SearchOption.AllDirectories).Any()
-                End If
-                Return False
-            Catch
-                Return False
-            End Try
-        End Function
-
-        Private Shared Function IsDownloadArchive(valuePath As String) As Boolean
-            Select Case Path.GetExtension(valuePath).ToLowerInvariant()
-                Case ".7z", ".zip", ".rar", ".gz", ".xz", ".zst", ".tar"
-                    Return True
-                Case Else
-                    Return False
-            End Select
-        End Function
-
-        Private Shared Function IsRtxVideoRuntimeDownload(relativePath As String) As Boolean
-            If String.IsNullOrWhiteSpace(relativePath) Then Return False
-            Dim normalized = relativePath.Replace("\"c, "/"c).TrimStart("/"c)
-            Return Regex.IsMatch(normalized,
-                "^Bin/rtx-video/RTXVideoRuntime_\d{8}\.7z$",
-                RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
-        End Function
-
-        Private Shared Function FrameInterpolationArchiveMarkerPath(coreRoot As String, relativePath As String) As String
-            Dim normalized = relativePath.Replace("\"c, "/"c).ToUpperInvariant()
-            Dim hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalized)))
-            Return Path.Combine(coreRoot, "models", "Frame-Interpolation", ".downloads", hash & ".installed")
-        End Function
-
         Private Sub AddDownloadGroup(category As String, entries As List(Of DownloadModelEntry))
             Dim group = New UltraDetailListView.ListGroup(category,
                 DownloadCategoryTitle(category) & "  ·  " & entries.Count & " 个文件") With {
@@ -573,8 +484,8 @@ Namespace videoenhancer
 
         Private Shared Function CanDeleteDownloadedModel(entry As DownloadModelEntry) As Boolean
             If entry Is Nothing OrElse Not entry.Installed Then Return False
-            If IsRtxVideoRuntimeDownload(entry.RelativePath) Then Return True
-            If IsDownloadArchive(entry.RelativePath) Then Return False
+            If DownloadInstallStatus.IsRtxVideoRuntimeDownload(entry.RelativePath) Then Return True
+            If DownloadInstallStatus.IsDownloadArchive(entry.RelativePath) Then Return False
             Dim category = DownloadCategory(entry.RelativePath)
             Return Not category.Equals("Backend", StringComparison.OrdinalIgnoreCase) AndAlso
                 Not category.Equals("Bin", StringComparison.OrdinalIgnoreCase) AndAlso
@@ -583,7 +494,7 @@ Namespace videoenhancer
 
         Private Sub OnDownloadListMouseDown(sender As Object, e As MouseEventArgs)
             If e.Button <> MouseButtons.Right OrElse _downloadsLoading OrElse _archiveCleanupBusy OrElse
-                _downloadActiveCount > 0 Then Return
+                _downloadCoordinator.ActiveCount > 0 Then Return
             Dim item = _downloadList.GetItemAt(e.X, e.Y)
             Dim row = TryCast(If(item Is Nothing, Nothing, item.Tag), DownloadListRowTag)
             Dim entry = If(row Is Nothing, Nothing, row.Entry)
@@ -611,7 +522,7 @@ Namespace videoenhancer
             CloseDownloadModelContextMenu()
             Dim menu As New ModernContextMenu()
             ConfigureModelMenu(menu, reserveIconColumn:=False)
-            Dim actionText = If(IsRtxVideoRuntimeDownload(entry.RelativePath),
+            Dim actionText = If(DownloadInstallStatus.IsRtxVideoRuntimeDownload(entry.RelativePath),
                 "卸载 RTX 运行组件", "删除本地模型")
             Dim deleteItem As New ModernContextMenu.ModernMenuItem(actionText) With {
                 .CloseOnClick = True,
@@ -631,7 +542,7 @@ Namespace videoenhancer
 
         Private Async Sub DeleteDownloadedModelWithConfirmation(entry As DownloadModelEntry)
             If Not CanDeleteDownloadedModel(entry) Then Return
-            Dim isRtxRuntime = IsRtxVideoRuntimeDownload(entry.RelativePath)
+            Dim isRtxRuntime = DownloadInstallStatus.IsRtxVideoRuntimeDownload(entry.RelativePath)
             Dim dialogTitle = If(isRtxRuntime, "卸载 RTX 运行组件", "删除本地模型")
             Dim question = If(isRtxRuntime,
                 "确定卸载本机 RTX 运行组件？" & Environment.NewLine &
@@ -654,7 +565,7 @@ Namespace videoenhancer
                     ShowStatus("本地模型删除失败：" & errorText, True)
                     Return
                 End If
-                entry.Installed = IsDownloadInstalled(entry.RelativePath)
+                entry.Installed = DownloadInstallStatus.IsDownloadInstalled(entry.RelativePath, ResolveCoreRoot(), PluginConfig.ResolveInstalledExePath())
                 SetDownloadRowState(entry.RelativePath, "未安装", "下载", UiTextMuted, UiAccent)
                 RefreshDownloadGroupSummary(DownloadCategory(entry.RelativePath))
                 RefreshModels()
@@ -697,7 +608,7 @@ Namespace videoenhancer
 
         Private Async Sub OnDownloadAllClick(sender As Object, e As EventArgs)
             If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse
-                _archiveCleanupBusy OrElse _downloadActiveCount > 0 Then Return
+                _archiveCleanupBusy OrElse _downloadCoordinator.ActiveCount > 0 Then Return
             ' 插件 EXE 由自动更新流程管理；Backend 使用独立事务更新，均不进入三路并行资源下载。
             Dim paths = _downloadItemsByPath.Keys.
                 Where(Function(path) Not path.Equals("Plugin/videoenhancer.exe", StringComparison.OrdinalIgnoreCase) AndAlso
@@ -712,7 +623,7 @@ Namespace videoenhancer
 
         Private Async Function DownloadSingleItemAsync(entry As DownloadModelEntry) As Task
             If entry Is Nothing OrElse entry.Installed Then Return
-            If _downloadActiveCount >= MaxParallelDownloads Then
+            If _downloadCoordinator.ActiveCount >= 3 Then
                 ShowStatus("当前已有 3 个并行下载，请等待任一文件完成。", True)
                 Return
             End If
@@ -763,8 +674,8 @@ Namespace videoenhancer
         End Function
 
         Private Async Function DownloadGroupItemsAsync(category As String, allPaths As List(Of String)) As Task
-            If allPaths Is Nothing OrElse allPaths.Count = 0 OrElse _activeDownloadGroups.Contains(category) Then Return
-            If _downloadActiveCount >= MaxParallelDownloads Then
+            If allPaths Is Nothing OrElse allPaths.Count = 0 OrElse _downloadCoordinator.IsGroupActive(category) Then Return
+            If _downloadCoordinator.ActiveCount >= 3 Then
                 ShowStatus("当前已有 3 个并行下载，请等待任一文件完成。", True)
                 Return
             End If
@@ -773,7 +684,7 @@ Namespace videoenhancer
                 If Not _downloadItemsByPath.TryGetValue(path, item) Then Return False
                 Dim row = TryCast(item.Tag, DownloadListRowTag)
                 Return row IsNot Nothing AndAlso row.Entry IsNot Nothing AndAlso Not row.Entry.Installed AndAlso
-                    Not _activeDownloadPaths.Contains(path)
+                    Not _downloadCoordinator.IsPathActive(path)
             End Function).ToList()
             If paths.Count = 0 Then
                 RefreshDownloadGroupSummary(category)
@@ -781,7 +692,7 @@ Namespace videoenhancer
             End If
             Dim exePath = DownloadExecutablePath()
             If String.IsNullOrWhiteSpace(exePath) Then Return
-            _activeDownloadGroups.Add(category)
+            _downloadCoordinator.TryBeginGroup(category)
             Dim completed = 0
             Dim nextIndex = 0
             Dim failed = False
@@ -792,7 +703,7 @@ Namespace videoenhancer
             Try
                 SetDownloadGroupState(category, "0/" & paths.Count & " 已完成", "下载中", UiAccent)
                 While nextIndex < paths.Count OrElse running.Count > 0
-                    While nextIndex < paths.Count AndAlso _downloadActiveCount < MaxParallelDownloads AndAlso Not failed
+                    While nextIndex < paths.Count AndAlso _downloadCoordinator.ActiveCount < 3 AndAlso Not failed
                         Dim relativePath = paths(nextIndex)
                         nextIndex += 1
                         If Not TryBeginDownload(relativePath) Then Continue While
@@ -832,7 +743,7 @@ Namespace videoenhancer
                         If(failed, "等待当前任务", "下载中"), If(failed, UiTextMuted, UiAccent))
                 End While
             Finally
-                _activeDownloadGroups.Remove(category)
+                _downloadCoordinator.EndGroup(category)
             End Try
 
             RefreshDownloadGroupSummary(category)
@@ -999,26 +910,22 @@ Namespace videoenhancer
         End Sub
 
         Private Function TryBeginDownload(relativePath As String) As Boolean
-            If _downloadActiveCount >= MaxParallelDownloads OrElse _activeDownloadPaths.Contains(relativePath) Then Return False
-            _activeDownloadPaths.Add(relativePath)
-            _downloadActiveCount += 1
-            UpdateDownloadUtilityButtons()
-            Return True
+            Dim started = _downloadCoordinator.TryBegin(relativePath)
+            If started Then UpdateDownloadUtilityButtons()
+            Return started
         End Function
 
         Private Sub EndDownload(relativePath As String)
-            If _activeDownloadPaths.Remove(relativePath) Then
-                _downloadActiveCount = Math.Max(0, _downloadActiveCount - 1)
-            End If
+            _downloadCoordinator.EndPath(relativePath)
             UpdateDownloadUtilityButtons()
         End Sub
 
         Private Sub UpdateDownloadUtilityButtons()
             _btnRefreshDownloads.Enabled = Not _downloadsLoading AndAlso
-                _downloadActiveCount = 0 AndAlso Not _archiveCleanupBusy
+                _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
             _btnDownloadPluginUpdate.Enabled = _downloadsLoaded AndAlso _downloadActionsEnabled AndAlso
-                _downloadOnline AndAlso _downloadActiveCount = 0 AndAlso Not _archiveCleanupBusy
-            _btnCleanArchives.Enabled = _downloadActiveCount = 0 AndAlso Not _archiveCleanupBusy
+                _downloadOnline AndAlso _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
+            _btnCleanArchives.Enabled = _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
         End Sub
 
         Private Sub ShowOfflineDownloadStatus()
@@ -1035,7 +942,7 @@ Namespace videoenhancer
         End Sub
 
         Private Async Sub OnCleanDownloadArchives(sender As Object, e As EventArgs)
-            If _archiveCleanupBusy OrElse _downloadActiveCount > 0 Then
+            If _archiveCleanupBusy OrElse _downloadCoordinator.ActiveCount > 0 Then
                 ShowStatus("请等待当前模型下载完成后再清理压缩包。", True)
                 Return
             End If

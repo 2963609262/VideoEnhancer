@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 11:06
+Last updated: 2026-09-27 12:53
 Updated by: Codex
 
 ## Current Snapshot
+
+- Latest architecture refactor (2026-09-27 12:53): 用户批准六批职责拆分。以 99a6367 干净 main 起步，git pull --ff-only origin main 已最新。已拆插件模型说明/目录类型与 CLI 调用、CLI 参数/帮助与 ModelScope/下载、四宫格合成规则、队列分词/参数构造、分段探测/编辑规则、下载页安装状态/活动任务计数；保留原对外参数、插件入口和生命周期。前五批本地提交 ac64770、f1bd470、3624fc9、67aea0b、0b4a023；第六批及记录待提交。Release build/publish 0 警告/0 错误，Python 33/33，安装器、自更新、后端更新、发布门禁通过，CLI version/help/未知参数退出码核对；真实 3FUI 界面和短视频样本未执行，待人工验收。版本保持 1.3.5，无 Release、安装或推送。
 
 - Latest branch archival (2026-09-27 11:08): 用户要求安全归档剩余三条独有提交的旧远端分支。`origin/feat/hdr-bit-depth`、`origin/fix/backend-aware-environment-check`、`origin/release/1.2.2` 的末端分别保存为带注释远端标签 `archive/2026-09-27/hdr-bit-depth`、`archive/2026-09-27/backend-aware-environment-check`、`archive/2026-09-27/release-1.2.2`；逐个验证远端标签解引用提交等于原分支末端。另生成并验证本机 Git bundle `archive/local-2026-09-27/retired-branches-2026-09-27.bundle`（13,101,844 bytes，SHA-256 `CE9D797E7A3CCC8026940A29FD802BFEC9818974C2572978B1A855AB88E6F9DB`，含三个完整引用/历史）。随后带各分支精确 SHA 的 lease 进行原子远端删除，origin 仅余 main；本地 release/1.2.2 分支在标签验证后删除。`docs/archive/branches-2026-09-27.md` 已记录标签和恢复方式并随提交 `466ccc0` 推送 origin/main；旧 PR 工作树、release/1.3.3-integrated、本地构建候选未动。无版本/Release 变化，工作树推送后干净。
 
@@ -2442,3 +2444,15 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 ### 2026-09-27 11:08 - Codex
 
 - Closeout: 三分支归档清单与记录提交为 `466ccc0` (`docs: archive retired branches with verified tags`)，推送 origin/main 并用 `git ls-remote` 确认与本地 HEAD 一致；推送后工作树干净。远端仅 main 一条 branch，三个 `archive/2026-09-27/*` annotated tags 和 `v1.2.2` 仍可用。本地 bundle 在忽略目录中，不随 Git 同步；远端标签保证跨设备可恢复。
+
+### 2026-09-27 12:53 - Codex
+
+- Request/orientation: 用户要求实施六批职责拆分；同工具续作。读取 AGENTS.md、docs/codex/INDEX.md、STATUS.md 和 HandShake；git pull --ff-only origin main 已最新，基线 99a6367，工作树干净。HostBin 使用本机已记录的 3fui-core-compat-host（LakeUI 5.9）。
+- Batch 1: 新增 ModelDescriptionProvider、ModelCatalogClient、ModelCatalogTypes；超分、分段、Shell、导入页改用独立目录调用，环境检查仍与面板生命周期保持原顺序。提交 ac64770。
+- Batch 2: 新增 CliOptions、CliArgumentParser、CliHelp、ModelRepositoryClient、ModelDownloadManager；Program 保留分发和推理。提交 f1bd470。
+- Batch 3: 新增 GridCompositionSpec/GridCompositionBuilder；预览及导出复用布局、滤镜和 ASS 生成。提交 3624fc9。
+- Batch 4: 新增 QueueJobOptions、QueueCommandBuilder、CommandLineTokenizer；保留 QueueHook 原方法签名。逐字比较命令构造主体，除签名和参数对象外一致。提交 67aea0b。
+- Batch 5: 新增 SegmentVideoProbeService、SegmentEditingRules；保留分段页 UI 和队列原提示。提交 0b4a023。
+- Batch 6: 新增 DownloadInstallStatus、ModelDownloadCoordinator；页面保留进度提示和批量 UI 编排。更新源码定位型测试，保留行为断言，修正基线旧 HDR 门禁断言与不存在的旧注释断言。待单独提交。
+- Verification: 基线 Release build 0/0，Python 32/33（既有 HDR 断言失败）。重构后 Release build/publish 0/0，Python 33/33，test-installer、test-updater -Version 1.3.5、test-backend-updater、test-release-gates 通过，git diff --check 通过；CLI --version=1.3.5、-h=0、未知参数=1。第一次 test-updater 未传 Version 而失败，按脚本参数重跑通过。TEMP/TMP 指向项目内 Artifacts/.refactor-tmp。
+- Remaining: 未部署或发布；真实 3FUI 页面（模型目录、HDR/补帧门禁、高 DPI、四宫格、分段、下载）及普通超分/补帧/RTX HDR/混合分段短样本、暂停/恢复/停止仍待实机验收。版本 1.3.5；origin/main 未推送。

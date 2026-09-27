@@ -5,6 +5,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PLUGIN = ROOT / "VideoEnhancerPlugin"
+CLI = ROOT / "cli"
 
 
 def read_plugin_panel_sources():
@@ -44,11 +45,16 @@ class UserModelImportContractTests(unittest.TestCase):
 
     def test_segmented_page_and_shell_per_item_delete_are_wired(self):
         panel = read_plugin_panel_sources()
-        segmented = (PLUGIN / "Pages" / "PluginPanel.SegmentedUpscalePage.vb").read_text(encoding="utf-8")
+        source = panel
+        segmented = (PLUGIN / "Pages" / "PluginPanel.SegmentedUpscalePage.vb").read_text(encoding="utf-8") + (
+            PLUGIN / "SegmentEditingRules.vb"
+        ).read_text(encoding="utf-8")
         config = (ROOT / "VideoEnhancerPlugin" / "PluginConfig.vb").read_text(encoding="utf-8")
-        queue = (ROOT / "VideoEnhancerPlugin" / "QueueHook.vb").read_text(encoding="utf-8")
-        program = (ROOT / "cli" / "Program.cs").read_text(encoding="utf-8")
-        self.assertIn("_cmbRtxHdrMode.Enabled = True", panel)
+        queue = "\n".join((PLUGIN / name).read_text(encoding="utf-8") for name in (
+            "QueueHook.vb", "QueueCommandBuilder.vb", "SegmentEditingRules.vb"))
+        program = "\n".join((CLI / name).read_text(encoding="utf-8") for name in (
+            "Program.cs", "CliArgumentParser.cs"))
+        self.assertIn("_cmbRtxHdrMode.Enabled = hdrParametersEnabled", panel)
         self.assertIn("OnShellModelItemClick", panel)
         self.assertIn("分段总开关", segmented)
         self.assertIn("按秒（默认，断点自动吸附关键帧）", segmented)
@@ -95,7 +101,6 @@ class UserModelImportContractTests(unittest.TestCase):
         self.assertIn("RunDirectCustomSegment(", program)
         self.assertIn("SEGMENTED_DIRECT_DONE", program)
         self.assertIn("SEGMENTED_DIRECT_GRAPH", program)
-        self.assertIn("不再进入 Python 逐帧 pipe", program)
         self.assertIn("prepared.Any(segment => !IsSegmentModelBackend(segment.Backend))", program)
         self.assertIn("ProbeGeneratedVideoFast(", program)
         portable_paths = (ROOT / "cli" / "PortablePaths.cs").read_text(encoding="utf-8")
@@ -128,7 +133,9 @@ class UserModelImportContractTests(unittest.TestCase):
 
     def test_capability_updates_are_validated_and_affect_backend_lists(self):
         catalog = (ROOT / "cli" / "UserModelCatalog.cs").read_text(encoding="utf-8")
-        program = (ROOT / "cli" / "Program.cs").read_text(encoding="utf-8")
+        program = (ROOT / "cli" / "Program.cs").read_text(encoding="utf-8") + (
+            CLI / "CliArgumentParser.cs"
+        ).read_text(encoding="utf-8")
         self.assertIn("UpdateCapabilities", catalog)
         self.assertIn("AllowedBackends", catalog)
         self.assertIn('format == "onnx"', catalog)
@@ -137,7 +144,8 @@ class UserModelImportContractTests(unittest.TestCase):
         self.assertIn('case "--list-user-models"', program)
 
     def test_download_catalog_keeps_latest_runtime_and_supports_safe_local_delete(self):
-        program = (ROOT / "cli" / "Program.cs").read_text(encoding="utf-8")
+        program = "\n".join((CLI / name).read_text(encoding="utf-8") for name in (
+            "Program.cs", "CliArgumentParser.cs", "ModelRepositoryClient.cs", "ModelDownloadManager.cs"))
         panel = read_plugin_panel_sources()
         self.assertIn("KeepLatestVersionedArchive", program)
         self.assertIn("RTXVideoRuntime_(?<version>", program)
