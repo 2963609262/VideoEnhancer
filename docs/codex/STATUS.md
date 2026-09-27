@@ -1,11 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 12:58
+Last updated: 2026-09-27 12:59
 Updated by: Codex
 
 ## Current Snapshot
 
-- Latest refactor follow-up (2026-09-27 12:58): 收尾检查将环境检查字段移至实际使用的超分页，把批量下载并发滑动窗口移入 ModelDownloadCoordinator，通过回调通知页面更新状态；保留最大并发 3、失败后停止派发并等待已启动任务。Release build/publish 0/0、Python 33/33、最终安装包哈希/回滚门禁通过。源码/记录待提交，六批先前提交已在本地 main；origin/main 未推送。真实 3FUI/短样本仍待验收。
+- Latest refactor follow-up (2026-09-27 12:58): 收尾检查将环境检查字段移至实际使用的超分页，把批量下载并发滑动窗口移入 ModelDownloadCoordinator，通过回调通知页面更新状态；保留最大并发 3、失败后停止派发并等待已启动任务。Release build/publish 0/0、Python 33/33、最终安装包哈希/回滚门禁通过。补充代码与记录已提交 41afaaa；最终交接记录待提交。origin/main 未推送。真实 3FUI/短样本仍待验收。
 
 - Latest architecture refactor (2026-09-27 12:53): 用户批准六批职责拆分。以 99a6367 干净 main 起步，git pull --ff-only origin main 已最新。已拆插件模型说明/目录类型与 CLI 调用、CLI 参数/帮助与 ModelScope/下载、四宫格合成规则、队列分词/参数构造、分段探测/编辑规则、下载页安装状态/活动任务计数；保留原对外参数、插件入口和生命周期。前五批本地提交 ac64770、f1bd470、3624fc9、67aea0b、0b4a023；第六批已提交 9893fd9；收尾记录待提交。Release build/publish 0 警告/0 错误，Python 33/33，安装器、自更新、后端更新、发布门禁通过，CLI version/help/未知参数退出码核对；真实 3FUI 界面和短视频样本未执行，待人工验收。版本保持 1.3.5，无 Release、安装或推送。
 
@@ -2468,3 +2468,7 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Follow-up: 六批提交后复核计划，发现环境检查字段仍在下载页、批量下载滑动窗口仍由页面维护。将字段移回 UpscalePage；ModelDownloadCoordinator 现负责分组活动状态、最多三并发派发、失败后停止新任务、等待已启动任务及完成回调，页面仅保留 UI 状态处理。
 - Verification: dotnet build VideoEnhancer.slnx Release 0/0；最终 dotnet publish VideoEnhancer.slnx Release 0/0；Python 单测 33/33；最终 test-installer.ps1 包哈希和回滚通过；git diff --check 通过。此前自更新、后端更新、发布门禁已通过且对应代码未在本次补充中变化。
 - Remaining: 未运行真实 3FUI UI 与普通超分/补帧/RTX HDR/混合分段短样本、四宫格预览/导出、暂停恢复停止；未部署、未发布、未推送。当前补充代码与记录将提交；切换工具或设备前建议推送本地 main。
+
+### 2026-09-27 12:59 - Codex
+
+- Final closeout: 补充代码与记录提交 41afaaa。当前 main 工作树干净，本地 main 比 origin/main ahead 8；最终本条交接记录提交后将 ahead 9。无代码改动待提交，未推送。版本仍 1.3.5，未发布或安装。建议切换设备或工具前推送本地 main，并在真实 3FUI 中完成页面与短样本验收。
