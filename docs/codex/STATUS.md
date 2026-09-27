@@ -5,7 +5,7 @@ Updated by: Codex
 
 ## Current Snapshot
 
-- Latest repository cleanup (2026-09-27 10:44): `maxzrb/VideoEnhancer` 已脱离 GitHub fork 网络（API `fork=false`、无 parent）。本机 remotes 调整为 `origin=maxzrb/VideoEnhancer`、`upstream=user-Wing/VideoEnhancer`，main 跟踪 origin/main；发布流程推送命令已同步。旧远端分支名/提交哈希归档于 `docs/archive/branches-2026-09-27.md`，14 条已并入 main 的远端分支经原子推送删除，`pr-7` 在执行前已不存在；origin 现仅 main 和 3 条含独有提交的分支。8 条已并入 main 的本地旧分支安全删除；`release/1.2.2`、`release/1.3.3-integrated` 及旧 PR 工作树分支保留。根目录旧 EXE/DLL/ZIP/FFmpeg 日志和旧测试夹具/结果原样移动到本机忽略目录 `archive/local-2026-09-27`；当前 Artifacts 候选、release/dist、.zcode 未动。分支归档与发布流程初次提交 `c8051d4` 已推送 origin/main，工作树在该提交后曾干净；本轮记录收尾待提交。版本和 Release 不变。
+- Latest repository cleanup (2026-09-27 10:46): `maxzrb/VideoEnhancer` 已脱离 GitHub fork 网络（API `fork=false`、无 parent）。本机 remotes 调整为 `origin=maxzrb/VideoEnhancer`、`upstream=user-Wing/VideoEnhancer`，main 跟踪 origin/main；发布流程推送命令已同步。旧远端分支名/提交哈希归档于 `docs/archive/branches-2026-09-27.md`，14 条已并入 main 的远端分支经原子推送删除，`pr-7` 在执行前已不存在；origin 现仅 main 和 3 条含独有提交的分支。8 条已并入 main 的本地旧分支安全删除；`release/1.2.2`、`release/1.3.3-integrated` 及旧 PR 工作树分支保留。根目录旧 EXE/DLL/ZIP/FFmpeg 日志和旧测试夹具/结果原样移动到本机忽略目录 `archive/local-2026-09-27`；当前 Artifacts 候选、release/dist、.zcode 未动。分支清单和发布流程提交 `c8051d4`、本轮记录提交 `f89fad4` 均已推送 origin/main 并核对一致，推送后工作树干净。版本和 Release 不变。
 
 - Latest PATH clarification (2026-09-26 18:25): 用户提醒 3FUI 还可使用环境变量中的 FFmpeg；实机 Machine PATH 确有 `ffmpeg.exe`，当前插件/CLI 源码均会搜索 PATH。把预览及四宫格缺失提示改为同时列出 3FUI 工作目录、程序目录、系统 PATH，提交 `5a23acb` 已推送 fork/main 并核对远端一致。重建完整候选安装器 0 警告/0 错误，安装器空/错误/正确目录哈希及回滚通过；最新 `Artifacts/VideoEnhancerInstaller.exe` SHA-256 `A4F39F74498A8DBE7315AC81632441134FA2DCD4CA064BDFDA800BAFAC76C9D1`，DLL `ACA73BFF15B33EB23C4E2B19A9115E389BC9AB45BE653455ED285842A2A95323`。真实 3FUI 预览与视觉仍待重新安装候选后验收。
 
@@ -2425,3 +2425,7 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Branch audit/archive: `git ls-remote`、`gh pr list`、`git merge-base --is-ancestor`、`git rev-list` 核对；15 条旧远端分支均为 main 祖先，3 条有独有提交（HDR bit depth 1、backend-aware environment check 1、release/1.2.2 4）。提交 `docs/archive/branches-2026-09-27.md` 与发布流程为 `c8051d4` 并推送 origin/main。执行时 pr-7 已不在远端，其余 14 条以 `git push --atomic origin :refs/heads/...` 一次删除；最终远端精确为 main 与 3 条有独有提交分支。随后 `git fetch origin --prune` 清除本地 pr-7 远端跟踪引用。upstream 未推送/删除。
 - Local branches/files: 使用 `git branch -d` 删除已并入 main 的 8 条本地旧分支（fix/3fui-core-compat、fix/pr7-portable-installer、fix/pr7-root-guard、release/1.0.10、release/1.0.11、release/1.1.0、release/1.1.2、release/1.2.0）。`release/1.3.3-integrated` 含 1 个 main 未包含的提交，因此保留；`release/1.2.2` 保留，与远端一致。旧 PR #4/#5 三个 worktree 存在大量已删除文件状态，未清理，以免丢失未知改动。旧具名 stash 未动。根目录 4 份 9/13–9/15 旧文件（EXE/DLL/ZIP/log）及 `.tmp-delete-model-1-3-2`、`test-results` 移至本机 `archive/local-2026-09-27`，移动前后四份文件 SHA-256 一致，两个测试目录分别 50/132 文件、67,080,120/57,128,631 bytes。`Artifacts` 最新安装器候选、`release/dist` 与 `.zcode` 保留原位。
 - Verification/Git: 远端 `git ls-remote --heads origin` 仅 4 条，`git remote -v` 与 GitHub API 一致；无业务代码改动，不需构建。版本 1.3.5，未更新 Release。当前仅本次归档清单补记与 HandShake 收尾待提交推送；完成后核对 origin/main 与工作树状态。
+
+### 2026-09-27 10:46 - Codex
+
+- Closeout: 分支归档补记和 HandShake 记录提交 `f89fad4` (`docs: record branch and local artifact cleanup`) 已推送 origin/main，`git ls-remote origin refs/heads/main` 等于本地 HEAD，工作树推送后干净。归档目录被 .gitignore 排除；切换工具或设备时以 origin/main 为准，本机 archive 内容不会随 Git 自动同步。真实安装器候选的实机复验仍为既有待办，未因本次整理改变。
