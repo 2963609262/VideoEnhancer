@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 12:59
+Last updated: 2026-09-27 14:20
 Updated by: Codex
 
 ## Current Snapshot
+
+- Latest local installation (2026-09-27 14:20): 用户要求将六批重构候选安装到本机 3FUI 供实测。git pull --ff-only origin main 已最新；从本地 a0d43d8 的 Release 产物部署到 C:\Program portable\3FUI\3FUI：Plugin\videoenhancer.3fui.dll 与 Plugin\videoenhancer\videoenhancer.exe。部署前相关进程未运行，原文件已备份至项目内 Artifacts/.refactor-tmp/backup-3fui-before-refactor-deploy-20260927-141954；备份哈希核对通过。安装后 DLL SHA-256 D1BE4AEB4E8D7D51A59348EC6A9D17DCAD3B540F9A037BA7DDE6FBF44B570A54，EXE SHA-256 ACC0BB892BA288096E4BC6FFB94B87BFABB0A5B7B3329F7718BD2B96525DB80A，均与构建产物一致；CLI --version=1.3.5。配置、模型、后端未改。待用户重启 3FUI 验收界面与短样本；未推送或发布，origin/main 仍落后本地 main。
 
 - Latest refactor follow-up (2026-09-27 12:58): 收尾检查将环境检查字段移至实际使用的超分页，把批量下载并发滑动窗口移入 ModelDownloadCoordinator，通过回调通知页面更新状态；保留最大并发 3、失败后停止派发并等待已启动任务。Release build/publish 0/0、Python 33/33、最终安装包哈希/回滚门禁通过。补充代码与记录已提交 41afaaa；最终交接记录待提交。origin/main 未推送。真实 3FUI/短样本仍待验收。
 
@@ -2472,3 +2474,10 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 ### 2026-09-27 12:59 - Codex
 
 - Final closeout: 补充代码与记录提交 41afaaa。当前 main 工作树干净，本地 main 比 origin/main ahead 8；最终本条交接记录提交后将 ahead 9。无代码改动待提交，未推送。版本仍 1.3.5，未发布或安装。建议切换设备或工具前推送本地 main，并在真实 3FUI 中完成页面与短样本验收。
+
+### 2026-09-27 14:20 - Codex
+
+- Request/orientation: 用户要求将重构候选安装到真实 3FUI 供测试。同工具续作；读取 AGENTS.md、docs/codex/INDEX.md、STATUS.md；git pull --ff-only origin main 已最新，起始 main=a0d43d8，工作树干净且 ahead 9。
+- Deployment: 确认 C:\Program portable\3FUI\3FUI\FFmpegFreeUI.exe 存在，相关进程未运行。将现有 Plugin DLL/CLI 原样备份到项目内 Artifacts/.refactor-tmp/backup-3fui-before-refactor-deploy-20260927-141954，备份 SHA-256 与原件一致；再复制 Release DLL/EXE 到现有安装位置。未改 Settings.json、模型、后端或 aria2。
+- Verification: 安装 DLL/EXE 的 SHA-256 分别为 D1BE4AEB4E8D7D51A59348EC6A9D17DCAD3B540F9A037BA7DDE6FBF44B570A54、ACC0BB892BA288096E4BC6FFB94B87BFABB0A5B7B3329F7718BD2B96525DB80A，均等于构建源；CLI --version=1.3.5。此前完整 Release publish、Python 33/33、安装/更新/发布门禁已通过，本次仅复制产物，不重复构建。
+- Remaining/Git: 用户重启 3FUI 后验收六批相关界面和短样本、暂停/恢复/停止。版本和 Release 未变；部署记录随本次文档提交保存；本地 main 尚未推送 origin/main。
