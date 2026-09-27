@@ -230,7 +230,7 @@ Namespace videoenhancer
             _userModelsLoading = True
             AddImportModelMessage("正在读取用户模型能力清单…")
             Try
-                Dim models = Await Task.Run(Function() RunUserModelList(exePath))
+                Dim models = Await Task.Run(Function() ModelCatalogClient.RunUserModelList(exePath))
                 _importModelList.Items.Clear()
                 If models.Count = 0 Then
                     AddImportModelMessage("尚未导入用户模型；可从上方选择文件、文件夹或压缩包")

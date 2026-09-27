@@ -90,7 +90,7 @@ Namespace videoenhancer
             _shellCatalog.Clear()
             _cmbShellModel.WaterText = "正在读取模型列表…"
             Task.Run(Sub()
-                Dim catalog = RunModelCatalog(_config.ExePath, "--list-model-catalog", "-backend", backend)
+                Dim catalog = ModelCatalogClient.RunModelCatalog(_config.ExePath, "--list-model-catalog", "-backend", backend)
                 If IsHandleCreated Then BeginInvoke(New Action(Sub()
                     _shellCatalog.Clear() : _shellCatalog.AddRange(catalog)
                     _cmbShellModel.Items.Clear()

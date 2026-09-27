@@ -21,7 +21,6 @@ Namespace videoenhancer
         ' ── 模型下载页 ──
         Private Const DownloadActionColumn As Integer = 3
         Private Const MaxParallelDownloads As Integer = 3
-        Private Const UpscaleContentHeight As Integer = 920
         Private ReadOnly _downloadList As New UltraDetailListView()
         Private ReadOnly _btnRefreshDownloads As New ModernButton()
         Private ReadOnly _btnDownloadPluginUpdate As New ModernButton()

@@ -348,7 +348,7 @@ Namespace videoenhancer
             _lblConvertStatus.Text = "<font color=" & color & ">" & EscapeHtml(If(text, "")) & "</font>"
         End Sub
 
-        Private Shared Function LastNonEmptyLine(text As String) As String
+        Friend Shared Function LastNonEmptyLine(text As String) As String
             If String.IsNullOrWhiteSpace(text) Then Return "未返回详细信息"
             Dim lines = text.Replace(Convert.ToChar(13), Convert.ToChar(10)).Split(Convert.ToChar(10))
             For i As Integer = lines.Length - 1 To 0 Step -1

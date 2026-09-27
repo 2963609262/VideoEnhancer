@@ -125,16 +125,6 @@ Namespace videoenhancer
         Private _tabIndexSegmented As Integer = -1
         Private _tabIndexShell As Integer = -1
         Private _tabIndexTutorial As Integer = -1
-        Private NotInheritable Class ModelCatalogItem
-            Public Property Id As String = ""
-            Public Property DisplayName As String = ""
-            Public Property Architecture As String = ""
-            Public Property Purpose As String = ""
-            Public Property Scale As Integer
-            Public Property Source As String = ""
-            Public Property Backends As String() = Array.Empty(Of String)()
-        End Class
-
         ' ModernContextMenu 的菜单项不是 WinForms 控件，使用 LakeUI 的浮动提示窗显示当前悬停模型说明。
         Private NotInheritable Class ModelMenuToolTipController
             Private ReadOnly _menus As New HashSet(Of ModernContextMenu)()
@@ -361,24 +351,6 @@ Namespace videoenhancer
             Public Property Scale As Integer
             Public Property Backends As String() = Array.Empty(Of String)()
             Public Property [Error] As String = ""
-        End Class
-        Private NotInheritable Class UserModelItem
-            Public Property Id As String = ""
-            Public Property DisplayName As String = ""
-            Public Property RelativePath As String = ""
-            Public Property Task As String = ""
-            Public Property Architecture As String = ""
-            Public Property Purpose As String = ""
-            Public Property Format As String = ""
-            Public Property Scale As Integer
-            Public Property InputMultiple As Integer = 1
-            Public Property MinimumSize As Integer
-            Public Property Square As Boolean
-            Public Property Tiling As String = ""
-            Public Property Sha256 As String = ""
-            Public Property Size As Long
-            Public Property ImportedAtUtc As String = ""
-            Public Property Backends As String() = Array.Empty(Of String)()
         End Class
         Private ReadOnly _statusClearTimer As New Timer() With {.Interval = 5000}
         ''' <summary>插件面板实例（编码队列右键「预览输出」等外部入口使用）。</summary>
