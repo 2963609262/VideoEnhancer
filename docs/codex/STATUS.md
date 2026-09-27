@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 14:44
+Last updated: 2026-09-27 14:53
 Updated by: Codex
 
 ## Current Snapshot
+
+- Latest Backend download-all correction (2026-09-27 14:53): 实机反馈上一版“下载全部”仍不触发 Backend。定位上一版把 Backend 放在普通资源之后，普通资源任一失败或长时间运行就到不了后端。现改为先按后端状态执行 --update-backend：增量路由可用时走补丁，mode=full 时走完整安装；补丁返回 BACKEND_FULL_REQUIRED 时沿用确认及事务入口尝试完整包，再处理其余资源。本机 CLI --backend-status --json 返回 not-installed/mode=full，仓库列表有 Backend/python_20260919.7z。Release publish 0/0、后端更新专项 6/6 通过。已安装版 videoenhancer.exe 正在执行 --download-model Bin/PortableGit.7z，未中断该任务也未覆盖宿主文件；新候选仅在项目 Artifacts 和 plugin-artifact，待进程结束后部署。
 
 - Latest download fix (2026-09-27 14:44): 用户实机报告 mkvtoolnix.7z 解压失败和“下载全部”未覆盖 Backend。实包 mkvtoolnix/data/portable-app 为零字节，SharpCompress 0.50.3 将其误报 IsEncrypted=True；ManagedArchiveExtractor 现仅拒绝有内容的加密项。下载全部仍排除自更新 EXE，但普通资源完成后串行调用现有后端事务更新/完整安装入口，后端完整包仍沿用原确认提示和环境检查顺序。Release build/publish 0/0，Python 33/33，原始 30MB mkvtoolnix 包在调试构建和最终单文件 EXE 均完整解压成功。新 DLL/EXE 已部署到 C:\Program portable\3FUI\3FUI，部署前原件备份在 Artifacts/.refactor-tmp/backup-3fui-before-download-fix-20260927-144302；安装哈希与发布产物一致。待用户重启 3FUI 重试下载全部及后端安装；未更改版本或发布。
 
@@ -2490,3 +2492,11 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Diagnosis/changes: SharpCompress 0.50.3 对实包中的零字节 mkvtoolnix/data/portable-app 返回 IsEncrypted=True；系统 tar 能读取该条目。ManagedArchiveExtractor 仅对 Size>0 的加密项报错。下载全部此前在基线已排除 Backend；现普通资源成功完成后串行调用原 DownloadSingleItemAsync 后端事务更新，完整包保持现有确认、环境检查、回滚语义，并用 _downloadAllBusy 防重复点击。改动 cli/ManagedArchiveExtractor.cs 与 VideoEnhancerPlugin/Pages/PluginPanel.ModelDownloadPage.vb。
 - Verification: dotnet build/publish VideoEnhancer.slnx Release 0 警告/0 错误；python unittest 33/33；本机 30,165,817-byte mkvtoolnix.7z 在未裁剪构建与最终 Artifacts/videoenhancer.exe 两次完整解压成功，零字节 portable-app 存在。git diff --check 通过。未执行完整后端下载（体积较大），需用户在 UI 验收按钮和事务安装。
 - Deployment/Git: 确认 3FUI 相关进程未运行，备份旧 DLL/EXE 于 Artifacts/.refactor-tmp/backup-3fui-before-download-fix-20260927-144302，备份与原件哈希一致；安装新 DLL SHA-256 4B087D6CF188AEBACE02FA782EA751DD28083727546D0C8441D44C737C22406C，EXE SHA-256 815D9E25E8C3540840D77BA75F9B6AD6A0579D33E96ECF58D69A12CC14C01286，均与发布产物一致；--version=1.3.5。代码与记录将随本次本地提交保存，origin/main 未推送；版本和 Release 未变。
+
+### 2026-09-27 14:53 - Codex
+
+- Steering/orientation: 用户澄清“下载全部”必须在可用时增量安装 Backend，否则完整安装。读取 AGENTS.md、INDEX.md、STATUS.md，git pull --ff-only origin main 已最新；起始 bbffe8f，工作树干净，本地 ahead 11。
+- Diagnosis: 本机 --backend-status --json=not-installed/full/2,645,812,004 bytes；--list-download-models 有 Backend/python_20260919.7z。上一版在全部普通资源之后才调用后端，且任一资源失败就返回，故实际无法到达。
+- Change: 调整 PluginPanel.ModelDownloadPage.vb 的 OnDownloadAllClick，先通过现有 DownloadSingleItemAsync 执行后端，按当前状态自动选 patch/full；若 patch 返回 BACKEND_FULL_REQUIRED，使用现有完整包确认与事务更新入口继续尝试；后端完成后才派发普通资源。插件 EXE 自更新仍独立。
+- Verification: dotnet publish VideoEnhancer.slnx Release 成功，0 警告/0 错误；release/test-backend-updater.ps1 6/6，覆盖成功增量、增量拒绝/回滚和完整安装；git diff --check 通过。尚未在真实 3FUI 点击按钮，也未下载 2.6GB 完整包。
+- Deployment risk/Git: 检测到已安装版 videoenhancer.exe PID 30120 正在执行 --download-model Bin/PortableGit.7z，因此未替换正在使用的 DLL/EXE；新构建待任务结束后安装。代码和记录随本地提交保存；未推送、未改版本/Release。

@@ -606,7 +606,7 @@ Namespace videoenhancer
         Private Async Sub OnDownloadAllClick(sender As Object, e As EventArgs)
             If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse
                 _archiveCleanupBusy OrElse _downloadCoordinator.ActiveCount > 0 OrElse _downloadAllBusy Then Return
-            ' 插件 EXE 由自动更新流程管理；Backend 在普通资源完成后单独执行事务安装。
+            ' 插件 EXE 由自动更新流程管理；Backend 先按状态选择增量或完整事务安装。
             Dim paths = _downloadItemsByPath.Keys.
                 Where(Function(path) Not path.Equals("Plugin/videoenhancer.exe", StringComparison.OrdinalIgnoreCase) AndAlso
                     Not DownloadCategory(path).Equals("Backend", StringComparison.OrdinalIgnoreCase)).
@@ -627,14 +627,16 @@ Namespace videoenhancer
             _downloadAllBusy = True
             UpdateDownloadUtilityButtons()
             Try
-                If paths.Count > 0 Then
-                    Await DownloadGroupItemsAsync("全部资源", paths)
-                    If Not _downloadOnline OrElse paths.Any(Function(path)
-                        Dim row = TryCast(_downloadItemsByPath(path).Tag, DownloadListRowTag)
-                        Return row Is Nothing OrElse row.Entry Is Nothing OrElse Not row.Entry.Installed
-                    End Function) Then Return
+                If backendEntry IsNot Nothing Then
+                    Dim attemptedPatch = Not backendEntry.ForceBackendFull
+                    Await DownloadSingleItemAsync(backendEntry)
+                    If attemptedPatch AndAlso backendEntry.ForceBackendFull AndAlso Not backendEntry.Installed Then
+                        ' 增量补丁校验失败时，沿用单项下载的确认与事务回滚流程尝试完整包。
+                        Await DownloadSingleItemAsync(backendEntry)
+                    End If
+                    If Not backendEntry.Installed Then Return
                 End If
-                If backendEntry IsNot Nothing Then Await DownloadSingleItemAsync(backendEntry)
+                If paths.Count > 0 Then Await DownloadGroupItemsAsync("全部资源", paths)
             Finally
                 _downloadAllBusy = False
                 UpdateDownloadUtilityButtons()
