@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 15:17
+Last updated: 2026-09-27 16:42
 Updated by: Codex
 
 ## Current Snapshot
+
+- Latest Backend 99% fix (2026-09-27 16:42): 用户报告后端下载显示 99% 不动。实机后端归档 python_20260919.7z 2,645,812,004 bytes 已完整下载，旧 CLI 正逐项随机访问 35,235 项 7z，仅解出约 1,750 项并持续耗费 CPU；界面未显示解压阶段。按 SharpCompress 官方顺序提取文档 https://github.com/adamhathcock/sharpcompress/blob/master/docs/USAGE.md 改为归档项预检后 ExtractAllEntries 顺序解压，保留路径/链接检查，并输出 EXTRACT_START/PROGRESS/COMPLETE 供下载页显示。同一 mkvtoolnix.7z 新法 7.6 秒解压，266 个文件与旧法哈希完全相同；后端专项 6/6、Python 33/33、Release publish 0/0。用户关闭 3FUI 后，新 DLL/EXE 部署到 C:\Program portable\3FUI\3FUI，备份在 Artifacts/.refactor-tmp/backup-3fui-before-sequential-extract-20260927-163111；安装哈希一致。直接复用已缓存 2.6GB 包完成真实完整安装，输出 BACKEND_UPDATE_COMPLETE，--backend-status --json 显示 current/2026.09.19.1。旧中断遗留 full-extract-adb345e096564f1cb0a58f4d11eeb5dd 仍在状态目录；递归删除尝试被自动审批 blocked by policy 拒绝，未执行清理，不影响当前安装。未发布或推送；需用户重启 3FUI 目视确认新解压提示。
 
 - Latest download lifetime fix (2026-09-27 15:17): 用户关闭 3FUI 后，旧版 videoenhancer.exe --download-model Bin/PortableGit.7z 仍作为 PID 30120 运行，原父 PID 25000 已不存在。新增 DownloadProcessLifetime：插件下载进程加入带 KILL_ON_JOB_CLOSE 的 Windows Job，页面 Dispose 关闭 Job；宿主直接退出时 OS 关闭句柄并清理下载器及子进程。另修复 Bin 资源安装状态：ffmpeg、mkvtoolnix、PortableGit、RTX runtime 以解压后程序文件判断，不再把仅存在的归档或部分目录当作成功。本机遗留进程在确认父进程已退出后精确停止。Windows Job 探针验证主动 Dispose 与宿主直接退出均会终止子进程；部分解压 PortableGit 和仅下载 mkvtoolnix 的状态探针通过；Release publish 0/0。最终 DLL/EXE 已安装到 C:\Program portable\3FUI\3FUI，备份在 Artifacts/.refactor-tmp/backup-3fui-before-install-status-fix-20260927-151639，哈希一致，CLI 1.3.5。真实 3FUI 后端完整包下载与关闭窗口行为待用户复测；未发布、未推送。
 
@@ -2509,3 +2511,11 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Changes: 新增 VideoEnhancerPlugin/DownloadProcessLifetime.vb，使用 Windows KILL_ON_JOB_CLOSE Job 绑定下载 CLI 及其子进程；ModelDownloadPage 在启动后立即注册，注册失败则结束进程；PluginPanel.Dispose 关闭 Job。DownloadInstallStatus 对 ffmpeg、mkvtoolnix、PortableGit、RTX runtime 以解压后的核心可执行文件判定安装，避免归档/部分目录假阳性。项目临时探针仅在 Artifacts/.refactor-tmp，未跟踪。
 - Verification: Release build/publish VideoEnhancer.slnx 0 警告/0 错误；临时 VB 探针验证 Dispose 和宿主进程直接退出时子进程均在 5 秒内消失，部分解压 PortableGit 与仅下载 mkvtoolnix 均判未安装；git diff --check 通过。此前同轮 release/test-backend-updater.ps1 6/6；真实 3FUI 的按钮流程和 2.6GB Backend 完整包仍需用户实测。
 - Deployment/Git: 确认 PID 30120 的路径/命令及原父进程缺失后结束该遗留下载树，未触碰其他进程。最后部署前再次确认 3FUI/CLI 未运行，备份已安装 DLL/EXE 至 Artifacts/.refactor-tmp/backup-3fui-before-install-status-fix-20260927-151639，备份哈希一致；安装 DLL SHA-256 217368C69DA7FB020BFE479CE7847857884AECEADBD7F5BA5234672509FA0352，EXE SHA-256 A7E54013460269775CA2E2527E583D9AF7C1F7FFA30872172FEA16346A464FD2，均与发布产物一致；--version=1.3.5。代码和记录随本地提交保存，origin/main 未推送；无新版本/Release。
+
+### 2026-09-27 16:42 - Codex
+
+- Request/orientation: 用户报告下载卡在 99%。读取 STATUS.md，git pull --ff-only origin main 已最新，起始 b010d41/main ahead 13，工作树干净；同工具续作。确认 FFmpegFreeUI PID 31124 的后端完整安装进程已下载 2,645,812,004 字节、创建 full-extract，约 35,235 归档项仅解出 1,750 项，CPU/文件数持续增长，因此不是网络卡住。
+- Changes: cli/ManagedArchiveExtractor.cs 对 7z 保持全部条目安全预检，改用 SharpCompress ExtractAllEntries 顺序读取，不再逐项重新打开固实流；CLI 输出 EXTRACT_START/EXTRACT_PROGRESS/EXTRACT_COMPLETE，下载页把 99% 切换为解压状态和百分比。官方参考 https://github.com/adamhathcock/sharpcompress/blob/master/docs/USAGE.md 。
+- Verification: dotnet build/publish VideoEnhancer.slnx Release 0 警告/0 错误；mkVtoolnix 30MB 实包新法 7.6 秒且 266 文件 SHA-256 与旧法完全一致；release/test-backend-updater.ps1 6/6；Python 33/33；git diff --check 通过。
+- Deployment/actual install: 用户确认已退出 3FUI，CLI 及 aria 进程均已退出，已缓存后端归档仍为 2,645,812,004 bytes。备份现有 DLL/EXE 至 Artifacts/.refactor-tmp/backup-3fui-before-sequential-extract-20260927-163111，部署 DLL SHA-256 5BC776CE4C934B0101D005A9D122A99AA97C28E740A5F8DCE02D0547649B20C9、EXE SHA-256 D874971159E91D4C026B81FE74557116C6CEFE37BA121D87B6F9D8E5EBED2F24，均与构建产物一致。直接运行已安装 CLI --update-backend --force-backend-full 复用缓存包，进度 10–100%，完成 BACKEND_UPDATE_COMPLETE|2026.09.19.1；--backend-status --json 返回 state=current、installedVersion=2026.09.19.1、mode=none。日志仅在项目内 Artifacts/.refactor-tmp/backend-cache-retry-20260927.log。
+- Remaining/rejection/Git: 上次被中断的 full-extract-adb345e096564f1cb0a58f4d11eeb5dd 仍在真实安装的 .videoenhancer-backend-update；试图在确认目标绝对路径和无运行进程后递归删除时，exec_command 自动审批返回 blocked by policy，未删、未改用绕过方式；不影响已完成安装。真实下载页新状态文字待用户重启目视。代码及记录将本地提交；无新版本/Release、未推送 origin/main。

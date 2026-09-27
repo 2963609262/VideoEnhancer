@@ -808,6 +808,11 @@ Namespace videoenhancer
                             If ev.Data.StartsWith("DOWNLOAD_PROGRESS|", StringComparison.Ordinal) Then
                                 Dim parts = ev.Data.Split("|"c)
                                 If parts.Length > 1 Then progress(parts(1) & "%")
+                            ElseIf ev.Data.StartsWith("EXTRACT_START|", StringComparison.Ordinal) Then
+                                progress("解压安装中...")
+                            ElseIf ev.Data.StartsWith("EXTRACT_PROGRESS|", StringComparison.Ordinal) Then
+                                Dim parts = ev.Data.Split("|"c)
+                                If parts.Length > 1 Then progress("解压 " & parts(1) & "%")
                             ElseIf ev.Data.StartsWith("EXTRACT_COMPLETE|", StringComparison.Ordinal) Then
                                 progress("解压完成")
                             ElseIf ev.Data.StartsWith("BACKEND_PATCH_START|", StringComparison.Ordinal) Then

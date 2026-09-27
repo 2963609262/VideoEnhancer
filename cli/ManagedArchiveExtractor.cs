@@ -17,7 +17,7 @@ internal static class ManagedArchiveExtractor
         CheckCrc = true
     };
 
-    internal static void Extract(string archivePath, string outputDirectory)
+    internal static void Extract(string archivePath, string outputDirectory, Action<int>? progress = null)
     {
         var archive = Path.GetFullPath(archivePath);
         var output = Path.GetFullPath(outputDirectory)
@@ -27,7 +27,7 @@ internal static class ManagedArchiveExtractor
 
         // 7z 没有流式 Reader API；其余当前支持格式走顺序 Reader，避免一次加载全部内容。
         if (Path.GetExtension(archive).Equals(".7z", StringComparison.OrdinalIgnoreCase))
-            ExtractSevenZip(archive, output);
+            ExtractSevenZip(archive, output, progress);
         else
             ExtractSequential(archive, output);
     }
@@ -83,25 +83,35 @@ internal static class ManagedArchiveExtractor
         }
     }
 
-    private static void ExtractSevenZip(string archivePath, string outputRoot)
+    private static void ExtractSevenZip(string archivePath, string outputRoot, Action<int>? progress)
     {
         using var archive = ArchiveFactory.OpenArchive(archivePath);
         var entries = archive.Entries.ToArray();
-        var destinations = entries.Select((entry, index) =>
-            ResolveEntry(outputRoot, entry, archivePath, index)).ToArray();
-
+        // 写盘前预检全部归档项，再按顺序提取，避免固实 7z 每项重复解码。
         for (var index = 0; index < entries.Length; index++)
+            ResolveEntry(outputRoot, entries[index], archivePath, index);
+
+        using var reader = archive.ExtractAllEntries();
+        var completed = 0;
+        var lastPercent = -1;
+        while (reader.MoveToNextEntry())
         {
-            var entry = entries[index];
-            var destination = destinations[index];
+            var entry = reader.Entry;
+            var destination = ResolveEntry(outputRoot, entry, archivePath, completed);
             if (entry.IsDirectory)
-            {
                 EnsureSafeDirectory(destination);
-                continue;
+            else
+            {
+                EnsureSafeParent(destination, outputRoot);
+                RejectExistingReparsePoint(destination);
+                reader.WriteEntryToFile(destination, ExtractionOptions);
             }
-            EnsureSafeParent(destination, outputRoot);
-            RejectExistingReparsePoint(destination);
-            entry.WriteToFile(destination, ExtractionOptions);
+            completed++;
+            if (progress is null || entries.Length == 0) continue;
+            var percent = (int)Math.Min(100L, completed * 100L / entries.Length);
+            if (percent == lastPercent) continue;
+            lastPercent = percent;
+            progress(percent);
         }
     }
 

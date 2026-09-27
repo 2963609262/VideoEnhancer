@@ -2148,7 +2148,9 @@ internal static class Program
         try
         {
             if (!File.Exists(archive)) return Fail("压缩文件不存在：" + archive, 1);
-            ManagedArchiveExtractor.Extract(archive, outputDirectory);
+            if (printComplete) Console.WriteLine("EXTRACT_START|" + outputDirectory);
+            ManagedArchiveExtractor.Extract(archive, outputDirectory,
+                printComplete ? percent => Console.WriteLine("EXTRACT_PROGRESS|" + percent) : null);
             if (printComplete) Console.WriteLine("EXTRACT_COMPLETE|" + outputDirectory);
             return 0;
         }
