@@ -836,100 +836,6 @@ internal static class Program
         }
     }
 
-    private sealed class Options
-    {
-        public bool ShowHelp;
-        public bool ShowVersion;
-        public bool ListModels;
-        public bool ListModelCatalog;
-        public bool ListInterpModelCatalog;
-        public bool ListUserModels;
-        public bool CheckOnly;
-        public bool DebugSplit;
-        public bool Json;
-        public string Input = "";
-        public bool HasInput;
-        public string Model = "";
-        public bool HasModel;
-        public string FfmpegSettings = "";
-        public bool HasFfmpegSettings;
-        public string FfmpegPath = "";
-        public string FfprobePath = "";
-        public string ScaleOverride = "";
-        public bool HasScaleOverride;
-        public string PauseShm = "";
-        public bool HasPauseShm;
-        public string StopShm = "";
-        public bool HasStopShm;
-        public string InterpModel = "";
-        public bool HasInterpModel;
-        public string InterpFactor = "";
-        public bool HasInterpFactor;
-        public bool NoUpscale;
-        public bool RtxHdr;
-        public string RtxTarget = "2x";
-        public string RtxQuality = "3";
-        public string RtxHdrContrast = "100";
-        public string RtxHdrSaturation = "100";
-        public string RtxHdrMiddleGray = "44";
-        public string RtxHdrMaxLuminance = "1000";
-        public string SegmentsBase64 = "";
-        public bool AllowMixedSegmentBackends;
-        public bool ListInterpModels;
-        public string Backend = "ncnn";
-        public bool HasBackend;
-        public string InterpBackend = "";
-        public bool HasInterpBackend;
-        public string ProcessOrder = "upscale-first";
-        public string UpscalePrecision = "auto";
-        public string InterpPrecision = "auto";
-        public string SceneThreshold = "4.0";
-        public bool HasSceneThreshold;
-        public bool DynamicOpticalFlow;
-        public string TileSize = "0";
-        public bool HasTileSize;
-        public bool ListBackends;
-        public bool ValidateEngines;
-        public string InspectInterpModel = "";
-        public string InspectUpscaleModel = "";
-        public string ImportModel = "";
-        public string UpdateUserModel = "";
-        public string DeleteUserModel = "";
-        public string UserArchitecture = "";
-        public string UserPurpose = "";
-        public string UserScale = "";
-        public string UserInputMultiple = "";
-        public string UserBackends = "";
-        public string PrepareInterpEngine = "";
-        public string PrepareWidth = "1920";
-        public string PrepareHeight = "1080";
-        public bool PrepareStaticShape;
-        public bool ListDownloadModels;
-        public bool CleanDownloadArchives;
-        public string DownloadModel = "";
-        public string DeleteDownloadModel = "";
-        public bool BackendStatus;
-        public bool UpdateBackend;
-        public bool ForceBackendFull;
-        public string ApplyBackendPatch = "";
-        public string BackendChannel = "";
-        public string DownloadUrl = "";
-        public string DownloadOutput = "";
-        public string ExtractArchive = "";
-        public string ExtractOutput = "";
-        public bool CleanupLegacyResidue;
-        public bool CleanupRegistryResidue;
-        public string PluginRoot = "";
-        public string LegacyLocalAppData = "";
-        public string LegacyTempRoot = "";
-        public readonly List<string> ImageInputs = new();
-        public readonly List<string> ImageFolders = new();
-        public string ImageOutput = "";
-        public bool ImageOutputOriginal;
-        public string ImageSuffix = "timestamp";
-        public bool ImagePng = true;
-    }
-
     /// <summary>参与 TensorRT Engine 缓存隔离的本机运行时信息。</summary>
     private sealed record TensorRtRuntime(string GpuName, string TensorRtVersion, string TorchTensorRtVersion);
 
@@ -973,11 +879,11 @@ internal static class Program
         if (args.Length == 0)
         {
             if (InstallerManager.IsInstaller()) return InstallerManager.RunInteractive();
-            PrintHelp(Console.Out);
+            CliHelp.Print(Console.Out, ToolVersion, DefaultModelScopeDataset);
             return 0;
         }
 
-        var o = ParseArgs(args);
+        var o = CliArgumentParser.Parse(args);
         FfmpegPathOverride = o.FfmpegPath;
         FfprobePathOverride = o.FfprobePath;
 
@@ -990,7 +896,7 @@ internal static class Program
 
         if (o.ShowHelp)
         {
-            PrintHelp(Console.Out);
+            CliHelp.Print(Console.Out, ToolVersion, DefaultModelScopeDataset);
             return 0;
         }
 
@@ -1059,7 +965,7 @@ internal static class Program
         // 在线列表只读取远端元数据，不依赖本地核心目录。
         if (o.ListDownloadModels)
         {
-            return ListRemoteModels(o.Json);
+            return CreateModelDownloadManager().ListRemoteModels(o.Json);
         }
 
         BackendUpdateManager.RecoverPending(CoreRoot);
@@ -1084,17 +990,17 @@ internal static class Program
 
         if (o.CleanDownloadArchives)
         {
-            return CleanDownloadArchives();
+            return CreateModelDownloadManager().CleanDownloadArchives();
         }
 
         if (!string.IsNullOrWhiteSpace(o.DownloadModel))
         {
-            return DownloadRepositoryModel(o.DownloadModel);
+            return CreateModelDownloadManager().DownloadRepositoryModel(o.DownloadModel);
         }
 
         if (!string.IsNullOrWhiteSpace(o.DeleteDownloadModel))
         {
-            return DeleteDownloadedModel(o.DeleteDownloadModel);
+            return CreateModelDownloadManager().DeleteDownloadedModel(o.DeleteDownloadModel);
         }
 
         if (!string.IsNullOrWhiteSpace(o.DownloadUrl))
@@ -1463,331 +1369,8 @@ internal static class Program
         writer.WriteLine(reader.ReadToEnd().TrimEnd());
     }
 
-    private static Options ParseArgs(string[] args)
-    {
-        var o = new Options();
-        for (var i = 0; i < args.Length; i++)
-        {
-            var (name, inlineValue) = SplitOption(args[i]);
-            switch (name)
-            {
-                case "-h":
-                case "--help":
-                    o.ShowHelp = true;
-                    break;
-                case "-v":
-                case "--version":
-                    o.ShowVersion = true;
-                    break;
-                case "--list-models":
-                case "--search-models":
-                    o.ListModels = true;
-                    break;
-                case "--list-model-catalog":
-                    o.ListModelCatalog = true;
-                    break;
-                case "--list-interp-model-catalog":
-                    o.ListInterpModelCatalog = true;
-                    break;
-                case "--list-user-models":
-                    o.ListUserModels = true;
-                    break;
-                case "--json":
-                    o.Json = true;
-                    break;
-                case "--check":
-                    o.CheckOnly = true;
-                    break;
-                case "--list-backends":
-                case "--list_backends":
-                    o.ListBackends = true;
-                    break;
-                case "--validate-engines":
-                    o.ValidateEngines = true;
-                    break;
-                case "--inspect-interp-model":
-                    o.InspectInterpModel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--inspect-upscale-model":
-                    o.InspectUpscaleModel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--import-model":
-                    o.ImportModel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--update-user-model":
-                    o.UpdateUserModel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--delete-user-model":
-                    o.DeleteUserModel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--user-architecture":
-                    o.UserArchitecture = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--user-purpose":
-                    o.UserPurpose = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--user-scale":
-                    o.UserScale = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--user-input-multiple":
-                    o.UserInputMultiple = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--user-backends":
-                    o.UserBackends = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--prepare-interp-engine":
-                    o.PrepareInterpEngine = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--prepare-width":
-                    o.PrepareWidth = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--prepare-height":
-                    o.PrepareHeight = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--prepare-static-shape":
-                    o.PrepareStaticShape = true;
-                    break;
-                case "--list-download-models":
-                    o.ListDownloadModels = true;
-                    break;
-                case "--clean-download-archives":
-                    o.CleanDownloadArchives = true;
-                    break;
-                case "--download-model":
-                    o.DownloadModel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--delete-download-model":
-                    o.DeleteDownloadModel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--backend-status":
-                    o.BackendStatus = true;
-                    break;
-                case "--update-backend":
-                    o.UpdateBackend = true;
-                    break;
-                case "--force-backend-full":
-                    o.ForceBackendFull = true;
-                    break;
-                case "--apply-backend-patch":
-                    o.ApplyBackendPatch = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--backend-channel":
-                    o.BackendChannel = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--download-url":
-                    o.DownloadUrl = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--download-output":
-                    o.DownloadOutput = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--extract-archive":
-                    o.ExtractArchive = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--extract-output":
-                    o.ExtractOutput = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--cleanup-legacy-residue":
-                    o.CleanupLegacyResidue = true;
-                    break;
-                case "--cleanup-registry-residue":
-                    o.CleanupRegistryResidue = true;
-                    break;
-                case "--plugin-root":
-                    o.PluginRoot = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--legacy-local-app-data":
-                    o.LegacyLocalAppData = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--legacy-temp-root":
-                    o.LegacyTempRoot = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--debug-split":
-                    o.DebugSplit = true;
-                    break;
-                case "-i":
-                case "--input":
-                    o.Input = TakeValue(args, ref i, name, inlineValue);
-                    o.HasInput = true;
-                    break;
-                case "-modelpath":
-                case "--modelpath":
-                case "--model":
-                    o.Model = TakeValue(args, ref i, name, inlineValue);
-                    o.HasModel = true;
-                    break;
-                case "-ffmpeg-settings":
-                case "--ffmpeg-settings":
-                    o.FfmpegSettings = TakeValue(args, ref i, name, inlineValue);
-                    o.HasFfmpegSettings = true;
-                    break;
-                case "--ffmpeg-path":
-                    o.FfmpegPath = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--ffprobe-path":
-                    o.FfprobePath = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-scale":
-                case "--scale":
-                    o.ScaleOverride = TakeValue(args, ref i, name, inlineValue);
-                    o.HasScaleOverride = true;
-                    break;
-                case "-pause-shm":
-                case "--pause-shm":
-                    o.PauseShm = TakeValue(args, ref i, name, inlineValue);
-                    o.HasPauseShm = true;
-                    break;
-                case "-stop-shm":
-                case "--stop-shm":
-                    o.StopShm = TakeValue(args, ref i, name, inlineValue);
-                    o.HasStopShm = true;
-                    break;
-                case "-interp-model":
-                case "--interp-model":
-                case "--interp-modelpath":
-                    o.InterpModel = TakeValue(args, ref i, name, inlineValue);
-                    o.HasInterpModel = true;
-                    break;
-                case "-interp-factor":
-                case "--interp-factor":
-                    o.InterpFactor = TakeValue(args, ref i, name, inlineValue);
-                    o.HasInterpFactor = true;
-                    break;
-                case "-no-upscale":
-                case "--no-upscale":
-                    o.NoUpscale = true;
-                    break;
-                case "-rtx-hdr":
-                case "--rtx-hdr":
-                    o.RtxHdr = true;
-                    break;
-                case "-rtx-target":
-                case "--rtx-target":
-                    o.RtxTarget = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-rtx-quality":
-                case "--rtx-quality":
-                    o.RtxQuality = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-rtx-hdr-contrast":
-                case "--rtx-hdr-contrast":
-                    o.RtxHdrContrast = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-rtx-hdr-saturation":
-                case "--rtx-hdr-saturation":
-                    o.RtxHdrSaturation = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-rtx-hdr-middle-gray":
-                case "--rtx-hdr-middle-gray":
-                    o.RtxHdrMiddleGray = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-rtx-hdr-max-luminance":
-                case "--rtx-hdr-max-luminance":
-                    o.RtxHdrMaxLuminance = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--segments-base64":
-                    o.SegmentsBase64 = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--allow-mixed-segment-backends":
-                    o.AllowMixedSegmentBackends = true;
-                    break;
-                case "--list-interp-models":
-                case "--search-interp-models":
-                    o.ListInterpModels = true;
-                    break;
-                case "-backend":
-                case "--backend":
-                    o.Backend = TakeValue(args, ref i, name, inlineValue);
-                    o.HasBackend = true;
-                    break;
-                case "-interp-backend":
-                case "--interp-backend":
-                    o.InterpBackend = TakeValue(args, ref i, name, inlineValue);
-                    o.HasInterpBackend = true;
-                    break;
-                case "-process-order":
-                case "--process-order":
-                    o.ProcessOrder = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-upscale-precision":
-                case "--upscale-precision":
-                    o.UpscalePrecision = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-interp-precision":
-                case "--interp-precision":
-                    o.InterpPrecision = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "-scene-threshold":
-                case "--scene-threshold":
-                    o.SceneThreshold = TakeValue(args, ref i, name, inlineValue);
-                    o.HasSceneThreshold = true;
-                    break;
-                case "-dynamic-optical-flow":
-                case "--dynamic-optical-flow":
-                    o.DynamicOpticalFlow = true;
-                    break;
-                case "-tile-size":
-                case "--tile-size":
-                case "--tilesize":
-                    o.TileSize = TakeValue(args, ref i, name, inlineValue);
-                    o.HasTileSize = true;
-                    break;
-                case "--image-input":
-                    o.ImageInputs.Add(TakeValue(args, ref i, name, inlineValue));
-                    break;
-                case "--image-folder":
-                    o.ImageFolders.Add(TakeValue(args, ref i, name, inlineValue));
-                    break;
-                case "--image-output":
-                    o.ImageOutput = TakeValue(args, ref i, name, inlineValue);
-                    break;
-                case "--image-output-original":
-                    o.ImageOutputOriginal = true;
-                    break;
-                case "--image-suffix":
-                    o.ImageSuffix = TakeValue(args, ref i, name, inlineValue).Trim().ToLowerInvariant();
-                    if (o.ImageSuffix is not ("timestamp" or "model"))
-                    {
-                        throw new ArgumentException("--image-suffix 仅支持 timestamp 或 model");
-                    }
-                    break;
-                case "--image-png":
-                    o.ImagePng = true;
-                    break;
-                case "--image-source-format":
-                    o.ImagePng = false;
-                    break;
-                default:
-                    throw new ArgumentException("未知参数：" + args[i] + "（使用 -h 查看帮助）");
-            }
-        }
-        return o;
-    }
-
-    private static string TakeValue(string[] args, ref int i, string name, string? inlineValue)
-    {
-        if (inlineValue is not null)
-        {
-            return inlineValue;
-        }
-        if (i + 1 >= args.Length)
-        {
-            throw new ArgumentException("参数 " + name + " 缺少值");
-        }
-        return args[++i];
-    }
-
-    private static (string Name, string? Value) SplitOption(string arg)
-    {
-        var eq = arg.IndexOf('=');
-        if (eq > 1 && arg.StartsWith('-'))
-        {
-            return (arg[..eq], arg[(eq + 1)..]);
-        }
-        return (arg, null);
-    }
-
     /// <summary>由便携安装器调用：迁移旧布局并清除可明确识别的旧版残留。</summary>
-    private static int CleanupLegacyResidue(Options o)
+    private static int CleanupLegacyResidue(CliOptions o)
     {
         if (string.IsNullOrWhiteSpace(o.PluginRoot))
             return Fail("--cleanup-legacy-residue 需要 --plugin-root", 1);
@@ -1830,6 +1413,7 @@ internal static class Program
     }
 
     private static string DefaultBackendChannel => ModelScopeResolveRoot + "Backend/channel.json";
+    private static ModelRepositoryClient CreateModelRepository() => new(ModelScopeDataset, ModelScopeToken, ToolVersion);
 
     private static BackendUpdateChannel LoadBackendChannel(string configuredSource, out string source)
     {
@@ -1841,7 +1425,7 @@ internal static class Program
             && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
-            ApplyModelScopeAuthentication(client);
+            CreateModelRepository().ApplyModelScopeAuthentication(client);
             client.DefaultRequestHeaders.UserAgent.ParseAdd("VideoEnhancer/" + ToolVersion);
             json = client.GetStringAsync(uri).GetAwaiter().GetResult();
         }
@@ -1884,7 +1468,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            WriteRemoteFailure("无法读取后端更新状态", ex);
+            ModelRepositoryClient.WriteRemoteFailure("无法读取后端更新状态", ex);
             return 3;
         }
     }
@@ -1919,8 +1503,8 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            if (IsNetworkFailure(ex) || IsAuthenticationFailure(ex))
-                WriteRemoteFailure("后端更新失败", ex);
+            if (ModelRepositoryClient.IsNetworkFailure(ex) || ModelRepositoryClient.IsAuthenticationFailure(ex))
+                ModelRepositoryClient.WriteRemoteFailure("后端更新失败", ex);
             else
                 Console.Error.WriteLine("[错误] 后端更新失败：" + ex.Message);
             return 1;
@@ -1964,7 +1548,7 @@ internal static class Program
                 url = new Uri(channelUri, artifactPath).ToString();
             var code = ModelScopeToken is null
                 ? DownloadWithAria(url, destination, printComplete: false)
-                : DownloadModelScopeFile(url, destination);
+                : CreateModelDownloadManager().DownloadModelScopeFile(url, destination);
             if (code != 0) throw new InvalidOperationException("无法下载后端更新包：" + artifactPath);
         }
         else
@@ -2042,488 +1626,10 @@ internal static class Program
         }
     }
 
-    private sealed record RemoteModel(string Name, string Path, long Size, string Sha256);
+    private static ModelDownloadManager CreateModelDownloadManager() => new(
+        CoreRoot, ModelScopeToken, ToolVersion, CreateModelRepository(),
+        DownloadWithAria, ExtractArchive, Fail);
 
-    private static void KeepLatestVersionedArchive(
-        List<RemoteModel> models,
-        string versionedPathPattern,
-        params string[] legacyPaths)
-    {
-        var options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
-        var latest = models
-            .Select(model => (Model: model, Match: Regex.Match(model.Path, versionedPathPattern, options)))
-            .Where(candidate => candidate.Match.Success)
-            .OrderByDescending(
-                candidate => candidate.Match.Groups["version"].Value,
-                StringComparer.OrdinalIgnoreCase)
-            .ThenByDescending(candidate => candidate.Model.Path, StringComparer.OrdinalIgnoreCase)
-            .Select(candidate => candidate.Model)
-            .FirstOrDefault();
-        if (latest is null) return;
-
-        models.RemoveAll(model =>
-            legacyPaths.Contains(model.Path, StringComparer.OrdinalIgnoreCase)
-            || (Regex.IsMatch(model.Path, versionedPathPattern, options)
-                && !model.Path.Equals(latest.Path, StringComparison.OrdinalIgnoreCase)));
-    }
-
-    private static List<RemoteModel> FetchRemoteModels()
-    {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
-        ApplyModelScopeAuthentication(client);
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("VideoEnhancer/" + ToolVersion);
-        client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
-        var result = new List<RemoteModel>();
-        var allowedRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "Backend", "BasicVSR++", "Bin", "FlashVSR", "Frame-Interpolation", "ONNX", "Param-Bin", "Plugin", "RIFE", "PTH" };
-        var fetchedEntries = 0;
-        for (var pageNumber = 1; ; pageNumber++)
-        {
-            var json = client.GetStringAsync(ModelScopeTreeApi(pageNumber)).GetAwaiter().GetResult();
-            using var document = JsonDocument.Parse(json);
-            var rootElement = document.RootElement;
-            var files = rootElement.GetProperty("Data").GetProperty("Files");
-            var returnedEntries = files.GetArrayLength();
-            fetchedEntries += returnedEntries;
-
-            foreach (var file in files.EnumerateArray())
-            {
-                if (!string.Equals(file.GetProperty("Type").GetString(), "blob", StringComparison.OrdinalIgnoreCase)) continue;
-                var path = file.GetProperty("Path").GetString()?.Replace('\\', '/').TrimStart('/') ?? "";
-                if (path.Length == 0 || path.EndsWith("/.gitkeep", StringComparison.OrdinalIgnoreCase)) continue;
-                var slash = path.IndexOf('/');
-                var root = slash < 0 ? path : path[..slash];
-                if (!allowedRoots.Contains(root)) continue;
-                result.Add(new RemoteModel(
-                    file.GetProperty("Name").GetString() ?? System.IO.Path.GetFileName(path),
-                    path,
-                    file.TryGetProperty("Size", out var size) ? size.GetInt64() : 0,
-                    file.TryGetProperty("Sha256", out var hash) ? hash.GetString() ?? "" : ""));
-            }
-
-            var totalCount = rootElement.TryGetProperty("TotalCount", out var total)
-                && total.TryGetInt32(out var parsedTotal)
-                    ? parsedTotal
-                    : -1;
-            // ModelScope 默认只返回 100 条。根据总数翻页；旧接口缺少总数时，
-            // 以实际返回数小于请求页大小作为结束条件。
-            if (returnedEntries == 0
-                || (totalCount >= 0 && fetchedEntries >= totalCount)
-                || (totalCount < 0 && returnedEntries < ModelScopeTreePageSize))
-            {
-                break;
-            }
-        }
-        // 版本化运行包在仓库中保留历史文件用于旧客户端和回滚，但当前下载页只展示最新项。
-        // 模型权重继续使用稳定路径；更新同一权重时覆盖原路径，不产生带日期的重复条目。
-        KeepLatestVersionedArchive(
-            result,
-            @"^Backend/python_(?<version>\d{8})\.7z$",
-            "Backend/python.7z");
-        KeepLatestVersionedArchive(
-            result,
-            @"^Bin/rtx-video/RTXVideoRuntime_(?<version>\d{8})\.7z$");
-
-        // 新版补帧包已迁移到 Frame-Interpolation；旧 RIFE/RIFE.7z 与其内容重复，
-        // 但远端文件仍保留给旧客户端使用，因此只从当前下载列表隐藏旧路径。
-        result.RemoveAll(model =>
-            model.Path.Equals("Backend/channel.json", StringComparison.OrdinalIgnoreCase)
-            || model.Path.StartsWith("Backend/patches/", StringComparison.OrdinalIgnoreCase));
-        result.RemoveAll(model => model.Path.Equals("RIFE/RIFE.7z", StringComparison.OrdinalIgnoreCase));
-
-        return result.OrderBy(m => m.Path, StringComparer.OrdinalIgnoreCase).ToList();
-    }
-
-    private static bool IsNetworkFailure(Exception exception)
-    {
-        for (Exception? current = exception; current is not null; current = current.InnerException)
-        {
-            if (current is HttpRequestException or TaskCanceledException or TimeoutException)
-                return true;
-        }
-        return false;
-    }
-
-    private static bool IsAuthenticationFailure(Exception exception)
-    {
-        for (Exception? current = exception; current is not null; current = current.InnerException)
-        {
-            if (current is HttpRequestException request
-                && request.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-                return true;
-        }
-        return false;
-    }
-
-    private static void ApplyModelScopeAuthentication(HttpClient client)
-    {
-        var token = ModelScopeToken;
-        if (token is null) return;
-        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", "Bearer " + token);
-        client.DefaultRequestHeaders.TryAddWithoutValidation(
-            "Cookie", "m_session_id=" + token + "; modelscope_session=" + token);
-    }
-
-    private static void WriteRemoteFailure(string operation, Exception exception)
-    {
-        if (IsAuthenticationFailure(exception))
-            Console.Error.WriteLine("AUTH_REQUIRED|ModelScope 私有仓库需要有效令牌；请设置 VIDEOENHANCER_MODELSCOPE_TOKEN 或 MODELSCOPE_API_TOKEN");
-        else if (IsNetworkFailure(exception))
-            Console.Error.WriteLine("NO_NETWORK|无法连接 ModelScope");
-        else
-            Console.Error.WriteLine("REMOTE_ERROR|ModelScope 返回的数据无法解析");
-        Console.Error.WriteLine($"[错误] {operation}：{exception.Message}");
-    }
-
-    private static int ListRemoteModels(bool json)
-    {
-        try
-        {
-            var models = FetchRemoteModels();
-            if (json)
-            {
-                using var buffer = new MemoryStream();
-                using (var writer = new Utf8JsonWriter(buffer))
-                {
-                    writer.WriteStartArray();
-                    foreach (var model in models)
-                    {
-                        writer.WriteStartObject();
-                        writer.WriteString("name", model.Name);
-                        writer.WriteString("path", model.Path);
-                        writer.WriteNumber("size", model.Size);
-                        writer.WriteEndObject();
-                    }
-                    writer.WriteEndArray();
-                }
-                Console.WriteLine(Encoding.UTF8.GetString(buffer.ToArray()));
-            }
-            else
-            {
-                foreach (var model in models)
-                    Console.WriteLine($"{model.Path}\t{model.Size}");
-            }
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            WriteRemoteFailure("无法读取模型列表", ex);
-            return 3;
-        }
-    }
-
-    private static int DownloadRepositoryModel(string requestedPath)
-    {
-        List<RemoteModel> models;
-        try
-        {
-            models = FetchRemoteModels();
-        }
-        catch (Exception ex)
-        {
-            WriteRemoteFailure("无法连接模型镜像", ex);
-            return 3;
-        }
-
-        var normalized = requestedPath.Replace('\\', '/').TrimStart('/');
-        if (normalized.StartsWith("Backend/", StringComparison.OrdinalIgnoreCase))
-            return Fail("后端不能再用覆盖解压方式安装，请改用 --update-backend", 1);
-        var model = models.FirstOrDefault(m => m.Path.Equals(normalized, StringComparison.OrdinalIgnoreCase));
-        if (model is null) return Fail("镜像中不存在该文件：" + normalized, 1);
-
-        var slash = model.Path.IndexOf('/');
-        if (slash <= 0) return Fail("模型镜像路径无效：" + model.Path, 1);
-        var category = model.Path[..slash];
-        var suffix = model.Path[(slash + 1)..].Replace('/', Path.DirectorySeparatorChar);
-        var destinationRoot = category.Equals("Plugin", StringComparison.OrdinalIgnoreCase)
-            ? CoreRoot
-            : category.Equals("Backend", StringComparison.OrdinalIgnoreCase)
-                ? Path.Combine(CoreRoot, "python")
-                : category.Equals("Bin", StringComparison.OrdinalIgnoreCase)
-                    ? Path.Combine(CoreRoot, "bin")
-                    : Path.Combine(CoreRoot, "models", category);
-        var destination = SafeCombine(destinationRoot, suffix);
-        var url = ModelScopeResolveRoot + string.Join("/", model.Path.Split('/').Select(Uri.EscapeDataString));
-        Console.WriteLine("DOWNLOAD_START|" + model.Path);
-        var code = ModelScopeToken is null
-            ? DownloadWithAria(url, destination, printComplete: false)
-            : DownloadModelScopeFile(url, destination);
-        if (code != 0) return code;
-
-        if (model.Size > 0 && new FileInfo(destination).Length != model.Size)
-            return Fail("下载文件大小校验失败：" + destination, 1);
-        if (!string.IsNullOrWhiteSpace(model.Sha256))
-        {
-            using var stream = File.OpenRead(destination);
-            var actual = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
-            if (!actual.Equals(model.Sha256, StringComparison.OrdinalIgnoreCase))
-                return Fail("下载文件 SHA256 校验失败：" + destination, 1);
-        }
-
-        if (IsArchiveFile(destination))
-        {
-            // 旧镜像压缩包包含一级分类目录；新版补帧包只包含架构目录，需直接解到 Frame-Interpolation。
-            var extractionRoot = category.Equals("Backend", StringComparison.OrdinalIgnoreCase)
-                ? CoreRoot
-                : category.Equals("Bin", StringComparison.OrdinalIgnoreCase)
-                    ? Path.Combine(CoreRoot, "bin")
-                    : category.Equals("Frame-Interpolation", StringComparison.OrdinalIgnoreCase)
-                        ? FrameInterpolationDir
-                        : Path.Combine(CoreRoot, "models");
-            code = ExtractArchive(destination, extractionRoot);
-            if (code != 0) return code;
-            if (category.Equals("Frame-Interpolation", StringComparison.OrdinalIgnoreCase))
-            {
-                var marker = FrameInterpolationArchiveMarkerPath(model.Path);
-                Directory.CreateDirectory(Path.GetDirectoryName(marker)!);
-                File.WriteAllText(marker, model.Path, Encoding.UTF8);
-            }
-            if (IsRtxVideoRuntimeArchivePath(model.Path))
-            {
-                // runtime 已完整解压并通过下载哈希校验，日期归档不再参与运行；
-                // 清掉所有历史归档，避免每次更新都在本地累积一份约 22MB 的包。
-                DeleteRtxVideoRuntimeArchives();
-            }
-        }
-        Console.WriteLine("DOWNLOAD_COMPLETE|" + destination);
-        return 0;
-    }
-
-    private static int DeleteDownloadedModel(string requestedPath)
-    {
-        var normalized = requestedPath.Replace('\\', '/').TrimStart('/');
-        if (IsRtxVideoRuntimeArchivePath(normalized))
-            return DeleteRtxVideoRuntime();
-
-        var slash = normalized.IndexOf('/');
-        if (slash <= 0) return Fail("模型路径无效：" + normalized, 1);
-        var category = normalized[..slash];
-        var allowedCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "BasicVSR++", "FlashVSR", "Frame-Interpolation", "ONNX", "Param-Bin", "RIFE", "PTH" };
-        if (!allowedCategories.Contains(category))
-            return Fail("只允许删除 models 目录中的模型文件", 1);
-
-        var suffix = normalized[(slash + 1)..].Replace('/', Path.DirectorySeparatorChar);
-        var destination = SafeCombine(Path.Combine(CoreRoot, "models", category), suffix);
-        if (IsArchiveFile(destination))
-            return Fail("压缩模型包可能包含共享目录，不能按单文件方式删除；请使用清理归档功能", 1);
-        if (!File.Exists(destination))
-            return Fail("本地模型文件不存在：" + normalized, 1);
-
-        try
-        {
-            var attributes = File.GetAttributes(destination);
-            if ((attributes & FileAttributes.ReparsePoint) != 0)
-                return Fail("本地模型文件是符号链接或联接点，已拒绝删除", 1);
-            File.Delete(destination);
-            Console.WriteLine("MODEL_DELETE_COMPLETE|" + normalized);
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            return Fail("删除本地模型失败：" + ex.Message, 1);
-        }
-    }
-
-    private static int DeleteRtxVideoRuntime()
-    {
-        var root = Path.GetFullPath(Path.Combine(CoreRoot, "bin", "rtx-video"));
-        if (!Directory.Exists(root))
-            return Fail("本地 RTX 运行组件不存在", 1);
-
-        var sidecars = Process.GetProcessesByName("vsr_backend");
-        try
-        {
-            if (sidecars.Length > 0)
-                return Fail("RTX 运行组件正在被视频任务使用，请先停止任务再卸载", 1);
-        }
-        finally
-        {
-            foreach (var process in sidecars) process.Dispose();
-        }
-
-        try
-        {
-            var entries = Directory.EnumerateFileSystemEntries(
-                    root,
-                    "*",
-                    SearchOption.AllDirectories)
-                .Prepend(root);
-            foreach (var entry in entries)
-            {
-                if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
-                    return Fail("RTX 运行组件目录包含符号链接或联接点，已拒绝卸载", 1);
-            }
-
-            Directory.Delete(root, recursive: true);
-            Console.WriteLine("RTX_RUNTIME_DELETE_COMPLETE|Bin/rtx-video");
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            return Fail("卸载 RTX 运行组件失败：" + ex.Message, 1);
-        }
-    }
-
-    private static string FrameInterpolationArchiveMarkerPath(string relativePath)
-    {
-        var normalized = relativePath.Replace('\\', '/').ToUpperInvariant();
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalized)));
-        return Path.Combine(FrameInterpolationDir, ".downloads", hash + ".installed");
-    }
-
-    private static int DownloadModelScopeFile(string url, string destination)
-    {
-        var partial = destination + ".part";
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            using var handler = new HttpClientHandler { AllowAutoRedirect = false };
-            using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
-            ApplyModelScopeAuthentication(client);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("VideoEnhancer/" + ToolVersion);
-            using var response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException(
-                    $"ModelScope 下载返回 HTTP {(int)response.StatusCode} ({response.ReasonPhrase})",
-                    null,
-                    response.StatusCode);
-
-            var total = response.Content.Headers.ContentLength ?? 0;
-            using var input = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-            using (var output = new FileStream(partial, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                var buffer = new byte[1024 * 1024];
-                long completed = 0;
-                var lastPercent = -1;
-                int read;
-                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    output.Write(buffer, 0, read);
-                    completed += read;
-                    if (total <= 0) continue;
-                    var percent = (int)Math.Clamp(completed * 100L / total, 0, 100);
-                    if (percent == lastPercent) continue;
-                    lastPercent = percent;
-                    Console.WriteLine($"DOWNLOAD_PROGRESS|{percent}|{Path.GetFileName(destination)}");
-                }
-                output.Flush(true);
-            }
-            File.Move(partial, destination, true);
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            try { if (File.Exists(partial)) File.Delete(partial); } catch { }
-            if (IsAuthenticationFailure(ex))
-                Console.Error.WriteLine("AUTH_REQUIRED|ModelScope 私有文件需要有效令牌；请检查 VIDEOENHANCER_MODELSCOPE_TOKEN 或 MODELSCOPE_API_TOKEN");
-            else
-                Console.Error.WriteLine("[错误] ModelScope 下载失败：" + ex.Message);
-            return 1;
-        }
-    }
-
-    private static string SafeCombine(string root, string relative)
-    {
-        var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-        var full = Path.GetFullPath(Path.Combine(fullRoot, relative));
-        if (!full.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("路径越出了目标目录：" + relative);
-        return full;
-    }
-
-    private static bool IsArchiveFile(string path)
-    {
-        var extension = Path.GetExtension(path);
-        return extension.Equals(".7z", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".zip", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".rar", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".gz", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".xz", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".zst", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".tar", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsRtxVideoRuntimeArchivePath(string path)
-    {
-        var normalized = path.Replace('\\', '/').TrimStart('/');
-        return Regex.IsMatch(
-            normalized,
-            @"^Bin/rtx-video/RTXVideoRuntime_\d{8}\.7z$",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-    }
-
-    private static void DeleteRtxVideoRuntimeArchives()
-    {
-        var root = Path.Combine(CoreRoot, "bin", "rtx-video");
-        if (!Directory.Exists(root)) return;
-        foreach (var archive in Directory.EnumerateFiles(
-                     root,
-                     "RTXVideoRuntime_*.7z",
-                     SearchOption.TopDirectoryOnly))
-        {
-            try
-            {
-                File.Delete(archive);
-                Console.WriteLine("CLEAN_DELETED|" + archive);
-            }
-            catch (Exception ex)
-            {
-                // 运行组件已经安装成功，杀毒软件短暂占用归档不应把整个下载任务判为失败；
-                // 用户仍可稍后使用“清理归档”重试。
-                Console.Error.WriteLine("[警告] RTX runtime 归档暂时无法清理：" + ex.Message);
-            }
-        }
-    }
-
-    private static int CleanDownloadArchives()
-    {
-        var deleted = 0;
-        long reclaimedBytes = 0;
-        var failures = new List<string>();
-
-        var candidates = new List<string>();
-        var modelsRoot = Path.Combine(CoreRoot, "models");
-        if (Directory.Exists(modelsRoot))
-            candidates.AddRange(Directory.EnumerateFiles(modelsRoot, "*", SearchOption.AllDirectories));
-        // Backend 下载包落在核心 python 目录的顶层；其子目录是运行时与后端源码，
-        // 其中也包含 base_library.zip、测试数据 .gz 等不可删除的正常文件。
-        var pythonRoot = Path.Combine(CoreRoot, "python");
-        if (Directory.Exists(pythonRoot))
-            candidates.AddRange(Directory.EnumerateFiles(pythonRoot, "*", SearchOption.TopDirectoryOnly));
-        // RTX runtime 使用日期版本归档，解压后不再需要；只扫描专用目录顶层，
-        // 不触碰 bin 中 FFmpeg、mkvtoolnix 等其他运行组件。
-        var rtxVideoRoot = Path.Combine(CoreRoot, "bin", "rtx-video");
-        if (Directory.Exists(rtxVideoRoot))
-            candidates.AddRange(Directory.EnumerateFiles(
-                rtxVideoRoot,
-                "RTXVideoRuntime_*.7z",
-                SearchOption.TopDirectoryOnly));
-
-        foreach (var file in candidates.Where(IsArchiveFile).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            try
-            {
-                var full = Path.GetFullPath(file);
-                var length = new FileInfo(full).Length;
-                File.Delete(full);
-                reclaimedBytes += length;
-                deleted++;
-                Console.WriteLine("CLEAN_DELETED|" + full);
-            }
-            catch (Exception ex)
-            {
-                failures.Add(file + "：" + ex.Message);
-            }
-        }
-
-        Console.WriteLine($"CLEAN_COMPLETE|{deleted}|{reclaimedBytes}");
-        if (failures.Count == 0) return 0;
-        foreach (var failure in failures) Console.Error.WriteLine("[清理失败] " + failure);
-        return 2;
-    }
-
-    /// <summary>把 preview.2 旧下载逻辑生成的 models 下 FFmpeg 目录迁移到标准 bin 目录。</summary>
     private static void MigrateLegacyFfmpegLayout()
     {
         if (File.Exists(FfmpegExe))
@@ -3060,7 +2166,7 @@ internal static class Program
     };
 
     /// <summary>找到图片任务中的第一张有效图片，用于 TensorRT 输入尺寸探测。</summary>
-    private static string? FindFirstImageInput(Options o)
+    private static string? FindFirstImageInput(CliOptions o)
     {
         foreach (var input in o.ImageInputs)
         {
@@ -3085,7 +2191,7 @@ internal static class Program
         return null;
     }
 
-    private static int RunImageJob(Options o)
+    private static int RunImageJob(CliOptions o)
     {
         if (!File.Exists(PythonExe)) return Fail("图片后端找不到便携 Python：" + PythonExe, 1);
         if (!File.Exists(ImageBackendScript)) return Fail("图片后端脚本不存在：" + ImageBackendScript, 1);
@@ -5074,7 +4180,7 @@ internal static class Program
     }
 
     private static int RunSegmentedVideo(
-        Options options, string input, string outputFile, string customEncoder, bool overwrite,
+        CliOptions options, string input, string outputFile, string customEncoder, bool overwrite,
         string pauseShm, StopWatcher? stopWatcher, int tileSize)
     {
         var requested = new List<SegmentRequest>();
@@ -6733,7 +5839,7 @@ internal static class Program
         return 0;
     }
 
-    private static int UpdateUserModel(Options options)
+    private static int UpdateUserModel(CliOptions options)
     {
         if (!int.TryParse(options.UserScale, NumberStyles.Integer, CultureInfo.InvariantCulture, out var scale))
             return Fail("--update-user-model 需要 --user-scale <整数>");
@@ -6758,7 +5864,7 @@ internal static class Program
         }
     }
 
-    private static int DeleteUserModel(Options options)
+    private static int DeleteUserModel(CliOptions options)
     {
         try
         {
@@ -7128,153 +6234,5 @@ internal static class Program
         return exitCode;
     }
 
-    private static void PrintHelp(TextWriter writer)
-    {
-        writer.WriteLine("videoenhancer.exe — 视频/图片超分辨率命令行工具  v" + ToolVersion);
-        writer.WriteLine("============================================================");
-        writer.WriteLine("用法");
-        writer.WriteLine("  videoenhancer.exe -i <输入视频> -modelpath <模型目录> -ffmpeg-settings \"<FFmpeg 参数 + 输出路径>\"");
-        writer.WriteLine("  videoenhancer.exe -i <输入视频> -interp-model <补帧模型> [-no-upscale] -ffmpeg-settings \"<FFmpeg 参数 + 输出路径>\"");
-        writer.WriteLine("  videoenhancer.exe -i <输入视频> -no-upscale -backend cuda -interp-model <CUDA 补帧模型> -ffmpeg-settings \"<FFmpeg 参数 + 输出路径>\"");
-        writer.WriteLine("  videoenhancer.exe --image-input <图片> --image-output <文件夹> -backend onnx -modelpath <模型>");
-        writer.WriteLine("  videoenhancer.exe --image-folder <文件夹> --image-output-original -modelpath <模型>");
-        writer.WriteLine("  videoenhancer.exe -i <输入视频> -backend rtxvsr -rtx-target 2160p -rtx-quality 3 -rtx-hdr -rtx-hdr-contrast 100 -ffmpeg-settings \"...\"");
-        writer.WriteLine("  videoenhancer.exe --list-download-models --json");
-        writer.WriteLine("  videoenhancer.exe --import-model <模型文件、目录或压缩包> --json");
-        writer.WriteLine("  videoenhancer.exe --clean-download-archives");
-        writer.WriteLine("  videoenhancer.exe --download-model <镜像相对路径>");
-        writer.WriteLine("  videoenhancer.exe --delete-download-model <镜像相对路径>");
-        writer.WriteLine("  videoenhancer.exe --backend-status --json");
-        writer.WriteLine("  videoenhancer.exe --update-backend");
-        writer.WriteLine("  videoenhancer.exe --apply-backend-patch <本地补丁包>");
-        writer.WriteLine("  videoenhancer.exe --download-url <链接> --download-output <文件>");
-        writer.WriteLine("  videoenhancer.exe --extract-archive <压缩包> [--extract-output <目录>]");
-        writer.WriteLine("  videoenhancer.exe --third-party-notices");
-        writer.WriteLine("  videoenhancer.exe --license");
-        writer.WriteLine("  videoenhancer.exe --version");
-        writer.WriteLine();
-        writer.WriteLine("必需参数");
-        writer.WriteLine("  -i, --input <路径>");
-        writer.WriteLine("        输入视频路径，含空格时用双引号包裹，例如 -i \"D:\\videos\\input.mp4\"");
-        writer.WriteLine("  -modelpath, --modelpath, --model <路径>");
-        writer.WriteLine("        放大模型：可给完整路径、models 下的相对路径或模型名");
-        writer.WriteLine("        （如 RealESRGAN-AnimeVideoV3-2x）；省略时使用默认模型；");
-        writer.WriteLine("        配合 -no-upscale 时可不提供（仅补帧模式）");
-        writer.WriteLine("  -ffmpeg-settings, --ffmpeg-settings <字符串>");
-        writer.WriteLine("        FFmpeg 输出编码参数，最后一个参数必须是输出文件路径");
-        writer.WriteLine("        （因此不需要 -o，输出路径内置于该参数中）");
-        writer.WriteLine();
-        writer.WriteLine("可选参数");
-        writer.WriteLine("  -h, --help          显示本帮助并退出");
-        writer.WriteLine("  -scale <N>          强制放大倍率（如 2/3/4），默认从模型名自动识别");
-        writer.WriteLine("  -interp-model <路径>  补帧模型：完整路径、models\\Frame-Interpolation 下的相对路径或模型名");
-        writer.WriteLine("        （如 RIFE/rife-v4.25、GIMM-VFI/gimm-vfi）；旧 models\\RIFE 目录仍可读取；");
-        writer.WriteLine("        CUDA 使用 .pth/.pt/.pkl；TensorRT 使用 RIFE 权重自动构建 Engine；NCNN 使用 .param/.bin 文件夹");
-        writer.WriteLine("  -interp-factor <N>  补帧倍率（帧率倍数，默认 2，需大于 1）");
-        writer.WriteLine("  -process-order <upscale-first|interp-first>  组合处理顺序；默认 upscale-first");
-        writer.WriteLine("        画质优先：先超分，再补帧。速度/算力优先：先补帧，再超分。");
-        writer.WriteLine("  -upscale-precision <auto|float16|float32>  超分精度；默认 auto（FP16 优先，必要时回退）");
-        writer.WriteLine("  -interp-precision <auto|float16|float32>  补帧精度；默认 auto（FP16 优先，必要时回退）");
-        writer.WriteLine("        同后端组合也会分别应用两种精度，在内存中转换张量，不产生额外 FFV1 中间视频。");
-        writer.WriteLine("  -interp-backend <ncnn|cuda|tensorrt>  可选的独立补帧后端；RIFE 实际支持 NCNN、CUDA/PyTorch、TensorRT");
-        writer.WriteLine("  -scene-threshold <N>  转场检测阈值（RVE 官方外部 0-10 标尺；数值越低越敏感，默认 4）");
-        writer.WriteLine("  -dynamic-optical-flow  开启 RIFE 动态光流尺度（仅 CUDA/PyTorch 补帧有效）");
-        writer.WriteLine("  -tile-size <N>  超分分块边长（0 为 RVE 默认；至少 32；支持 NCNN/CUDA/TensorRT/ONNX）");
-        writer.WriteLine("  -backend <ncnn|cuda|tensorrt|onnx|flashvsr|basicvsrpp|rtxvsr>  超分推理后端；");
-        writer.WriteLine("        basicvsrpp 支持官方 x4 PTH，及 config.py/chkpts.pth 的 1x 优化目录；");
-        writer.WriteLine("        所有后端均递归扫描 models 子目录；Frame-Interpolation 仅用于补帧；");
-        writer.WriteLine("        cuda 使用 .pth/.pt/.pkl/.ckpt/.safetensors；tensorrt 接受可转换权重，缺少缓存时会自动构建；");
-        writer.WriteLine("        TensorRT 缓存名包含 GPU、TensorRT 版本、输入尺寸和源模型摘要；onnx 使用 .onnx；");
-        writer.WriteLine("        超分与补帧可同时指定；同一后端逐帧执行，跨后端才使用 FFV1 无损中间视频；");
-        writer.WriteLine("        SDR 内部为 8-bit RGB；PQ/HLG 使用 16-bit RGB，且仅支持 CUDA/PyTorch 或 TensorRT");
-        writer.WriteLine("  -rtx-target <规格>  RTX VSR 输出规格：1x/1.5x/2x/3x/4x 或 1080p/1440p/2160p/4320p；最大 4x，输出边长取偶数");
-        writer.WriteLine("  -rtx-quality <1-4>  RTX VSR 质量等级，默认 3");
-        writer.WriteLine("  -rtx-hdr            启用 RTX Video HDR；输入已是 PQ/HLG 时会拒绝重复映射");
-        writer.WriteLine("  -rtx-hdr-contrast <0-200>       RTX HDR 对比度，默认 100，可输入范围内任意整数");
-        writer.WriteLine("  -rtx-hdr-saturation <0-200>     RTX HDR 饱和度，默认 100，可输入范围内任意整数");
-        writer.WriteLine("  -rtx-hdr-middle-gray <10-100>   RTX HDR 中灰度，默认 44，可输入范围内任意整数");
-        writer.WriteLine("  -rtx-hdr-max-luminance <400-2000> RTX HDR 最大亮度（nit），默认 1000，可输入范围内任意整数");
-        writer.WriteLine("  --segments-base64 <Base64 JSON>");
-        writer.WriteLine("        分段配置；默认禁止 NCNN/CUDA/TensorRT/ONNX 跨模型后端混用，FFmpeg/Anime4K 不受此限制");
-        writer.WriteLine("  --allow-mixed-segment-backends  实验功能：显式允许分段跨 NCNN/CUDA/TensorRT/ONNX 混用");
-        writer.WriteLine("  -no-upscale         不放大（可用于仅补帧或仅 RTX HDR）");
-        writer.WriteLine("  -pause-shm <ID>     暂停共享内存名（透传给 rve-backend --pause_shared_memory_id）");
-        writer.WriteLine("  -stop-shm <ID>      停止共享内存名：字节变 1 时优雅停止，已处理部分写入输出文件");
-        writer.WriteLine("  --list-models, --search-models  列出可用的放大模型并退出（默认 ncnn 文件夹）");
-        writer.WriteLine("        各后端均递归列出 models 子目录中的对应放大模型（排除补帧目录）；");
-        writer.WriteLine("        （配合 --json 输出一行 JSON 数组，供界面程序解析）");
-        writer.WriteLine("  --list-model-catalog / --list-interp-model-catalog  输出带架构、倍率、来源和后端能力的结构化模型清单");
-        writer.WriteLine("  --list-user-models --json  输出用户导入模型的完整能力清单");
-        writer.WriteLine("  --inspect-upscale-model <权重>  安全预检 PTH/PT/CKPT/safetensors/ONNX 的架构、倍率和尺寸能力");
-        writer.WriteLine("  --import-model <路径>  预检文件、目录或压缩包，通过后原子安装到 models\\User 并登记能力清单");
-        writer.WriteLine("  --update-user-model <ID>  配合 --user-* 参数校验并修正用户模型能力");
-        writer.WriteLine("  --delete-user-model <ID>  删除用户模型文件、目录及其能力清单记录");
-        writer.WriteLine("  --list-interp-models  列出 models\\Frame-Interpolation 下可用的补帧模型并退出");
-        writer.WriteLine("        （配合 --json 输出一行 JSON 数组，供界面程序解析）；");
-        writer.WriteLine("        加 -interp-backend cuda 列出全部 PyTorch 权重，tensorrt 只列 RIFE 权重；旧 RIFE 兼容读取");
-        writer.WriteLine("  --check             仅检测运行环境（ffmpeg / python 库 / 模型库）并退出");
-        writer.WriteLine("  --list-backends     列出后端，并逐个在当前 GPU 上反序列化 models 中的 TensorRT Engine");
-        writer.WriteLine("  --validate-engines  递归验证全部 .engine；不兼容时提示在当前 GPU 上重新编译");
-        writer.WriteLine("  --inspect-interp-model <权重>  按权重内容识别补帧架构，并输出 CUDA/TensorRT 能力 JSON");
-        writer.WriteLine("  --prepare-interp-engine <RIFE 权重> --prepare-width <宽> --prepare-height <高>");
-        writer.WriteLine("        用 RVE 的 RIFE flow/encode 路径预构建 TensorRT Engine；支持 .pth/.pt/.pkl");
-        writer.WriteLine("        可加 --prepare-static-shape 强制按指定分辨率构建静态 Engine");
-        writer.WriteLine("  --list-download-models  从 ModelScope 镜像读取可下载文件；配合 --json 输出给界面");
-        writer.WriteLine("        默认仓库：" + DefaultModelScopeDataset);
-        writer.WriteLine("        VIDEOENHANCER_MODELSCOPE_DATASET 可覆盖仓库 ID；私有仓库需设置");
-        writer.WriteLine("        VIDEOENHANCER_MODELSCOPE_TOKEN 或 MODELSCOPE_API_TOKEN（不会写入配置文件）");
-        writer.WriteLine("  --clean-download-archives  清理 models、python 与 RTX runtime 专用目录中的下载压缩包");
-        writer.WriteLine("  --download-model <路径>  用独立安装的 aria2-next 下载镜像文件；压缩包自动用 SharpCompress 解压");
-        writer.WriteLine("  --delete-download-model <路径>  删除本地单文件模型；RTX runtime 路径执行专用卸载，其他组件与压缩包拒绝删除");
-        writer.WriteLine("  --backend-status [--json]  检查后端版本、可用增量补丁和预计下载大小");
-        writer.WriteLine("  --update-backend  按最小补丁链事务更新后端；失败或中断时自动回滚");
-        writer.WriteLine("  --force-backend-full  配合 --update-backend，跳过增量补丁并下载完整修复包");
-        writer.WriteLine("  --apply-backend-patch <文件>  离线应用后端增量补丁");
-        writer.WriteLine("  --backend-channel <URL或文件>  指定更新通道；也可设置 VIDEOENHANCER_BACKEND_CHANNEL");
-        writer.WriteLine("  --download-url <链接> --download-output <文件>  使用独立安装的 aria2-next 下载任意直链");
-        writer.WriteLine("  --extract-archive <文件> [--extract-output <目录>]  使用 SharpCompress 托管解压");
-        writer.WriteLine("  --third-party-notices  显示第三方组件和许可证信息");
-        writer.WriteLine("  --license  显示 VideoEnhancer 项目 MIT 许可证");
-        writer.WriteLine("  --image-input <文件>  添加一个图片输入（可重复）");
-        writer.WriteLine("  --image-folder <目录>  递归添加目录及其子目录图片（可重复）");
-        writer.WriteLine("  --image-output <目录>  指定图片输出目录；或用 --image-output-original 输出到原目录");
-        writer.WriteLine("  --image-suffix <timestamp|model>  文件名附加处理时间戳或模型名称");
-        writer.WriteLine("  --image-png / --image-source-format  输出无损 PNG（默认）或保持源扩展格式");
-        writer.WriteLine();
-        writer.WriteLine("说明");
-        writer.WriteLine("  · 便携目录：CoreRoot 永远是 videoenhancer.exe 所在目录；");
-        writer.WriteLine("    不读取或写入 videoenhancer.ini，cache、.work 和 .update 始终位于 EXE 目录内。");
-        writer.WriteLine("  · FFmpeg 优先使用 3FUI EXE 同目录或 PATH 中的 ffmpeg.exe/ffprobe.exe；");
-        writer.WriteLine("    插件旧版 bin\\ffmpeg 仅作兼容回退。其余检测 CoreRoot 下的 python 与 models；");
-        writer.WriteLine("    任一缺失会报错并标出缺失项。");
-        writer.WriteLine("  · ffmpeg-settings 是“编码参数 + 输出文件”的完整片段，程序会中转给");
-        writer.WriteLine("    rve-backend（--custom_encoder 与 -o）。输出路径必须是最后一个参数；");
-        writer.WriteLine("    末尾可加 -y 表示覆盖已存在文件。");
-        writer.WriteLine("    -map 流映射会被自动移除（后端写进程自带映射），-map_metadata / -map_chapters");
-        writer.WriteLine("    的源输入索引自动从 0 改写为 1（后端写进程中源文件为输入 1）。");
-        writer.WriteLine("  · 带空格的参数值请用双引号包裹；编码参数需要完整（如像素格式），");
-        writer.WriteLine("    与 GUI“参数总览”生成的片段一致。");
-        writer.WriteLine();
-        writer.WriteLine("示例（PowerShell）");
-        writer.WriteLine("  .\\videoenhancer.exe -i \"D:\\videos\\input.mp4\" -modelpath RealESRGAN-AnimeVideoV3-2x `");
-        writer.WriteLine("      -ffmpeg-settings '-c:v av1_nvenc -preset:v p4 -cq:v 38 -pix_fmt:v p010le `");
-        writer.WriteLine("                       -c:a libopus -b:a 192k \"D:\\videos\\input_upscaled.mkv\"'");
-        writer.WriteLine();
-        writer.WriteLine("示例（cmd）");
-        writer.WriteLine("  videoenhancer.exe -i \"D:\\videos\\input.mp4\" -modelpath RealESRGAN-AnimeVideoV3-2x `");
-        writer.WriteLine("      -ffmpeg-settings \"-c:v libx264 -crf 18 -c:a aac \\\"D:\\videos\\out.mp4\\\"\"");
-        writer.WriteLine("示例（cmd，仅补帧 2x）");
-        writer.WriteLine("  videoenhancer.exe -i \"D:\\videos\\input.mp4\" -no-upscale -interp-model rife-v4.25 `");
-        writer.WriteLine("      -ffmpeg-settings \"-c:v libx264 -crf 18 -r 60 \\\"D:\\videos\\out_60fps.mp4\\\"\"");
-        writer.WriteLine();
-        writer.WriteLine("退出码");
-        writer.WriteLine("  0 成功；1 处理失败或环境错误；2 参数错误；130 用户中止");
-        writer.WriteLine();
-        writer.WriteLine("说明：本工具是 Video Enhancer GUI 的 rve-backend 命令行中转器，后端逻辑");
-        writer.WriteLine("与 GUI 完全一致（ncnn 后端、场景检测、倍率自动识别等）。");
-        writer.WriteLine("  · 放大模型递归扫描 models：NCNN 取 .param/.bin 文件夹，CUDA 取 .pth/.pt/.pkl/.ckpt/.safetensors，");
-        writer.WriteLine("    TensorRT 取可转换源权重，并把自动构建结果写入 models\\TensorRT-Cache；");
-        writer.WriteLine("    models\\Frame-Interpolation 独立保留给补帧模型，旧 models\\RIFE 兼容读取；");
-        writer.WriteLine("    （rve-backend 的 spandrel/InterpolateRIFE 加载）。");
-    }
+
 }
