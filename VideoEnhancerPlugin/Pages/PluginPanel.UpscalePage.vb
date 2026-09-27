@@ -19,6 +19,10 @@ Namespace videoenhancer
     Public Partial Class PluginPanel
 
         Private Const UpscaleContentHeight As Integer = 920
+        Private _environmentCheckCompleted As Boolean = False
+        Private ReadOnly _environmentCheckSync As New Object()
+        Private _environmentCheckCancellation As System.Threading.CancellationTokenSource
+        Private _environmentCheckTask As Task
         Private ReadOnly _switchMaster As New LakeUI.BooleanSwitch()
         Private ReadOnly _lblMaster As New HtmlColorLabel()
         Private ReadOnly _cmbModel As New WheelLockedComboBox()

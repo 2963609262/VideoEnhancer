@@ -30,10 +30,6 @@ Namespace videoenhancer
         Private _downloadOnline As Boolean = True
         Private _archiveCleanupBusy As Boolean = False
         Private _updateCheckBusy As Boolean = False
-        Private _environmentCheckCompleted As Boolean = False
-        Private ReadOnly _environmentCheckSync As New Object()
-        Private _environmentCheckCancellation As System.Threading.CancellationTokenSource
-        Private _environmentCheckTask As Task
         Private ReadOnly _downloadCoordinator As New ModelDownloadCoordinator()
         Private _downloadActionsEnabled As Boolean = True
         Private _downloadListConfigured As Boolean = False
@@ -692,59 +688,42 @@ Namespace videoenhancer
             End If
             Dim exePath = DownloadExecutablePath()
             If String.IsNullOrWhiteSpace(exePath) Then Return
-            _downloadCoordinator.TryBeginGroup(category)
-            Dim completed = 0
-            Dim nextIndex = 0
-            Dim failed = False
             Dim failureMessage = ""
-            ' 滑动窗口：始终保持最多 3 个活动下载，任一任务完成就立即补下一个。
-            Dim running As New List(Of Task(Of DownloadExecutionResult))()
-            Dim runningPaths As New Dictionary(Of Task(Of DownloadExecutionResult), String)()
-            Try
-                SetDownloadGroupState(category, "0/" & paths.Count & " 已完成", "下载中", UiAccent)
-                While nextIndex < paths.Count OrElse running.Count > 0
-                    While nextIndex < paths.Count AndAlso _downloadCoordinator.ActiveCount < 3 AndAlso Not failed
-                        Dim relativePath = paths(nextIndex)
-                        nextIndex += 1
-                        If Not TryBeginDownload(relativePath) Then Continue While
-                        Dim currentPath = relativePath
-                        SetDownloadRowState(currentPath, "下载中", "准备中...", UiAccent, UiAccent)
-                        Dim task = ExecuteDownloadAsync(exePath, currentPath,
-                            Sub(text)
-                                Try
-                                    BeginInvoke(New Action(Sub()
-                                        SetDownloadRowState(currentPath, "下载中", text, UiAccent, UiAccent)
-                                    End Sub))
-                                Catch
-                                End Try
-                            End Sub)
-                        running.Add(task)
-                        runningPaths(task) = currentPath
-                    End While
-
-                    If running.Count = 0 Then Exit While
-                    Dim finished = Await Task.WhenAny(running)
-                    running.Remove(finished)
-                    Dim finishedPath = runningPaths(finished)
-                    runningPaths.Remove(finished)
-                    Dim result = Await finished
+            SetDownloadGroupState(category, "0/" & paths.Count & " 已完成", "下载中", UiAccent)
+            Dim batch = Await _downloadCoordinator.RunGroupAsync(Of DownloadExecutionResult)(
+                category, paths,
+                Function(relativePath)
+                    UpdateDownloadUtilityButtons()
+                    SetDownloadRowState(relativePath, "下载中", "准备中...", UiAccent, UiAccent)
+                    Return ExecuteDownloadAsync(exePath, relativePath,
+                        Sub(text)
+                            Try
+                                BeginInvoke(New Action(Sub()
+                                    SetDownloadRowState(relativePath, "下载中", text, UiAccent, UiAccent)
+                                End Sub))
+                            Catch
+                            End Try
+                        End Sub)
+                End Function,
+                Function(result) result.ExitCode = 0,
+                Sub(finishedPath, result, failedSoFar)
                     If result.ExitCode <> 0 Then
-                        failed = True
                         failureMessage = CliErrorMessage(result.Errors, "模型下载失败")
                         SetDownloadRowState(finishedPath,
                             If(result.Errors.Contains("AUTH_REQUIRED|"), "需要认证", "下载失败"),
                             "重试", UiDanger, UiAccent)
                         If result.Errors.Contains("NO_NETWORK|") Then _downloadOnline = False
                     Else
-                        completed += 1
                         MarkDownloadInstalled(finishedPath)
                     End If
-                    SetDownloadGroupState(category, completed & "/" & paths.Count & " 已完成",
-                        If(failed, "等待当前任务", "下载中"), If(failed, UiTextMuted, UiAccent))
-                End While
-            Finally
-                _downloadCoordinator.EndGroup(category)
-            End Try
+                End Sub,
+                Sub(done, failedSoFar)
+                    SetDownloadGroupState(category, done & "/" & paths.Count & " 已完成",
+                        If(failedSoFar, "等待当前任务", "下载中"),
+                        If(failedSoFar, UiTextMuted, UiAccent))
+                End Sub)
+            Dim completed = batch.Completed
+            Dim failed = batch.Failed
 
             RefreshDownloadGroupSummary(category)
             If Not _downloadOnline Then
