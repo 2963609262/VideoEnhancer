@@ -36,16 +36,6 @@ Namespace videoenhancer
         Private _segmentVideosLoading As Boolean
         Private _segmentSync As Boolean
 
-        Private NotInheritable Class SegmentVideoProbe
-            Public Property Path As String = ""
-            Public Property FrameCount As Long
-            Public Property DurationSeconds As Double
-            Public Property Width As Integer
-            Public Property Height As Integer
-            Public Property FrameRate As Double
-            Public Property Keyframes As New List(Of Double)()
-        End Class
-
         Private NotInheritable Class SegmentModelChoice
             Public Property Backend As String = ""
             Public Property Model As String = ""
@@ -311,7 +301,7 @@ Namespace videoenhancer
                 Dim choices = Await Task.Run(Function()
                     Dim result As New List(Of SegmentModelChoice)()
                     For Each backend In New String() {"ncnn", "cuda", "tensorrt", "onnx"}
-                        For Each item In RunModelCatalog(exePath, "--list-model-catalog", "-backend", backend)
+                        For Each item In ModelCatalogClient.RunModelCatalog(exePath, "--list-model-catalog", "-backend", backend)
                             Dim scale = If(item.Scale > 0, item.Scale, InferSegmentScale(item.Id))
                             If scale <= 0 Then Continue For
                             result.Add(New SegmentModelChoice With {
@@ -354,7 +344,7 @@ Namespace videoenhancer
                 Dim probed = Await Task.Run(Function()
                     Dim result As New List(Of SegmentVideoProbe)()
                     For Each filePath As String In paths
-                        Dim probe = ProbeSegmentVideo(ffprobe, filePath)
+                        Dim probe = SegmentVideoProbeService.ProbeSegmentVideo(ffprobe, filePath)
                         If probe IsNot Nothing Then result.Add(probe)
                     Next
                     Return result
@@ -394,143 +384,6 @@ Namespace videoenhancer
                 _btnSegmentRefresh.Enabled = True
             End Try
         End Sub
-
-        Private Shared Function ProbeSegmentVideo(ffprobe As String, source As String) As SegmentVideoProbe
-            If String.IsNullOrWhiteSpace(ffprobe) OrElse Not File.Exists(ffprobe) Then Return Nothing
-            Dim metadata = RunSegmentProbe(ffprobe, New String() {
-                "-v", "error", "-select_streams", "v:0",
-                "-show_entries", "stream=width,height,nb_frames,avg_frame_rate,r_frame_rate,duration:format=duration",
-                "-of", "json", source
-            }, 120000)
-            If String.IsNullOrWhiteSpace(metadata) Then Return Nothing
-            Dim result As New SegmentVideoProbe With {.Path = Path.GetFullPath(source)}
-            Using document = JsonDocument.Parse(metadata)
-                Dim streams = document.RootElement.GetProperty("streams")
-                If streams.GetArrayLength() = 0 Then Return Nothing
-                Dim stream = streams(0)
-                result.Width = stream.GetProperty("width").GetInt32()
-                result.Height = stream.GetProperty("height").GetInt32()
-                result.FrameRate = ParseSegmentRate(GetProbeString(stream, "avg_frame_rate"))
-                If result.FrameRate <= 0 Then result.FrameRate = ParseSegmentRate(GetProbeString(stream, "r_frame_rate"))
-                result.DurationSeconds = ParseProbeDouble(GetProbeString(stream, "duration"))
-                If result.DurationSeconds <= 0 Then
-                    Dim format As JsonElement
-                    If document.RootElement.TryGetProperty("format", format) Then
-                        result.DurationSeconds = ParseProbeDouble(GetProbeString(format, "duration"))
-                    End If
-                End If
-                Dim frames As Long
-                Dim frameText = GetProbeString(stream, "nb_frames")
-                If Long.TryParse(frameText, NumberStyles.Integer, CultureInfo.InvariantCulture, frames) Then
-                    result.FrameCount = frames
-                End If
-            End Using
-            If result.Width <= 0 OrElse result.Height <= 0 OrElse result.DurationSeconds <= 0 OrElse result.FrameRate <= 0 Then Return Nothing
-            If result.FrameCount <= 0 Then result.FrameCount = Math.Max(1, CLng(Math.Round(result.DurationSeconds * result.FrameRate)))
-
-            Dim keyframeJson = RunSegmentProbe(ffprobe, New String() {
-                "-v", "error", "-skip_frame", "nokey", "-select_streams", "v:0",
-                "-show_frames", "-show_entries", "frame=best_effort_timestamp_time,pts_time,pkt_dts_time",
-                "-of", "json", source
-            }, 300000)
-            result.Keyframes.Add(0)
-            If Not String.IsNullOrWhiteSpace(keyframeJson) Then
-                Using document = JsonDocument.Parse(keyframeJson)
-                    Dim frames = document.RootElement.GetProperty("frames")
-                    For Each frame In frames.EnumerateArray()
-                        Dim timestamp As Double = -1
-                        For Each propertyName In New String() {"best_effort_timestamp_time", "pts_time", "pkt_dts_time"}
-                            timestamp = ParseProbeDouble(GetProbeString(frame, propertyName))
-                            If timestamp >= 0 Then Exit For
-                        Next
-                        If timestamp >= 0 AndAlso timestamp < result.DurationSeconds Then result.Keyframes.Add(timestamp)
-                    Next
-                End Using
-            End If
-            result.Keyframes = result.Keyframes.Distinct().
-                OrderBy(Function(value) value).ToList()
-            Return result
-        End Function
-
-        Private Shared Function RunSegmentProbe(executable As String, arguments As IEnumerable(Of String), timeoutMs As Integer) As String
-            Dim info As New ProcessStartInfo With {
-                .FileName = executable,
-                .UseShellExecute = False,
-                .RedirectStandardOutput = True,
-                .RedirectStandardError = True,
-                .CreateNoWindow = True,
-                .StandardOutputEncoding = Encoding.UTF8,
-                .StandardErrorEncoding = Encoding.UTF8
-            }
-            PortableRuntime.ConfigureProcess(info)
-            For Each argument In arguments
-                info.ArgumentList.Add(argument)
-            Next
-            Using child = Process.Start(info)
-                If child Is Nothing Then Return ""
-                Dim output = child.StandardOutput.ReadToEnd()
-                Dim errorText = child.StandardError.ReadToEnd()
-                If Not child.WaitForExit(timeoutMs) Then
-                    Try
-                        child.Kill(True)
-                    Catch
-                    End Try
-                    Return ""
-                End If
-                If child.ExitCode <> 0 Then
-                    Trace.WriteLine("[VideoEnhancer][分段] ffprobe 失败：" & errorText)
-                    Return ""
-                End If
-                Return output
-            End Using
-        End Function
-
-        Private Shared Function GetProbeString(element As JsonElement, propertyName As String) As String
-            Dim value As JsonElement
-            If Not element.TryGetProperty(propertyName, value) Then Return ""
-            If value.ValueKind = JsonValueKind.String Then Return If(value.GetString(), "")
-            If value.ValueKind = JsonValueKind.Number Then Return value.GetRawText()
-            Return ""
-        End Function
-
-        Private Shared Function ParseProbeDouble(value As String) As Double
-            Dim result As Double
-            Return If(Double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, result), result, -1)
-        End Function
-
-        Private Shared Function ParseSegmentRate(value As String) As Double
-            If String.IsNullOrWhiteSpace(value) Then Return 0
-            Dim parts = value.Split("/"c)
-            If parts.Length = 2 Then
-                Dim numerator As Double
-                Dim denominator As Double
-                If Double.TryParse(parts(0), NumberStyles.Float, CultureInfo.InvariantCulture, numerator) AndAlso
-                   Double.TryParse(parts(1), NumberStyles.Float, CultureInfo.InvariantCulture, denominator) AndAlso
-                   denominator <> 0 Then Return numerator / denominator
-            End If
-            Return Math.Max(0, ParseProbeDouble(value))
-        End Function
-
-        Private Shared Function ProbeSegmentFrameCount(ffprobe As String, source As String) As Long
-            If String.IsNullOrWhiteSpace(ffprobe) OrElse Not File.Exists(ffprobe) Then Return 0
-            Dim output = RunSegmentProbe(ffprobe, New String() {
-                "-v", "error", "-select_streams", "v:0", "-count_frames",
-                "-show_entries", "stream=nb_read_frames,nb_frames", "-of", "json", source
-            }, 300000)
-            If String.IsNullOrWhiteSpace(output) Then Return 0
-            Using document = JsonDocument.Parse(output)
-                Dim streams = document.RootElement.GetProperty("streams")
-                If streams.GetArrayLength() = 0 Then Return 0
-                Dim stream = streams(0)
-                For Each propertyName In New String() {"nb_read_frames", "nb_frames"}
-                    Dim frames As Long
-                    If Long.TryParse(GetProbeString(stream, propertyName), NumberStyles.Integer, CultureInfo.InvariantCulture, frames) AndAlso frames > 0 Then
-                        Return frames
-                    End If
-                Next
-            End Using
-            Return 0
-        End Function
 
         Private Function EnsureSegmentVideoConfig(probe As SegmentVideoProbe) As SegmentedVideoConfig
             If _config.SegmentedVideos Is Nothing Then _config.SegmentedVideos = New List(Of SegmentedVideoConfig)()
@@ -578,8 +431,8 @@ Namespace videoenhancer
             If String.Equals(config.BoundaryMode, "seconds", StringComparison.OrdinalIgnoreCase) Then
                 config.Segments(0).StartSeconds = 0
                 config.Segments(config.Segments.Count - 1).EndSeconds = probe.DurationSeconds
-                SnapAllSegmentBoundaries(config, probe)
-                ApplySegmentResolutionRule(config)
+                SegmentEditingRules.SnapAllSegmentBoundaries(config, probe)
+                SegmentEditingRules.ApplySegmentResolutionRule(config)
             Else
                 config.Segments(0).Start = 1
                 config.Segments(config.Segments.Count - 1).[End] = config.FrameCount
@@ -645,7 +498,7 @@ Namespace videoenhancer
                 _cmbSegmentMode.Enabled = False
                 _lblSegmentStatus.Text = "<font color=#B8B8B8>正在读取精确帧数…</font>"
                 Dim ffprobe = FfmpegToolResolver.Resolve("ffprobe.exe")
-                Dim exactFrames = Await Task.Run(Function() ProbeSegmentFrameCount(ffprobe, config.Path))
+                Dim exactFrames = Await Task.Run(Function() SegmentVideoProbeService.ProbeSegmentFrameCount(ffprobe, config.Path))
                 _cmbSegmentMode.Enabled = True
                 If exactFrames <= 0 Then
                     _segmentSync = True
@@ -655,55 +508,15 @@ Namespace videoenhancer
                     Return
                 End If
                 config.FrameCount = exactFrames
-                ConvertSegmentSecondsToFrames(config)
+                SegmentEditingRules.ConvertSegmentSecondsToFrames(config)
                 config.BoundaryMode = "frames"
             Else
                 config.BoundaryMode = "seconds"
-                ConvertSegmentFramesToSeconds(config, probe)
+                SegmentEditingRules.ConvertSegmentFramesToSeconds(config, probe)
             End If
             _config.Save()
             RenderSegmentRows()
             ValidateAndShowSegmentConfig()
-        End Sub
-
-        Private Sub ConvertSegmentSecondsToFrames(config As SegmentedVideoConfig)
-            If config.FrameCount <= 0 OrElse config.DurationSeconds <= 0 Then Return
-            Dim expected As Long = 1
-            For index = 0 To config.Segments.Count - 1
-                Dim segment = config.Segments(index)
-                segment.Start = expected
-                If index = config.Segments.Count - 1 Then
-                    segment.[End] = config.FrameCount
-                Else
-                    segment.[End] = Math.Max(expected,
-                        Math.Min(config.FrameCount - 1,
-                            CLng(Math.Round(segment.EndSeconds / config.DurationSeconds * config.FrameCount))))
-                End If
-                expected = segment.[End] + 1
-            Next
-        End Sub
-
-        Private Sub ConvertSegmentFramesToSeconds(config As SegmentedVideoConfig, probe As SegmentVideoProbe)
-            If config.FrameCount <= 0 OrElse probe.DurationSeconds <= 0 Then Return
-            Dim expected As Double = 0
-            For index = 0 To config.Segments.Count - 1
-                Dim segment = config.Segments(index)
-                segment.StartSeconds = expected
-                If index = config.Segments.Count - 1 Then
-                    segment.EndSeconds = probe.DurationSeconds
-                Else
-                    Dim desired = CDbl(segment.[End]) / config.FrameCount * probe.DurationSeconds
-                    Dim snapped = SnapSegmentBoundary(probe, desired, expected, probe.DurationSeconds)
-                    If snapped < 0 Then snapped = desired
-                    segment.EndSeconds = snapped
-                End If
-                expected = segment.EndSeconds
-            Next
-            config.DurationSeconds = probe.DurationSeconds
-            config.SourceWidth = probe.Width
-            config.SourceHeight = probe.Height
-            SnapAllSegmentBoundaries(config, probe)
-            ApplySegmentResolutionRule(config)
         End Sub
 
         Private Sub OnSegmentedSwitchChanged(sender As Object, e As EventArgs)
@@ -771,7 +584,7 @@ Namespace videoenhancer
                 End If
                 Dim oldEnd = last.EndSeconds
                 Dim desired = last.StartSeconds + (oldEnd - last.StartSeconds) / 2
-                Dim split = SnapSegmentBoundary(probe, desired, last.StartSeconds, oldEnd)
+                Dim split = SegmentEditingRules.SnapSegmentBoundary(probe, desired, last.StartSeconds, oldEnd)
                 If split < 0 Then
                     ShowStatus("最后一段附近没有可用的内部关键帧，不能继续拆分", True)
                     Return
@@ -791,7 +604,7 @@ Namespace videoenhancer
                 newSegment.[End] = oldEnd
             End If
             config.Segments.Add(newSegment)
-            ApplySegmentResolutionRule(config)
+            SegmentEditingRules.ApplySegmentResolutionRule(config)
             _config.Save()
             RenderSegmentRows()
             ValidateAndShowSegmentConfig()
@@ -802,7 +615,7 @@ Namespace videoenhancer
             Dim config = SelectedSegmentConfig()
             If config Is Nothing Then Return
             Dim secondsMode = String.Equals(config.BoundaryMode, "seconds", StringComparison.OrdinalIgnoreCase)
-            Dim fixedScale = SegmentFixedScale(config)
+            Dim fixedScale = SegmentEditingRules.SegmentFixedScale(config)
             _segmentSync = True
             Try
                 For index = 0 To config.Segments.Count - 1
@@ -921,7 +734,7 @@ Namespace videoenhancer
             segment.Model = choice.Model
             segment.DisplayName = choice.DisplayName
             segment.Scale = choice.Scale
-            ApplySegmentResolutionRule(config)
+            SegmentEditingRules.ApplySegmentResolutionRule(config)
             _config.Save()
             RenderSegmentRows()
             ValidateAndShowSegmentConfig()
@@ -932,7 +745,7 @@ Namespace videoenhancer
             Dim box = TryCast(sender, ModernTextBox)
             Dim row = TryCast(If(box Is Nothing, Nothing, box.Tag), SegmentRowControls)
             Dim config = SelectedSegmentConfig()
-            If box Is Nothing OrElse row Is Nothing OrElse config Is Nothing OrElse SegmentFixedScale(config) > 0 Then Return
+            If box Is Nothing OrElse row Is Nothing OrElse config Is Nothing OrElse SegmentEditingRules.SegmentFixedScale(config) > 0 Then Return
             Dim segment = config.Segments(row.Index)
             If Not IsSegmentCustomBackend(segment.Backend) Then Return
             Dim value As Integer
@@ -968,7 +781,7 @@ Namespace videoenhancer
                 End If
                 Dim previous = config.Segments(row.Index - 1)
                 Dim current = config.Segments(row.Index)
-                Dim snapped = SnapSegmentBoundary(probe, value, previous.StartSeconds, current.EndSeconds)
+                Dim snapped = SegmentEditingRules.SnapSegmentBoundary(probe, value, previous.StartSeconds, current.EndSeconds)
                 If snapped < 0 Then
                     ShowStatus("附近没有可用的内部关键帧", True) : RenderSegmentRows() : Return
                 End If
@@ -1002,7 +815,7 @@ Namespace videoenhancer
                 End If
                 Dim current = config.Segments(row.Index)
                 Dim following = config.Segments(row.Index + 1)
-                Dim snapped = SnapSegmentBoundary(probe, value, current.StartSeconds, following.EndSeconds)
+                Dim snapped = SegmentEditingRules.SnapSegmentBoundary(probe, value, current.StartSeconds, following.EndSeconds)
                 If snapped < 0 Then
                     ShowStatus("附近没有可用的内部关键帧", True) : RenderSegmentRows() : Return
                 End If
@@ -1044,7 +857,7 @@ Namespace videoenhancer
                 End If
                 config.Segments(config.Segments.Count - 1).[End] = config.FrameCount
             End If
-            ApplySegmentResolutionRule(config)
+            SegmentEditingRules.ApplySegmentResolutionRule(config)
             _config.Save()
             RenderSegmentRows()
             ValidateAndShowSegmentConfig()
@@ -1065,75 +878,15 @@ Namespace videoenhancer
             Return Double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, value)
         End Function
 
-        Private Shared Function SnapSegmentBoundary(
-            probe As SegmentVideoProbe, desired As Double, minimum As Double, maximum As Double) As Double
-            If probe Is Nothing OrElse probe.Keyframes Is Nothing Then Return -1
-            Dim candidates = probe.Keyframes.Where(
-                Function(value) value > minimum + 0.001 AndAlso value < maximum - 0.001).ToList()
-            If candidates.Count = 0 Then Return -1
-            Return candidates.OrderBy(Function(value) Math.Abs(value - desired)).First()
-        End Function
-
-        Private Shared Sub SnapAllSegmentBoundaries(config As SegmentedVideoConfig, probe As SegmentVideoProbe)
-            If config Is Nothing OrElse probe Is Nothing OrElse config.Segments Is Nothing OrElse config.Segments.Count < 2 Then Return
-            config.Segments(0).StartSeconds = 0
-            For index = 0 To config.Segments.Count - 2
-                Dim current = config.Segments(index)
-                Dim following = config.Segments(index + 1)
-                Dim minimum = current.StartSeconds
-                Dim maximum = If(index + 1 = config.Segments.Count - 1, config.DurationSeconds, following.EndSeconds)
-                Dim desired = If(current.EndSeconds > minimum AndAlso current.EndSeconds < maximum,
-                    current.EndSeconds, minimum + (maximum - minimum) / 2)
-                Dim snapped = SnapSegmentBoundary(probe, desired, minimum, maximum)
-                If snapped >= 0 Then
-                    current.EndSeconds = snapped
-                    following.StartSeconds = snapped
-                End If
-            Next
-            config.Segments(config.Segments.Count - 1).EndSeconds = config.DurationSeconds
-        End Sub
-
-        Private Shared Function SegmentFixedScale(config As SegmentedVideoConfig) As Integer
-            If config Is Nothing OrElse config.Segments Is Nothing Then Return 0
-            Return config.Segments.Where(
-                Function(segment) IsSegmentModelBackend(segment.Backend) AndAlso segment.Scale > 0).
-                Select(Function(segment) segment.Scale).FirstOrDefault()
-        End Function
-
-        Private Shared Sub ApplySegmentResolutionRule(config As SegmentedVideoConfig)
-            If config Is Nothing OrElse config.Segments Is Nothing OrElse config.Segments.Count = 0 Then Return
-            Dim fixedScale = SegmentFixedScale(config)
-            Dim width As Integer
-            Dim height As Integer
-            If fixedScale > 0 AndAlso config.SourceWidth > 0 AndAlso config.SourceHeight > 0 Then
-                width = config.SourceWidth * fixedScale
-                height = config.SourceHeight * fixedScale
-            Else
-                Dim existing = config.Segments.FirstOrDefault(
-                    Function(segment) segment.TargetWidth > 0 AndAlso segment.TargetHeight > 0)
-                If existing IsNot Nothing Then
-                    width = existing.TargetWidth
-                    height = existing.TargetHeight
-                Else
-                    width = Math.Max(1, config.SourceWidth * 2)
-                    height = Math.Max(1, config.SourceHeight * 2)
-                End If
-            End If
-            For Each segment In config.Segments
-                segment.TargetWidth = width
-                segment.TargetHeight = height
-            Next
-        End Sub
-
         Private Sub ValidateAndShowSegmentConfig()
             Dim config = SelectedSegmentConfig()
             If config Is Nothing Then Return
-            Dim errorText = ValidateSegmentRanges(config)
+            Dim errorText = SegmentEditingRules.ValidateSegmentRanges(config)
             If errorText.Length > 0 Then
                 _lblSegmentStatus.Text = "<font color=#E07878>配置未通过：" & EscapeHtml(errorText) & "</font>"
                 Return
             End If
-            Dim fixedScale = SegmentFixedScale(config)
+            Dim fixedScale = SegmentEditingRules.SegmentFixedScale(config)
             Dim sizeText As String
             If fixedScale > 0 Then
                 sizeText = "模型倍率优先 " & fixedScale & "x → " &
@@ -1147,67 +900,6 @@ Namespace videoenhancer
                 "已连续覆盖 1-" & config.FrameCount & " 帧")
             _lblSegmentStatus.Text = "<font color=#96D2A0>" & EscapeHtml(coverage & "；" & sizeText & "；配置已自动保存。") & "</font>"
         End Sub
-
-        Private Shared Function ValidateSegmentRanges(config As SegmentedVideoConfig) As String
-            If config.Segments Is Nothing OrElse config.Segments.Count = 0 Then Return "至少添加一个分段"
-            Dim secondsMode = String.Equals(config.BoundaryMode, "seconds", StringComparison.OrdinalIgnoreCase)
-            If secondsMode AndAlso config.DurationSeconds <= 0 Then Return "视频时长无效"
-            If Not secondsMode AndAlso config.FrameCount <= 0 Then Return "视频帧数无效"
-            Dim expectedFrame As Long = 1
-            Dim expectedSeconds As Double = 0
-            Dim fixedScale As Integer = 0
-            Dim firstModelBackend As String = ""
-            Dim targetWidth As Integer = 0
-            Dim targetHeight As Integer = 0
-            For index = 0 To config.Segments.Count - 1
-                Dim segment = config.Segments(index)
-                If secondsMode Then
-                    If Math.Abs(segment.StartSeconds - expectedSeconds) > 0.002 OrElse segment.EndSeconds <= segment.StartSeconds Then
-                        Return $"第 {index + 1} 段秒级边界不连续"
-                    End If
-                    expectedSeconds = segment.EndSeconds
-                Else
-                    If segment.Start <> expectedFrame OrElse segment.[End] < segment.Start Then Return $"第 {index + 1} 段应从第 {expectedFrame} 帧开始"
-                    expectedFrame = segment.[End] + 1
-                End If
-                If String.IsNullOrWhiteSpace(segment.Model) Then Return $"第 {index + 1} 段尚未选择处理方式"
-                If IsSegmentModelBackend(segment.Backend) Then
-                    If segment.Scale <= 0 Then Return $"第 {index + 1} 段模型倍率无效"
-                    Dim currentBackend = segment.Backend.Trim().ToLowerInvariant()
-                    If firstModelBackend.Length = 0 Then
-                        firstModelBackend = currentBackend
-                    ElseIf Not config.AllowMixedModelBackends AndAlso
-                           Not String.Equals(currentBackend, firstModelBackend, StringComparison.OrdinalIgnoreCase) Then
-                        Return "跨 NCNN / CUDA / TensorRT / ONNX 混用是测试功能，请先手动开启跨模型后端混用开关"
-                    End If
-                    If fixedScale = 0 Then
-                        fixedScale = segment.Scale
-                    ElseIf segment.Scale <> fixedScale Then
-                        Return "固定倍率模型必须使用相同倍率"
-                    End If
-                ElseIf Not IsSegmentCustomBackend(segment.Backend) Then
-                    Return $"第 {index + 1} 段处理方式不受支持"
-                End If
-                If targetWidth = 0 Then
-                    targetWidth = segment.TargetWidth
-                    targetHeight = segment.TargetHeight
-                ElseIf segment.TargetWidth <> targetWidth OrElse segment.TargetHeight <> targetHeight Then
-                    Return "整片视频必须使用统一输出分辨率"
-                End If
-            Next
-            If secondsMode Then
-                If Math.Abs(config.Segments(0).StartSeconds) > 0.002 OrElse
-                   Math.Abs(config.Segments(config.Segments.Count - 1).EndSeconds - config.DurationSeconds) > 0.002 Then Return "必须自动覆盖完整视频时长"
-            ElseIf config.Segments(0).Start <> 1 OrElse config.Segments(config.Segments.Count - 1).[End] <> config.FrameCount Then
-                Return "必须覆盖全部帧"
-            End If
-            If targetWidth <= 0 OrElse targetHeight <= 0 Then Return "目标分辨率无效"
-            If fixedScale > 0 AndAlso config.SourceWidth > 0 AndAlso config.SourceHeight > 0 AndAlso
-               (targetWidth <> config.SourceWidth * fixedScale OrElse targetHeight <> config.SourceHeight * fixedScale) Then
-                Return "固定倍率模型存在时，输出分辨率必须服从模型倍率"
-            End If
-            Return ""
-        End Function
 
     End Class
 

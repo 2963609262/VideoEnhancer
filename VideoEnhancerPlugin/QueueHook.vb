@@ -716,7 +716,7 @@ Namespace videoenhancer
             For Each input In entries
                 Dim segmentConfig = FindSegmentedConfig(cfg, input)
                 If segmentConfig Is Nothing OrElse Not segmentConfig.Enabled Then Continue For
-                Dim validationError = ValidateSegmentedConfig(segmentConfig)
+                Dim validationError = SegmentEditingRules.ValidateSegmentedConfig(segmentConfig)
                 If validationError.Length > 0 Then
                     ShowTip(Path.GetFileName(input) & " 的分段配置无效：" & validationError)
                     Return
@@ -812,82 +812,6 @@ Namespace videoenhancer
                         Return False
                     End Try
                 End Function)
-        End Function
-
-        Private Shared Function ValidateSegmentedConfig(config As SegmentedVideoConfig) As String
-            If config.Segments Is Nothing OrElse config.Segments.Count = 0 Then Return "至少需要一个分段"
-            Dim secondsMode = String.Equals(config.BoundaryMode, "seconds", StringComparison.OrdinalIgnoreCase)
-            If secondsMode AndAlso config.DurationSeconds <= 0 Then Return "尚未取得有效视频时长"
-            If Not secondsMode AndAlso config.FrameCount <= 0 Then Return "尚未取得有效帧数"
-            Dim expectedFrame As Long = 1
-            Dim expectedSeconds As Double = 0
-            Dim fixedScale As Integer = 0
-            Dim firstModelBackend As String = ""
-            Dim customWidth As Integer = 0
-            Dim customHeight As Integer = 0
-            For index = 0 To config.Segments.Count - 1
-                Dim segment = config.Segments(index)
-                If secondsMode Then
-                    If Math.Abs(segment.StartSeconds - expectedSeconds) > 0.002 OrElse
-                       segment.EndSeconds <= segment.StartSeconds Then
-                        Return $"第 {index + 1} 段秒级边界不连续"
-                    End If
-                    expectedSeconds = segment.EndSeconds
-                Else
-                    If segment.Start <> expectedFrame OrElse segment.[End] < segment.Start Then
-                        Return $"第 {index + 1} 段必须从第 {expectedFrame} 帧开始"
-                    End If
-                    expectedFrame = segment.[End] + 1
-                End If
-                If String.IsNullOrWhiteSpace(segment.Model) Then Return $"第 {index + 1} 段尚未选择处理方式"
-                Dim currentBackend = If(segment.Backend, "").Trim().ToLowerInvariant()
-                Dim modelBackend = currentBackend = "ncnn" OrElse currentBackend = "cuda" OrElse
-                    currentBackend = "tensorrt" OrElse currentBackend = "onnx"
-                If Not modelBackend AndAlso currentBackend <> "ffmpeg" AndAlso currentBackend <> "anime4k" Then
-                    Return $"第 {index + 1} 段处理后端不受支持"
-                End If
-                If modelBackend Then
-                    If segment.Scale <= 0 Then Return $"第 {index + 1} 段模型倍率无效"
-                    If firstModelBackend.Length = 0 Then
-                        firstModelBackend = currentBackend
-                    ElseIf Not config.AllowMixedModelBackends AndAlso
-                           Not String.Equals(currentBackend, firstModelBackend, StringComparison.OrdinalIgnoreCase) Then
-                        Return "跨 NCNN / CUDA / TensorRT / ONNX 混用是测试功能，请先手动开启跨模型后端混用开关"
-                    End If
-                    If fixedScale = 0 Then
-                        fixedScale = segment.Scale
-                    ElseIf segment.Scale <> fixedScale Then
-                        Return "所有固定倍率模型必须使用相同放大倍率"
-                    End If
-                ElseIf fixedScale = 0 AndAlso segment.TargetWidth > 0 AndAlso segment.TargetHeight > 0 Then
-                    If customWidth = 0 Then
-                        customWidth = segment.TargetWidth
-                        customHeight = segment.TargetHeight
-                    ElseIf segment.TargetWidth <> customWidth OrElse segment.TargetHeight <> customHeight Then
-                        Return "仅使用 FFmpeg / Anime4K 时所有分段必须使用相同目标分辨率"
-                    End If
-                End If
-            Next
-            If secondsMode Then
-                If Math.Abs(config.Segments(0).StartSeconds) > 0.002 OrElse
-                   Math.Abs(config.Segments(config.Segments.Count - 1).EndSeconds - config.DurationSeconds) > 0.002 Then
-                    Return $"必须完整覆盖 0 到 {config.DurationSeconds:0.###} 秒"
-                End If
-            ElseIf config.Segments(0).Start <> 1 OrElse
-                   config.Segments(config.Segments.Count - 1).[End] <> config.FrameCount Then
-                Return $"必须完整覆盖第 1 到第 {config.FrameCount} 帧"
-            End If
-            If fixedScale = 0 Then
-                If customWidth <= 0 OrElse customHeight <= 0 Then
-                    Return "仅使用 FFmpeg / Anime4K 时必须设置统一目标分辨率"
-                End If
-                For Each segment In config.Segments
-                    If segment.TargetWidth <> customWidth OrElse segment.TargetHeight <> customHeight Then
-                        Return "仅使用 FFmpeg / Anime4K 时所有分段必须使用相同目标分辨率"
-                    End If
-                Next
-            End If
-            Return ""
         End Function
 
         Private Shared Sub AddQueueTask(args As String, name As String, output As String, input As String)
