@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 10:44
+Last updated: 2026-09-27 11:06
 Updated by: Codex
 
 ## Current Snapshot
+
+- Latest branch archival (2026-09-27 11:06): 用户要求安全归档剩余三条独有提交的旧远端分支。`origin/feat/hdr-bit-depth`、`origin/fix/backend-aware-environment-check`、`origin/release/1.2.2` 的末端分别保存为带注释远端标签 `archive/2026-09-27/hdr-bit-depth`、`archive/2026-09-27/backend-aware-environment-check`、`archive/2026-09-27/release-1.2.2`；逐个验证远端标签解引用提交等于原分支末端。另生成并验证本机 Git bundle `archive/local-2026-09-27/retired-branches-2026-09-27.bundle`（13,101,844 bytes，SHA-256 `CE9D797E7A3CCC8026940A29FD802BFEC9818974C2572978B1A855AB88E6F9DB`，含三个完整引用/历史）。随后带各分支精确 SHA 的 lease 进行原子远端删除，origin 仅余 main；本地 release/1.2.2 分支在标签验证后删除。`docs/archive/branches-2026-09-27.md` 已记录标签和恢复方式；旧 PR 工作树、release/1.3.3-integrated、本地构建候选未动。无版本/Release 变化，交接记录待提交推送。
 
 - Latest repository cleanup (2026-09-27 10:46): `maxzrb/VideoEnhancer` 已脱离 GitHub fork 网络（API `fork=false`、无 parent）。本机 remotes 调整为 `origin=maxzrb/VideoEnhancer`、`upstream=user-Wing/VideoEnhancer`，main 跟踪 origin/main；发布流程推送命令已同步。旧远端分支名/提交哈希归档于 `docs/archive/branches-2026-09-27.md`，14 条已并入 main 的远端分支经原子推送删除，`pr-7` 在执行前已不存在；origin 现仅 main 和 3 条含独有提交的分支。8 条已并入 main 的本地旧分支安全删除；`release/1.2.2`、`release/1.3.3-integrated` 及旧 PR 工作树分支保留。根目录旧 EXE/DLL/ZIP/FFmpeg 日志和旧测试夹具/结果原样移动到本机忽略目录 `archive/local-2026-09-27`；当前 Artifacts 候选、release/dist、.zcode 未动。分支清单和发布流程提交 `c8051d4`、本轮记录提交 `f89fad4` 均已推送 origin/main 并核对一致，推送后工作树干净。版本和 Release 不变。
 
@@ -2429,3 +2431,10 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 ### 2026-09-27 10:46 - Codex
 
 - Closeout: 分支归档补记和 HandShake 记录提交 `f89fad4` (`docs: record branch and local artifact cleanup`) 已推送 origin/main，`git ls-remote origin refs/heads/main` 等于本地 HEAD，工作树推送后干净。归档目录被 .gitignore 排除；切换工具或设备时以 origin/main 为准，本机 archive 内容不会随 Git 自动同步。真实安装器候选的实机复验仍为既有待办，未因本次整理改变。
+
+### 2026-09-27 11:06 - Codex
+
+- Request/orientation: 用户要求安全归档此前暂留的三条远端分支，允许早期实现已有替代或验证失败而废止。读取 AGENTS.md、docs/codex/INDEX.md、STATUS.md，`git pull --ff-only origin main` 已最新，起始 main=c347de0 且工作树干净；GitHub 无 open PR。三分支末端与上轮归档清单一致，分别有 1/1/4 个 main 未包含的提交；当前 main 已有后续 HDR 及按后端检查模型的实现，release/1.2.2 分支还有主线未收录的兼容性测试文件，因此只归档原历史，不合并旧代码。
+- Archive: 创建三个 annotated tags 并核对 `tag^{}` 精确为 `8b972e364706ea7bbd07c22ac1bdcaa267d7afa9`、`e213a4e5635ffab3bad6fcbbc50b2f716f9bc0dc`、`66aaba0e9367b23184eabd856d53f70d3b47c80d`；原子推送 origin 后逐个通过 `git ls-remote` 核对 tag object 与 peeled commit。使用 `git bundle create` 导出三个标签到本机 `archive/local-2026-09-27/retired-branches-2026-09-27.bundle`，`git bundle verify` 报完整历史，13,101,844 bytes / SHA-256 `CE9D797E7A3CCC8026940A29FD802BFEC9818974C2572978B1A855AB88E6F9DB`。
+- Cleanup/verification: 再次核对远端分支 SHA 后，`git push --atomic` 搭配三个 `--force-with-lease` 精确限制，成功删除三条远端分支；`git ls-remote --heads origin` 仅 main。本地 `release/1.2.2` 与归档标签末端一致，且不在工作树中，随后删除并执行 `git fetch origin --prune`；`git branch -r` 仅 origin/main 和未触及的 upstream 分支。主工作树未改业务代码，不需构建。旧 PR 工作树与本地 `release/1.3.3-integrated` 保留；标签和本地 bundle 可恢复三分支历史，`v1.2.2` 发布标签仍在。
+- Files/Git: 更新 `docs/archive/branches-2026-09-27.md`、本 STATUS 与 `version/工作进度.md`；当前文档改动待提交推送 origin/main。版本 1.3.5，无新 Release。
