@@ -31,6 +31,7 @@ Namespace videoenhancer
         Private _archiveCleanupBusy As Boolean = False
         Private _updateCheckBusy As Boolean = False
         Private ReadOnly _downloadCoordinator As New ModelDownloadCoordinator()
+        Private ReadOnly _downloadProcessLifetime As New DownloadProcessLifetime()
         Private _downloadActionsEnabled As Boolean = True
         Private _downloadAllBusy As Boolean = False
         Private _downloadListConfigured As Boolean = False
@@ -819,6 +820,15 @@ Namespace videoenhancer
                         End Sub
                     AddHandler process.ErrorDataReceived, Sub(s, ev) If ev.Data IsNot Nothing Then errors.AppendLine(ev.Data)
                     process.Start()
+                    Try
+                        _downloadProcessLifetime.Register(process)
+                    Catch
+                        Try
+                            process.Kill(entireProcessTree:=True)
+                        Catch
+                        End Try
+                        Throw
+                    End Try
                     process.BeginOutputReadLine()
                     process.BeginErrorReadLine()
                     process.WaitForExit()

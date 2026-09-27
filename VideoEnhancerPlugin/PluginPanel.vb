@@ -891,6 +891,7 @@ Namespace videoenhancer
                 CloseModelMenuToolTip()
                 CloseUserModelContextMenu()
                 CloseDownloadModelContextMenu()
+                _downloadProcessLifetime.Dispose()
                 StopEnvironmentCheck(5000)
                 ' LakeUI 5.x 在 TabControl 隐藏时会重新显示当前绑定页。
                 ' 先解除绑定，避免父窗体销毁期间访问已经 Dispose 的 ModernPanel。

@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 14:53
+Last updated: 2026-09-27 15:17
 Updated by: Codex
 
 ## Current Snapshot
+
+- Latest download lifetime fix (2026-09-27 15:17): 用户关闭 3FUI 后，旧版 videoenhancer.exe --download-model Bin/PortableGit.7z 仍作为 PID 30120 运行，原父 PID 25000 已不存在。新增 DownloadProcessLifetime：插件下载进程加入带 KILL_ON_JOB_CLOSE 的 Windows Job，页面 Dispose 关闭 Job；宿主直接退出时 OS 关闭句柄并清理下载器及子进程。另修复 Bin 资源安装状态：ffmpeg、mkvtoolnix、PortableGit、RTX runtime 以解压后程序文件判断，不再把仅存在的归档或部分目录当作成功。本机遗留进程在确认父进程已退出后精确停止。Windows Job 探针验证主动 Dispose 与宿主直接退出均会终止子进程；部分解压 PortableGit 和仅下载 mkvtoolnix 的状态探针通过；Release publish 0/0。最终 DLL/EXE 已安装到 C:\Program portable\3FUI\3FUI，备份在 Artifacts/.refactor-tmp/backup-3fui-before-install-status-fix-20260927-151639，哈希一致，CLI 1.3.5。真实 3FUI 后端完整包下载与关闭窗口行为待用户复测；未发布、未推送。
 
 - Latest Backend download-all correction (2026-09-27 14:53): 实机反馈上一版“下载全部”仍不触发 Backend。定位上一版把 Backend 放在普通资源之后，普通资源任一失败或长时间运行就到不了后端。现改为先按后端状态执行 --update-backend：增量路由可用时走补丁，mode=full 时走完整安装；补丁返回 BACKEND_FULL_REQUIRED 时沿用确认及事务入口尝试完整包，再处理其余资源。本机 CLI --backend-status --json 返回 not-installed/mode=full，仓库列表有 Backend/python_20260919.7z。Release publish 0/0、后端更新专项 6/6 通过。已安装版 videoenhancer.exe 正在执行 --download-model Bin/PortableGit.7z，未中断该任务也未覆盖宿主文件；新候选仅在项目 Artifacts 和 plugin-artifact，待进程结束后部署。
 
@@ -2500,3 +2502,10 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Change: 调整 PluginPanel.ModelDownloadPage.vb 的 OnDownloadAllClick，先通过现有 DownloadSingleItemAsync 执行后端，按当前状态自动选 patch/full；若 patch 返回 BACKEND_FULL_REQUIRED，使用现有完整包确认与事务更新入口继续尝试；后端完成后才派发普通资源。插件 EXE 自更新仍独立。
 - Verification: dotnet publish VideoEnhancer.slnx Release 成功，0 警告/0 错误；release/test-backend-updater.ps1 6/6，覆盖成功增量、增量拒绝/回滚和完整安装；git diff --check 通过。尚未在真实 3FUI 点击按钮，也未下载 2.6GB 完整包。
 - Deployment risk/Git: 检测到已安装版 videoenhancer.exe PID 30120 正在执行 --download-model Bin/PortableGit.7z，因此未替换正在使用的 DLL/EXE；新构建待任务结束后安装。代码和记录随本地提交保存；未推送、未改版本/Release。
+
+### 2026-09-27 15:17 - Codex
+
+- Steering/diagnosis: 用户关闭 3FUI 后 videoenhancer.exe PID 30120 仍执行 --download-model Bin/PortableGit.7z；原父 PID 25000 已不存在。下载页 ExecuteModelDownload 只 WaitForExit，Panel.Dispose 不管理该进程。定位本机 PortableGit.7z 已下载、PortableGit 目录部分解压且 cmd/git.exe 不存在；旧 DownloadInstallStatus 因归档存在会误报已安装。
+- Changes: 新增 VideoEnhancerPlugin/DownloadProcessLifetime.vb，使用 Windows KILL_ON_JOB_CLOSE Job 绑定下载 CLI 及其子进程；ModelDownloadPage 在启动后立即注册，注册失败则结束进程；PluginPanel.Dispose 关闭 Job。DownloadInstallStatus 对 ffmpeg、mkvtoolnix、PortableGit、RTX runtime 以解压后的核心可执行文件判定安装，避免归档/部分目录假阳性。项目临时探针仅在 Artifacts/.refactor-tmp，未跟踪。
+- Verification: Release build/publish VideoEnhancer.slnx 0 警告/0 错误；临时 VB 探针验证 Dispose 和宿主进程直接退出时子进程均在 5 秒内消失，部分解压 PortableGit 与仅下载 mkvtoolnix 均判未安装；git diff --check 通过。此前同轮 release/test-backend-updater.ps1 6/6；真实 3FUI 的按钮流程和 2.6GB Backend 完整包仍需用户实测。
+- Deployment/Git: 确认 PID 30120 的路径/命令及原父进程缺失后结束该遗留下载树，未触碰其他进程。最后部署前再次确认 3FUI/CLI 未运行，备份已安装 DLL/EXE 至 Artifacts/.refactor-tmp/backup-3fui-before-install-status-fix-20260927-151639，备份哈希一致；安装 DLL SHA-256 217368C69DA7FB020BFE479CE7847857884AECEADBD7F5BA5234672509FA0352，EXE SHA-256 A7E54013460269775CA2E2527E583D9AF7C1F7FFA30872172FEA16346A464FD2，均与发布产物一致；--version=1.3.5。代码和记录随本地提交保存，origin/main 未推送；无新版本/Release。

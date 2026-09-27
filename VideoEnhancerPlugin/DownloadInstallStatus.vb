@@ -22,17 +22,10 @@ Namespace videoenhancer
                         If(category.Equals("Bin", StringComparison.OrdinalIgnoreCase),
                             Path.Combine(coreRoot, "bin"), Path.Combine(coreRoot, "models", category))))
                 Dim downloaded = Path.Combine(destinationRoot, suffix)
-                If File.Exists(downloaded) Then Return True
-
-                ' 压缩包下载后会自动解压；刷新时用解压后的核心文件判断，清理压缩包后仍能保持“已存在”。
-                If Not String.Equals(Path.GetExtension(suffix), ".7z", StringComparison.OrdinalIgnoreCase) AndAlso
-                   Not String.Equals(Path.GetExtension(suffix), ".zip", StringComparison.OrdinalIgnoreCase) Then
-                    Return False
-                End If
-                If category.Equals("Backend", StringComparison.OrdinalIgnoreCase) Then
-                    Return File.Exists(Path.Combine(coreRoot, "python", "python", "python.exe"))
-                End If
-                If category.Equals("Bin", StringComparison.OrdinalIgnoreCase) Then
+                Dim isArchive = String.Equals(Path.GetExtension(suffix), ".7z", StringComparison.OrdinalIgnoreCase) OrElse
+                    String.Equals(Path.GetExtension(suffix), ".zip", StringComparison.OrdinalIgnoreCase)
+                ' Bin 压缩包可能已下载但只解压了一部分，不能把归档文件存在当作安装完成。
+                If category.Equals("Bin", StringComparison.OrdinalIgnoreCase) AndAlso isArchive Then
                     Dim archiveName = Path.GetFileNameWithoutExtension(suffix)
                     If archiveName.StartsWith("RTXVideoRuntime_", StringComparison.OrdinalIgnoreCase) Then
                         Return File.Exists(Path.Combine(coreRoot, "bin", "rtx-video", "runtime", "vsr_backend.exe"))
@@ -41,11 +34,18 @@ Namespace videoenhancer
                         Return File.Exists(Path.Combine(coreRoot, "bin", "ffmpeg", "ffmpeg.exe"))
                     End If
                     If archiveName.Equals("mkvtoolnix", StringComparison.OrdinalIgnoreCase) Then
-                        Return Directory.Exists(Path.Combine(coreRoot, "bin", "mkvtoolnix"))
+                        Return File.Exists(Path.Combine(coreRoot, "bin", "mkvtoolnix", "mkvmerge.exe"))
                     End If
                     If archiveName.Equals("PortableGit", StringComparison.OrdinalIgnoreCase) Then
-                        Return Directory.Exists(Path.Combine(coreRoot, "bin", "PortableGit"))
+                        Return File.Exists(Path.Combine(coreRoot, "bin", "PortableGit", "cmd", "git.exe"))
                     End If
+                End If
+                If File.Exists(downloaded) Then Return True
+
+                ' 压缩包下载后会自动解压；刷新时用解压后的核心文件判断，清理压缩包后仍能保持“已存在”。
+                If Not isArchive Then Return False
+                If category.Equals("Backend", StringComparison.OrdinalIgnoreCase) Then
+                    Return File.Exists(Path.Combine(coreRoot, "python", "python", "python.exe"))
                 End If
                 If category.Equals("Frame-Interpolation", StringComparison.OrdinalIgnoreCase) Then
                     Return IsDownloadArchive(suffix) AndAlso
