@@ -32,6 +32,7 @@ Namespace videoenhancer
         Private _updateCheckBusy As Boolean = False
         Private ReadOnly _downloadCoordinator As New ModelDownloadCoordinator()
         Private _downloadActionsEnabled As Boolean = True
+        Private _downloadAllBusy As Boolean = False
         Private _downloadListConfigured As Boolean = False
         Private ReadOnly _downloadItemsByPath As New Dictionary(Of String, UltraDetailListView.ListItem)(StringComparer.OrdinalIgnoreCase)
         Private ReadOnly _downloadGroupItems As New Dictionary(Of String, UltraDetailListView.ListItem)(StringComparer.OrdinalIgnoreCase)
@@ -604,17 +605,40 @@ Namespace videoenhancer
 
         Private Async Sub OnDownloadAllClick(sender As Object, e As EventArgs)
             If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse
-                _archiveCleanupBusy OrElse _downloadCoordinator.ActiveCount > 0 Then Return
-            ' 插件 EXE 由自动更新流程管理；Backend 使用独立事务更新，均不进入三路并行资源下载。
+                _archiveCleanupBusy OrElse _downloadCoordinator.ActiveCount > 0 OrElse _downloadAllBusy Then Return
+            ' 插件 EXE 由自动更新流程管理；Backend 在普通资源完成后单独执行事务安装。
             Dim paths = _downloadItemsByPath.Keys.
                 Where(Function(path) Not path.Equals("Plugin/videoenhancer.exe", StringComparison.OrdinalIgnoreCase) AndAlso
                     Not DownloadCategory(path).Equals("Backend", StringComparison.OrdinalIgnoreCase)).
                 ToList()
-            If paths.Count = 0 Then
-                ShowStatus("请先刷新资源列表。", True)
+            Dim backendEntry As DownloadModelEntry = Nothing
+            For Each pair In _downloadItemsByPath
+                If Not DownloadCategory(pair.Key).Equals("Backend", StringComparison.OrdinalIgnoreCase) Then Continue For
+                Dim row = TryCast(pair.Value.Tag, DownloadListRowTag)
+                If row IsNot Nothing AndAlso row.Entry IsNot Nothing AndAlso Not row.Entry.Installed Then
+                    backendEntry = row.Entry
+                    Exit For
+                End If
+            Next
+            If paths.Count = 0 AndAlso backendEntry Is Nothing Then
+                ShowStatus("全部资源已安装。", False)
                 Return
             End If
-            Await DownloadGroupItemsAsync("全部资源", paths)
+            _downloadAllBusy = True
+            UpdateDownloadUtilityButtons()
+            Try
+                If paths.Count > 0 Then
+                    Await DownloadGroupItemsAsync("全部资源", paths)
+                    If Not _downloadOnline OrElse paths.Any(Function(path)
+                        Dim row = TryCast(_downloadItemsByPath(path).Tag, DownloadListRowTag)
+                        Return row Is Nothing OrElse row.Entry Is Nothing OrElse Not row.Entry.Installed
+                    End Function) Then Return
+                End If
+                If backendEntry IsNot Nothing Then Await DownloadSingleItemAsync(backendEntry)
+            Finally
+                _downloadAllBusy = False
+                UpdateDownloadUtilityButtons()
+            End Try
         End Sub
 
         Private Async Function DownloadSingleItemAsync(entry As DownloadModelEntry) As Task
@@ -903,7 +927,8 @@ Namespace videoenhancer
             _btnRefreshDownloads.Enabled = Not _downloadsLoading AndAlso
                 _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
             _btnDownloadPluginUpdate.Enabled = _downloadsLoaded AndAlso _downloadActionsEnabled AndAlso
-                _downloadOnline AndAlso _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
+                _downloadOnline AndAlso _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy AndAlso
+                Not _downloadAllBusy
             _btnCleanArchives.Enabled = _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
         End Sub
 

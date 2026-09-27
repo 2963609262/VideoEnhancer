@@ -126,7 +126,8 @@ internal static class ManagedArchiveExtractor
 
     private static string ResolveEntry(string outputRoot, IEntry entry, string archivePath, int index)
     {
-        if (entry.IsEncrypted) throw new InvalidDataException("不支持加密压缩项：" + entry.Key);
+        // 7z 中零字节标记文件没有加密数据流；SharpCompress 可能将其误报为加密项。
+        if (entry.IsEncrypted && entry.Size > 0) throw new InvalidDataException("不支持加密压缩项：" + entry.Key);
         if (!string.IsNullOrEmpty(entry.LinkTarget))
             throw new InvalidDataException("出于安全原因不解压符号链接或硬链接：" + entry.Key);
 

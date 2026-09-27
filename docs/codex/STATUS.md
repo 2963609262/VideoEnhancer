@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-27 14:20
+Last updated: 2026-09-27 14:44
 Updated by: Codex
 
 ## Current Snapshot
+
+- Latest download fix (2026-09-27 14:44): 用户实机报告 mkvtoolnix.7z 解压失败和“下载全部”未覆盖 Backend。实包 mkvtoolnix/data/portable-app 为零字节，SharpCompress 0.50.3 将其误报 IsEncrypted=True；ManagedArchiveExtractor 现仅拒绝有内容的加密项。下载全部仍排除自更新 EXE，但普通资源完成后串行调用现有后端事务更新/完整安装入口，后端完整包仍沿用原确认提示和环境检查顺序。Release build/publish 0/0，Python 33/33，原始 30MB mkvtoolnix 包在调试构建和最终单文件 EXE 均完整解压成功。新 DLL/EXE 已部署到 C:\Program portable\3FUI\3FUI，部署前原件备份在 Artifacts/.refactor-tmp/backup-3fui-before-download-fix-20260927-144302；安装哈希与发布产物一致。待用户重启 3FUI 重试下载全部及后端安装；未更改版本或发布。
 
 - Latest local installation (2026-09-27 14:20): 用户要求将六批重构候选安装到本机 3FUI 供实测。git pull --ff-only origin main 已最新；从本地 a0d43d8 的 Release 产物部署到 C:\Program portable\3FUI\3FUI：Plugin\videoenhancer.3fui.dll 与 Plugin\videoenhancer\videoenhancer.exe。部署前相关进程未运行，原文件已备份至项目内 Artifacts/.refactor-tmp/backup-3fui-before-refactor-deploy-20260927-141954；备份哈希核对通过。安装后 DLL SHA-256 D1BE4AEB4E8D7D51A59348EC6A9D17DCAD3B540F9A037BA7DDE6FBF44B570A54，EXE SHA-256 ACC0BB892BA288096E4BC6FFB94B87BFABB0A5B7B3329F7718BD2B96525DB80A，均与构建产物一致；CLI --version=1.3.5。配置、模型、后端未改。待用户重启 3FUI 验收界面与短样本；未推送或发布，origin/main 仍落后本地 main。
 
@@ -2481,3 +2483,10 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Deployment: 确认 C:\Program portable\3FUI\3FUI\FFmpegFreeUI.exe 存在，相关进程未运行。将现有 Plugin DLL/CLI 原样备份到项目内 Artifacts/.refactor-tmp/backup-3fui-before-refactor-deploy-20260927-141954，备份 SHA-256 与原件一致；再复制 Release DLL/EXE 到现有安装位置。未改 Settings.json、模型、后端或 aria2。
 - Verification: 安装 DLL/EXE 的 SHA-256 分别为 D1BE4AEB4E8D7D51A59348EC6A9D17DCAD3B540F9A037BA7DDE6FBF44B570A54、ACC0BB892BA288096E4BC6FFB94B87BFABB0A5B7B3329F7718BD2B96525DB80A，均等于构建源；CLI --version=1.3.5。此前完整 Release publish、Python 33/33、安装/更新/发布门禁已通过，本次仅复制产物，不重复构建。
 - Remaining/Git: 用户重启 3FUI 后验收六批相关界面和短样本、暂停/恢复/停止。版本和 Release 未变；部署记录随本次文档提交保存；本地 main 尚未推送 origin/main。
+
+### 2026-09-27 14:44 - Codex
+
+- Request/orientation: 用户实机反馈下载页解压失败，截图显示 mkvtoolnix.7z 的 portable-app 加密错误；补充反馈“下载全部”未控制后端完整安装。同工具续作，读取 AGENTS.md、docs/codex/INDEX.md、STATUS.md 和 HandShake；git pull --ff-only origin main 已最新，起始 1341ad6，工作树干净，main ahead 10。
+- Diagnosis/changes: SharpCompress 0.50.3 对实包中的零字节 mkvtoolnix/data/portable-app 返回 IsEncrypted=True；系统 tar 能读取该条目。ManagedArchiveExtractor 仅对 Size>0 的加密项报错。下载全部此前在基线已排除 Backend；现普通资源成功完成后串行调用原 DownloadSingleItemAsync 后端事务更新，完整包保持现有确认、环境检查、回滚语义，并用 _downloadAllBusy 防重复点击。改动 cli/ManagedArchiveExtractor.cs 与 VideoEnhancerPlugin/Pages/PluginPanel.ModelDownloadPage.vb。
+- Verification: dotnet build/publish VideoEnhancer.slnx Release 0 警告/0 错误；python unittest 33/33；本机 30,165,817-byte mkvtoolnix.7z 在未裁剪构建与最终 Artifacts/videoenhancer.exe 两次完整解压成功，零字节 portable-app 存在。git diff --check 通过。未执行完整后端下载（体积较大），需用户在 UI 验收按钮和事务安装。
+- Deployment/Git: 确认 3FUI 相关进程未运行，备份旧 DLL/EXE 于 Artifacts/.refactor-tmp/backup-3fui-before-download-fix-20260927-144302，备份与原件哈希一致；安装新 DLL SHA-256 4B087D6CF188AEBACE02FA782EA751DD28083727546D0C8441D44C737C22406C，EXE SHA-256 815D9E25E8C3540840D77BA75F9B6AD6A0579D33E96ECF58D69A12CC14C01286，均与发布产物一致；--version=1.3.5。代码与记录将随本次本地提交保存，origin/main 未推送；版本和 Release 未变。
