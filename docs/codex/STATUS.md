@@ -1,9 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-30 14:26
+Last updated: 2026-09-30 15:05
 Updated by: Codex
 
 ## Current Snapshot
+
+- Current work (2026-09-30 15:05): 用户要求使用 ARXChem 的 https://www1.arxchem.top/docs/6-videoenhancer 替换插件内置教程，并让后端通道滚动支持最近五代增量。教程正文由站点 /api/articles/doc-6-videoenhancer 返回（截至 09-22 内容约 4.8K 字符）；现进入教程页时异步读取并用 LakeUI MarkDownViewer 显示，站内图片路径补绝对地址，失败则显示原文链接。发布脚本读取上版 channel 并保留最近五条连续补丁及对应 legacy 哨兵；旧版超出窗口仍走完整包。Release build 0/0、Backend 历史 5/5、更新器 6/6、发布门禁 5/5。线上现有 09.12→09.19 补丁文件仍在，已制作只增补历史边/哨兵的 channel 候选并核验本地路由 09.12→09.30 为 2 补丁 22,110 字节；尚未提交/推送代码或上传 channel，1.3.6 Release 不变。起点 main=ba47876、origin/main 同步、工作树原本干净。
 
 - Latest release (2026-09-30 14:26): 用户授权正式发布 VideoEnhancer 1.3.6，并追加要求同步后端更新。GitHub v1.3.6 已发布，标签指向 0579b3e；main 与标签已推送 origin。程序提供运行 EXE、安装器、手动 ZIP，stable.json 继续指向运行 EXE，Release Notes 末行用 Markdown 标题提示下载 VideoEnhancerInstaller-1.3.6-win-x64.exe。Python Backend 从 2026.09.19.1 增至 2026.09.30.1，完整包 3,070,523,121 bytes / FFE46F17…，增量 13,818 bytes / E264C6EA…；仅替换 4 个脚本（2 个仅行尾变化），图片/分段桥支持跨后端与模型分段、NCNN 分块、尺寸验证和处理统计。完整包解压后 29,709 文件逐一校验，审计 +0/~4/-0。Release build 0 警告/0 错误；Python 33/33、发布门禁 5/5、后端更新器 6/6、安装器/自更新门禁通过。GitHub/ModelScope 五项发布文件实际下载哈希一致；Backend 完整包与补丁远端 HTTP 大小、X-Linked-ETag 均匹配，本体备用 EXE 亦一致。真实 3FUI 窗口视觉与长视频链路仍待用户实机验收；当前只需提交/推送收尾记录。
 

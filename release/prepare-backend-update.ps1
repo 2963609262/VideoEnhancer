@@ -12,6 +12,8 @@ param(
     [string]$FullRemotePath = '',
     [string]$PatchRemotePath = '',
     [string[]]$SentinelPaths = @(),
+    [string]$PreviousChannel = '',
+    [ValidateRange(1, 20)][int]$PatchRetentionCount = 5,
     [switch]$DeferFullArchive,
     [string]$ArchiveTool = ''
 )
@@ -212,6 +214,53 @@ if ($DeferFullArchive) {
 }
 
 $fullItem = Get-Item -LiteralPath $fullPath
+$retainedPatches = [System.Collections.Generic.List[object]]::new()
+$retainedBaselines = [System.Collections.Generic.List[object]]::new()
+$retainedVersions = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+[void]$retainedVersions.Add($BaseVersion)
+if (-not [string]::IsNullOrWhiteSpace($PreviousChannel)) {
+    $previous = if ($PreviousChannel -match '^https?://') {
+        Invoke-RestMethod -Uri $PreviousChannel -TimeoutSec 30
+    } else {
+        Get-Content -Raw -Encoding UTF8 -LiteralPath $PreviousChannel | ConvertFrom-Json
+    }
+    if ($previous.latestVersion -ne $BaseVersion) {
+        throw "上一后端通道版本 $($previous.latestVersion) 与增量基础版本 $BaseVersion 不一致"
+    }
+    $cursor = $BaseVersion
+    while ($retainedPatches.Count -lt $PatchRetentionCount - 1) {
+        $incoming = @($previous.patches | Where-Object { $_.targetVersion -eq $cursor } |
+            Sort-Object baseVersion -Descending)
+        if ($incoming.Count -eq 0) { break }
+        $edge = $incoming[0]
+        if ([string]::IsNullOrWhiteSpace($edge.baseVersion) -or
+            [string]::IsNullOrWhiteSpace($edge.path) -or
+            [string]::IsNullOrWhiteSpace($edge.sha256) -or
+            [long]$edge.size -le 0 -or $retainedVersions.Contains($edge.baseVersion)) {
+            throw "上一后端通道包含无效或循环的补丁路径：$($edge.baseVersion) -> $cursor"
+        }
+        Assert-RemotePath $edge.path '历史补丁路径'
+        $retainedPatches.Insert(0, $edge)
+        [void]$retainedVersions.Add($edge.baseVersion)
+        $cursor = $edge.baseVersion
+    }
+    foreach ($baseline in @($previous.legacyBaselines | Where-Object { $null -ne $_ })) {
+        if ($retainedVersions.Contains([string]$baseline.version) -and $baseline.version -ne $BaseVersion) {
+            $retainedBaselines.Add($baseline)
+        }
+    }
+}
+$retainedPatches.Add([ordered]@{
+    baseVersion = $BaseVersion
+    targetVersion = $TargetVersion
+    path = $PatchRemotePath
+    size = [long]$patchItem.Length
+    sha256 = Get-Sha256 $patchPath
+})
+$retainedBaselines.Add([ordered]@{
+    version = $BaseVersion
+    sentinels = $sentinels
+})
 $channel = [ordered]@{
     schemaVersion = 1
     latestVersion = $TargetVersion
@@ -220,17 +269,8 @@ $channel = [ordered]@{
         size = [long]$fullItem.Length
         sha256 = Get-Sha256 $fullPath
     }
-    patches = @([ordered]@{
-        baseVersion = $BaseVersion
-        targetVersion = $TargetVersion
-        path = $PatchRemotePath
-        size = [long]$patchItem.Length
-        sha256 = Get-Sha256 $patchPath
-    })
-    legacyBaselines = @([ordered]@{
-        version = $BaseVersion
-        sentinels = $sentinels
-    })
+    patches = @($retainedPatches)
+    legacyBaselines = @($retainedBaselines)
 }
 $channelPath = Join-Path $outputPath 'channel.json'
 [System.IO.File]::WriteAllText($channelPath, ($channel | ConvertTo-Json -Depth 8), $utf8NoBom)

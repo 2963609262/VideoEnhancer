@@ -14,6 +14,7 @@
     [string]$BackendFullRemotePath = '',
     [string]$BackendPatchRemotePath = '',
     [string]$BackendChannelUrl = '',
+    [string]$BackendPreviousChannel = '',
     [string]$BackendOutputRoot = (Join-Path $PSScriptRoot 'dist\backend-update'),
     [string]$ArchiveTool = '',
     [switch]$DeferBackendPublish,
@@ -110,12 +111,19 @@ if (-not $ValidateOnly -and [string]::IsNullOrWhiteSpace($ArchiveTool)) {
 }
 
 $backendOutputRoot = [System.IO.Path]::GetFullPath($BackendOutputRoot)
+$previousChannelSource = $BackendPreviousChannel
+if ([string]::IsNullOrWhiteSpace($previousChannelSource) -and ($PublishGithub -or $PublishModelScope)) {
+    $previousChannelSource = if ([string]::IsNullOrWhiteSpace($BackendChannelUrl)) {
+        'https://www.modelscope.cn/datasets/' + $ModelScopeModelsDataset + '/resolve/master/Backend/channel.json'
+    } else { $BackendChannelUrl }
+}
 & (Join-Path $PSScriptRoot 'prepare-backend-update.ps1') `
     -BaseRoot $BackendBaseRoot -TargetRoot $BackendTargetRoot `
     -BaseVersion $BackendBaseVersion -TargetVersion $BackendTargetVersion `
     -FullArchive $BackendFullArchive -OutputRoot $backendOutputRoot `
     -FullRemotePath $BackendFullRemotePath -PatchRemotePath $BackendPatchRemotePath `
-    -SentinelPaths $BackendSentinelPaths -DeferFullArchive:$DeferBackendPublish `
+    -SentinelPaths $BackendSentinelPaths -PreviousChannel $previousChannelSource `
+    -DeferFullArchive:$DeferBackendPublish `
     -ArchiveTool $ArchiveTool
 $backendAuditPath = Join-Path $backendOutputRoot 'backend-release-audit.json'
 $backendAudit = Get-Content -Raw -Encoding UTF8 $backendAuditPath | ConvertFrom-Json
@@ -246,13 +254,27 @@ function Confirm-BackendChannel {
         $remote.full.sha256 -ne $localChannel.full.sha256) {
         throw '远端 Backend channel 的完整包信息与本次审计不一致'
     }
-    $remotePatch = $remote.patches | Where-Object {
-        $_.baseVersion -eq $BackendBaseVersion -and $_.targetVersion -eq $BackendTargetVersion
-    } | Select-Object -First 1
-    $localPatch = $localChannel.patches[0]
-    if ($null -eq $remotePatch -or $remotePatch.path -ne $localPatch.path -or
-        $remotePatch.size -ne $localPatch.size -or $remotePatch.sha256 -ne $localPatch.sha256) {
-        throw '远端 Backend channel 的增量包信息与本次审计不一致'
+    if (@($remote.patches).Count -ne @($localChannel.patches).Count -or
+        @($remote.legacyBaselines).Count -ne @($localChannel.legacyBaselines).Count) {
+        throw '远端 Backend channel 的历史补丁或旧版哨兵数量与本次审计不一致'
+    }
+    for ($index = 0; $index -lt @($localChannel.patches).Count; $index++) {
+        $remotePatch = $remote.patches[$index]
+        $localPatch = $localChannel.patches[$index]
+        if ($remotePatch.baseVersion -ne $localPatch.baseVersion -or
+            $remotePatch.targetVersion -ne $localPatch.targetVersion -or
+            $remotePatch.path -ne $localPatch.path -or
+            $remotePatch.size -ne $localPatch.size -or
+            $remotePatch.sha256 -ne $localPatch.sha256) {
+            throw '远端 Backend channel 的增量链与本次审计不一致'
+        }
+    }
+    for ($index = 0; $index -lt @($localChannel.legacyBaselines).Count; $index++) {
+        $remoteBaseline = $remote.legacyBaselines[$index] | ConvertTo-Json -Depth 5 -Compress
+        $localBaseline = $localChannel.legacyBaselines[$index] | ConvertTo-Json -Depth 5 -Compress
+        if ($remoteBaseline -ne $localBaseline) {
+            throw '远端 Backend channel 的旧版哨兵与本次审计不一致'
+        }
     }
     Write-Host "OK: 远端 Backend channel 已核对（$url）"
 }
