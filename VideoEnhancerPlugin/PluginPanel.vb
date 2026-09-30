@@ -364,6 +364,7 @@ Namespace videoenhancer
                 Return
             End If
             InitializeUi()
+            AddHandler _config.Saved, AddressOf OnConfigurationSaved
             If previewOnly Then
                 _uiReady = True
                 RefreshUi()
@@ -570,7 +571,11 @@ Namespace videoenhancer
             root.AddAt(sectionStatus, 0, 1)
             ModernPanel1.Controls.Add(root)
             Controls.Add(ModernPanel1)
-            AddHandler ClientSizeChanged, Sub(sender, e) SyncUpscaleRootBounds()
+            BindScrollableGpuBackgroundSources(root, ModernPanel1)
+            AddHandler ClientSizeChanged, Sub(sender, e)
+                                             SyncUpscaleRootBounds()
+                                             QueueUpscaleRootBounds()
+                                         End Sub
             AddHandler Layout, Sub(sender, e) SyncUpscaleRootBounds()
             QueueUpscaleRootBounds()
         End Sub
@@ -888,6 +893,7 @@ Namespace videoenhancer
 
         Protected Overrides Sub Dispose(disposing As Boolean)
             If disposing Then
+                RemoveHandler _config.Saved, AddressOf OnConfigurationSaved
                 CloseModelMenuToolTip()
                 CloseUserModelContextMenu()
                 CloseDownloadModelContextMenu()

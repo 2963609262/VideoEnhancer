@@ -879,6 +879,7 @@ internal static class Program
         if (args.Length == 0)
         {
             if (InstallerManager.IsInstaller()) return InstallerManager.RunInteractive();
+            if (InstallerManager.TryShowStandaloneLaunchGuidance()) return 0;
             CliHelp.Print(Console.Out, ToolVersion, DefaultModelScopeDataset);
             return 0;
         }

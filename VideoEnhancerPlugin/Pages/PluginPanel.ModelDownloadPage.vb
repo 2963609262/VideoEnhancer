@@ -470,7 +470,7 @@ Namespace videoenhancer
 
         Private Async Sub OnDownloadListItemClick(sender As Object, e As UltraDetailListView.ListItemEventArgs)
             If e.ColumnIndex <> DownloadActionColumn OrElse e.Item Is Nothing Then Return
-            If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse _archiveCleanupBusy Then Return
+            If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse _archiveCleanupBusy OrElse _downloadAllBusy Then Return
             Dim row = TryCast(e.Item.Tag, DownloadListRowTag)
             If row Is Nothing Then Return
             If row.Entry IsNot Nothing Then
@@ -752,7 +752,10 @@ Namespace videoenhancer
             Dim completed = batch.Completed
             Dim failed = batch.Failed
 
-            RefreshDownloadGroupSummary(category)
+            For Each affectedCategory In paths.Select(Function(path) DownloadCategory(path)).Distinct(StringComparer.OrdinalIgnoreCase)
+                RefreshDownloadGroupSummary(affectedCategory)
+            Next
+            UpdateDownloadUtilityButtons()
             If Not _downloadOnline Then
                 SetDownloadActionsEnabled(False)
                 ShowOfflineDownloadStatus()
@@ -886,6 +889,7 @@ Namespace videoenhancer
             Dim row = TryCast(item.Tag, DownloadListRowTag)
             If row IsNot Nothing AndAlso row.Entry IsNot Nothing Then row.Entry.Installed = True
             SetDownloadRowState(relativePath, "本地已安装", "已完成", UiSuccess, UiTextMuted)
+            RefreshDownloadGroupSummary(DownloadCategory(relativePath))
         End Sub
 
         Private Sub RefreshDownloadGroupSummary(category As String)
@@ -942,11 +946,11 @@ Namespace videoenhancer
 
         Private Sub UpdateDownloadUtilityButtons()
             _btnRefreshDownloads.Enabled = Not _downloadsLoading AndAlso
-                _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
+                _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy AndAlso Not _downloadAllBusy
             _btnDownloadPluginUpdate.Enabled = _downloadsLoaded AndAlso _downloadActionsEnabled AndAlso
                 _downloadOnline AndAlso _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy AndAlso
                 Not _downloadAllBusy
-            _btnCleanArchives.Enabled = _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy
+            _btnCleanArchives.Enabled = _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy AndAlso Not _downloadAllBusy
         End Sub
 
         Private Sub ShowOfflineDownloadStatus()

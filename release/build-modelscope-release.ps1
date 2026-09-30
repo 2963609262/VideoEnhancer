@@ -71,9 +71,14 @@ $noteLines = $normalizedNotes.Split("`n")
 if ($noteLines.Count -eq 0 -or @($noteLines | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
     throw 'GitHub Release Notes 不能为空或包含空行；每个更新条目必须单独一行'
 }
-foreach ($line in $noteLines) {
+for ($index = 0; $index -lt $noteLines.Count; $index++) {
+    $line = $noteLines[$index]
+    # 最后一行可放一个 Markdown 标题，用于提示用户选择安装器。
+    if ($index -eq $noteLines.Count - 1 -and $line -match '^## 下载提示：请下载 VideoEnhancerInstaller-\d+\.\d+\.\d+-win-x64\.exe 安装或更新插件$') {
+        continue
+    }
     if ($line -notmatch '^\[(更改|新增|移除)\]\S.*$') {
-        throw "Release Notes 格式错误：$line；必须使用 [更改]xxxx、[新增]xxxx 或 [移除]xxxx，每条单独一行"
+        throw "Release Notes 格式错误：$line；必须使用 [更改]xxxx、[新增]xxxx 或 [移除]xxxx，每条单独一行；末行可用指定的下载提示标题"
     }
     $remaining = $line.Substring($Matches[0].IndexOf(']') + 1)
     if ($remaining -match '\[(更改|新增|移除)\]') {

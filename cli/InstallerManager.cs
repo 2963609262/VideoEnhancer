@@ -14,6 +14,9 @@ internal static class InstallerManager
     [DllImport("kernel32.dll")]
     private static extern IntPtr GetConsoleWindow();
 
+    [DllImport("kernel32.dll")]
+    private static extern uint GetConsoleProcessList([Out] uint[] processList, uint processCount);
+
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr window, uint command);
 
@@ -57,6 +60,21 @@ internal static class InstallerManager
 
     internal static bool IsInstaller() =>
         Environment.ProcessPath is { } path && InstallerBundle.HasFooter(path);
+
+    internal static bool TryShowStandaloneLaunchGuidance()
+    {
+        var console = GetConsoleWindow();
+        if (console == IntPtr.Zero || GetConsoleProcessList(new uint[2], 2) != 1) return false;
+
+        // 资源管理器为控制台程序临时创建的窗口只属于当前进程；隐藏后显示持久的安装指引。
+        ShowWindow(console, HideWindow);
+        MessageBox(IntPtr.Zero,
+            "这是 VideoEnhancer 的运行程序，不含插件安装文件。\n\n" +
+            "安装或覆盖安装 3FUI 插件，请运行 VideoEnhancerInstaller.exe。\n" +
+            "命令行用法请在终端执行 videoenhancer.exe --help。",
+            "VideoEnhancer 运行程序", 0x40);
+        return true;
+    }
 
     internal static int Create(string[] args)
     {

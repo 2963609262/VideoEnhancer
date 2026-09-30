@@ -92,8 +92,9 @@ Namespace videoenhancer
             Next
             Using child = Process.Start(info)
                 If child Is Nothing Then Return ""
-                Dim output = child.StandardOutput.ReadToEnd()
-                Dim errorText = child.StandardError.ReadToEnd()
+                ' 同时排空两个管道，让超时覆盖实际运行阶段，避免输出填满后互相等待。
+                Dim outputTask = child.StandardOutput.ReadToEndAsync()
+                Dim errorTask = child.StandardError.ReadToEndAsync()
                 If Not child.WaitForExit(timeoutMs) Then
                     Try
                         child.Kill(True)
@@ -101,6 +102,8 @@ Namespace videoenhancer
                     End Try
                     Return ""
                 End If
+                Dim output = outputTask.GetAwaiter().GetResult()
+                Dim errorText = errorTask.GetAwaiter().GetResult()
                 If child.ExitCode <> 0 Then
                     Trace.WriteLine("[VideoEnhancer][分段] ffprobe 失败：" & errorText)
                     Return ""

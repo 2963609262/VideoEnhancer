@@ -182,8 +182,9 @@ foreach ($rawSentinel in $SentinelPaths) {
     if (-not $baseFiles.ContainsKey($relative)) {
         throw "旧版哨兵文件不存在：$relative"
     }
-    if ($added.Contains($relative) -or $replaced.Contains($relative) -or $deleted.Contains($relative)) {
-        throw "哨兵文件本次发生变化，不能稳定识别旧版基线：$relative"
+    # 哨兵记录旧版哈希；允许本次替换，才能区分仅有变更文件的相邻后端版本。
+    if ($deleted.Contains($relative)) {
+        throw "哨兵文件本次被删除，不能用于识别旧版基线：$relative"
     }
     $sentinels.Add([ordered]@{ path = $relative; sha256 = $baseFiles[$relative].Sha256 })
 }

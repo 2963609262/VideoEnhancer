@@ -134,6 +134,7 @@ Namespace videoenhancer
             _config.Save()
             RefreshUi()
             ShowStatus("已停用：编码队列恢复为直接执行 ffmpeg", False)
+            QueueHostParameterRefresh()
         End Sub
 
         ''' <summary>"插件总开关"切换：开 → 使用固定便携 EXE；关 → 停止对参数面板的 hook。</summary>
@@ -298,6 +299,7 @@ Namespace videoenhancer
                 End Try
                 ShowStatus("已停用：编码队列恢复为直接执行 ffmpeg", False)
             End If
+            QueueHostParameterRefresh()
         End Sub
 
         ' ────────────────────────── 模型下拉框 ──────────────────────────
@@ -1278,15 +1280,9 @@ Namespace videoenhancer
             Dim root = _upscaleRoot
             If root Is Nothing OrElse root.IsDisposed OrElse
                _pageUpscale Is Nothing OrElse _pageUpscale.IsDisposed Then Return
-            ' LakeUI 5.x 的 ModernTabControl 在宿主完成 Dock 布局前可能暂时保留
-            ' 页面旧 ClientSize；同时取页面、TabControl 和插件背景根的可用宽度，
-            ' 让后续测量能够跨过这个中间状态并覆盖到宿主真实视口。
-            Dim availableWidth = Math.Max(_pageUpscale.Width, _pageUpscale.ClientSize.Width)
-            availableWidth = Math.Max(availableWidth, Math.Max(_tabs.Width, _tabs.ClientSize.Width))
-            If ModernPanel1 IsNot Nothing AndAlso Not ModernPanel1.IsDisposed Then
-                availableWidth = Math.Max(availableWidth,
-                    ModernPanel1.ClientSize.Width - ModernPanel1.Padding.Left - ModernPanel1.Padding.Right)
-            End If
+            ' 使用页面实际视口；取各层旧宽度的最大值会让缩小时的内容越过背景表面。
+            ' 宿主 Dock 的中间尺寸在布局完成后的延迟同步中收敛。
+            Dim availableWidth = _pageUpscale.ClientSize.Width
             Dim width = Math.Max(0, availableWidth - _pageUpscale.ScrollBarWidth - 2)
             ' ModernPanel 会在滚动时把子控件移动到负的 Top/Left。这里只能同步尺寸，
             ' 不能无条件把位置重置为 0，否则 LakeUI 会把当前位置重新记录为设计坐标，
@@ -1309,7 +1305,14 @@ Namespace videoenhancer
                 BeginInvoke(New Action(
                     Sub()
                         _upscaleRootSyncPending = False
+                        If IsDisposed OrElse Disposing Then Return
                         SyncUpscaleRootBounds()
+                        ' 拉伸期间 GPU 背景可能先于宿主的新尺寸提交；布局稳定后使整条背景链失效。
+                        Dim source As Control = Nothing
+                        If ModernPanel1.TryGetBackgroundSource(source) AndAlso source IsNot Nothing AndAlso Not source.IsDisposed Then
+                            source.Invalidate()
+                        End If
+                        ModernPanel1.Invalidate(True)
                     End Sub))
             Catch
                 _upscaleRootSyncPending = False
@@ -1691,15 +1694,12 @@ Namespace videoenhancer
             ' 推理方式 / 补帧倍率：仅主开关开启时可操作
             _syncingBackend = True
             SyncBackendCombo()
-            _cmbBackend.Enabled = _config.Enabled
             _syncingBackend = False
             _syncingFactor = True
             SyncFactorCombo()
-            _cmbFactor.Enabled = _config.Enabled
             _syncingFactor = False
             _syncingInterpBackend = True
             SyncInterpBackendCombo()
-            _cmbInterpBackend.Enabled = _config.Enabled
             _syncingInterpBackend = False
             _syncingDynamicOpticalFlow = True
             SyncDynamicOpticalFlowCombo()
@@ -1794,6 +1794,9 @@ Namespace videoenhancer
         End Sub
 
         Private Sub UpdateAdvancedControlState()
+            _cmbBackend.Enabled = _config.Enabled AndAlso _config.UpscaleEnabled
+            _cmbInterpBackend.Enabled = _config.Enabled AndAlso _config.InterpEnabled
+            _cmbFactor.Enabled = _config.Enabled AndAlso _config.InterpEnabled
             Dim rtxVsr = String.Equals(_config.Backend, "rtxvsr", StringComparison.OrdinalIgnoreCase)
             If _upscaleModelField IsNot Nothing Then _upscaleModelField.Visible = Not rtxVsr
             If _upscaleTileField IsNot Nothing Then _upscaleTileField.Visible = Not rtxVsr

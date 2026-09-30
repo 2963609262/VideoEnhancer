@@ -9,6 +9,9 @@ Namespace videoenhancer
     ''' <summary>插件配置，持久化到 Plugin\videoenhancer\videoenhancer.plugin.json。</summary>
     Public Class PluginConfig
 
+        ''' <summary>配置保存完成后通知界面订阅者；事件不参与 JSON 持久化。</summary>
+        Public Event Saved As EventHandler
+
         ''' <summary>处理程序路径由插件 DLL 所在目录唯一确定，不再允许配置外部 EXE。</summary>
         <JsonIgnore>
         Public ReadOnly Property ExePath As String
@@ -158,6 +161,7 @@ Namespace videoenhancer
                     JsonSerializer.Serialize(Me, New JsonSerializerOptions With {.WriteIndented = True}),
                     New UTF8Encoding(False))
                 File.Move(temporary, ConfigPath, True)
+                RaiseEvent Saved(Me, EventArgs.Empty)
             Catch
             Finally
                 Try

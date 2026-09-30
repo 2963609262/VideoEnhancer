@@ -1,9 +1,17 @@
 # Project Status
 
-Last updated: 2026-09-27 16:42
+Last updated: 2026-09-30 13:20
 Updated by: Codex
 
 ## Current Snapshot
+
+- Release in progress (2026-09-30 13:20): 用户要求同步发布开发期间引入的后端桥。线上基线 Backend 2026.09.19.1 的归档哈希与 channel 一致；目标 Backend 2026.09.30.1 由线上全树 29,709 个文件加仓库 cli/embedded-tools 中 4 个脚本精确替换而成，4 文件与本机安装相同，其中 2 个只变了行尾，图片桥/分段桥新增跨后端及模型分段、NCNN 分块、输出尺寸验证、处理统计。先前托管 7z 压缩耗时异常已终止；本机 NanaZip/7z 现已成功压缩 29,709 文件、6,261,294,654 解压字节为 3,070,523,121 字节完整包，等待发布脚本解压校验与补丁制作。旧版哨兵改用 09.19 的 rve-image-backend.py 哈希，以区分更旧的 09.12；发布脚本现允许被替换文件做旧版哨兵。插件/CLI 1.3.6 三种程序资产已本地构建并通过安装器/自更新门禁，发布说明末尾保留安装器标题；尚未提交、推送或上传。起点 main=0210f8b，ahead origin/main 14。
+
+- Latest standalone launch fix (2026-09-30 11:59): 用户指出双击独立 videoenhancer.exe 会出现一闪而过的黑框。确认运行 EXE 无安装载荷，零参数从终端打印帮助后退出；现在检测独占控制台（资源管理器双击），隐藏临时控制台并显示安装包与 --help 的持久说明。终端/重定向零参数保持帮助文本；安装器保留原交互入口。重新 publish/打包成功，独立新控制台窗口、CLI --help/重定向零参数、安装器目录/哈希/回滚门禁通过。候选在 Artifacts，未部署、提交或发布，版本 1.3.5；此前工作树未提交改动保留。
+
+- Latest host notification fix (2026-09-30 10:55): 插件配置新增 Saved 事件，面板统一订阅并合并到下一轮 UI 消息；总开关与处理钩子更新后也主动请求通知。调用宿主实际的 预设管理_v6.刷新参数总览，不依赖切页或空实现的 请求刷新参数状态。处理句柄创建/重建/销毁，Dispose 退订。Release build/publish 通过，通知探针 5/5、Python 33/33；候选安装器已更新，尚未部署。保留上一轮未提交改动，main ahead 14，未推送或发布，版本仍 1.3.5。
+
+- Latest UI/regression fix (2026-09-30 10:32): 修复超分/补帧后端与倍率门禁、下载全部的真实分类汇总与操作互斥；补齐背景依赖并在窗口拉伸布局后重绘，黑块待真实宿主复验。目录/分段探测并发排空进程管道使超时生效，修复 [] 伪模型名。Release build/publish 0/0、Python 33/33、运行时探针 33 断言通过；最新候选在 Artifacts。5 个源码和交接记录待提交，main ahead 14；未安装、推送或发布，版本仍 1.3.5。
 
 - Latest Backend 99% fix (2026-09-27 16:42): 用户报告后端下载显示 99% 不动。实机后端归档 python_20260919.7z 2,645,812,004 bytes 已完整下载，旧 CLI 正逐项随机访问 35,235 项 7z，仅解出约 1,750 项并持续耗费 CPU；界面未显示解压阶段。按 SharpCompress 官方顺序提取文档 https://github.com/adamhathcock/sharpcompress/blob/master/docs/USAGE.md 改为归档项预检后 ExtractAllEntries 顺序解压，保留路径/链接检查，并输出 EXTRACT_START/PROGRESS/COMPLETE 供下载页显示。同一 mkvtoolnix.7z 新法 7.6 秒解压，266 个文件与旧法哈希完全相同；后端专项 6/6、Python 33/33、Release publish 0/0。用户关闭 3FUI 后，新 DLL/EXE 部署到 C:\Program portable\3FUI\3FUI，备份在 Artifacts/.refactor-tmp/backup-3fui-before-sequential-extract-20260927-163111；安装哈希一致。直接复用已缓存 2.6GB 包完成真实完整安装，输出 BACKEND_UPDATE_COMPLETE，--backend-status --json 显示 current/2026.09.19.1。旧中断遗留 full-extract-adb345e096564f1cb0a58f4d11eeb5dd 仍在状态目录；递归删除尝试被自动审批 blocked by policy 拒绝，未执行清理，不影响当前安装。未发布或推送；需用户重启 3FUI 目视确认新解压提示。
 
@@ -67,7 +75,7 @@ Updated by: Codex
 - Latest deployment: 最终 EXE 16,989,156 bytes / `38C606EC69B59E3B8E620280753BEE632A3D25BF56155E94C1A048AF291F910E`；手动 ZIP 14,003,730 bytes / `B6893EB0C73791767EF1121868FBD9A430DDDD3D7182182D81B812C831896B74`；stable.json 621 bytes / `032B4502993A5BACBF1DEDA49BEC91C9950D08744CF6A202C1FA12A07DD0A6A2`。本机 EXE/DLL 已部署，EXE 返回 1.3.5；备份位于 `C:\Users\maxzr\AppData\Local\Temp\videoenhancer-1.3.5-before-final-release-deploy-20260920-104937`。
 - Latest remaining issue/research: 用户重启 3FUI 后继续目视确认分段页面在当前 DPI/窗口宽度下的最终效果；无发布阻塞。
 
-- Current objective: 完成 1.3.4 分段超分页的高 DPI 布局修复和真实 3FUI 视觉验收，同时保持处理逻辑与已发布资产不变。
+- Current objective: 修复窗口拉伸重绘、处理开关联动、下载分类汇总，并排查职责拆分后的运行时问题；等待最新候选的真实宿主视觉验收。
 - Current state: 原矩阵两个 GIMM FAIL_EXIT 已定位为 DAT2/AniToon-RPLKSRL CUDA FP16 超分 NaN 并以 FP32 规则修复，两个组合各 7 帧哈希不同。RTX sidecar 现通过命名管道输出 NV12/P010/X2BGR10 原始帧，宿主 FFmpeg 执行用户 `ffmpeg-settings`；失败会清理零字节/部分输出；低分辨率输入自动走软件解码上传 D3D11。1.3.1、模型补全和手动安装包均已发布。
 - Current verification: sidecar 单测 89/89；模型规则单测 5/5；RTX 编码专项 8/8（HQ/UHQ×MKV/MP4、libx264、libx265、libsvtav1、精确 map、H.264/P010 门禁）通过；RTX VSR 专项 18/18、HDR 相 15/15 通过。最终安装版用《缎带英雄》1080p 真实 72 帧样本按 p7/uhq/vbr/cq28/P010 原参数输出 3840x2160 HEVC Main10 yuv420p10le、72/72 帧，日志确认最终 FFmpeg 为 PATH 中的 8.1.2 full build。
 - Last active agent: Codex
@@ -2519,3 +2527,30 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Verification: dotnet build/publish VideoEnhancer.slnx Release 0 警告/0 错误；mkVtoolnix 30MB 实包新法 7.6 秒且 266 文件 SHA-256 与旧法完全一致；release/test-backend-updater.ps1 6/6；Python 33/33；git diff --check 通过。
 - Deployment/actual install: 用户确认已退出 3FUI，CLI 及 aria 进程均已退出，已缓存后端归档仍为 2,645,812,004 bytes。备份现有 DLL/EXE 至 Artifacts/.refactor-tmp/backup-3fui-before-sequential-extract-20260927-163111，部署 DLL SHA-256 5BC776CE4C934B0101D005A9D122A99AA97C28E740A5F8DCE02D0547649B20C9、EXE SHA-256 D874971159E91D4C026B81FE74557116C6CEFE37BA121D87B6F9D8E5EBED2F24，均与构建产物一致。直接运行已安装 CLI --update-backend --force-backend-full 复用缓存包，进度 10–100%，完成 BACKEND_UPDATE_COMPLETE|2026.09.19.1；--backend-status --json 返回 state=current、installedVersion=2026.09.19.1、mode=none。日志仅在项目内 Artifacts/.refactor-tmp/backend-cache-retry-20260927.log。
 - Remaining/rejection/Git: 上次被中断的 full-extract-adb345e096564f1cb0a58f4d11eeb5dd 仍在真实安装的 .videoenhancer-backend-update；试图在确认目标绝对路径和无运行进程后递归删除时，exec_command 自动审批返回 blocked by policy，未删、未改用绕过方式；不影响已完成安装。真实下载页新状态文字待用户重启目视。代码及记录将本地提交；无新版本/Release、未推送 origin/main。
+
+### 2026-09-30 10:32 - Codex
+
+- Request/orientation: 用户报告拉伸黑块、超分/补帧关闭后仍可选后端、下载全部不刷新分类安装计数，并要求检查拆分遗留问题。同工具续作；读取 AGENTS.md、INDEX.md、STATUS.md 和 HandShake。git pull --ff-only 已最新，起点 0210f8b/main ahead 14，工作树干净。
+- UI changes: PluginPanel.UpscalePage 将后端和补帧倍率的 Enabled 统一交给 UpdateAdvancedControlState；按页面实际 ClientSize 同步内容宽度，避免多层旧尺寸最大值影响收缩。PluginPanel 为整个内部控件树补齐显式背景依赖（保留已有自定义来源），窗口尺寸变化后合并延迟同步并使宿主来源与插件子树失效。参考官方 LakeUI 5.9 源码 https://github.com/Lake1059/LakeUI/tree/5.9，源码仅在 Artifacts/.refactor-tmp/LakeUI-source。黑块属于背景取景/重绘方向的针对性修复，未在真实宿主复现并确认消失，不能宣称完全解决。
+- Download changes: ModelDownloadPage 每个成功资源更新实际分类，批次结束刷新所有涉及分类；下载全部期间禁止列表重复操作、刷新与清理，避免清空仍被批次引用的列表。
+- Split-module audit: ModelCatalogClient 和 SegmentVideoProbeService 的同步 ReadToEnd 位于 WaitForExit(timeout) 之前，超时不能覆盖读取且 stderr 可阻塞；现并发排空 stdout/stderr，再限时等待并在超时终止子进程。模型清单解析成功后立即返回，修复空 JSON 数组被回退解析为伪模型名 []。另阅读下载协调器、命令分词及分段编辑规则；未扩大修改这些模块。检查不能证明不存在其他拆分遗留问题。
+- Verification: dotnet build / publish VideoEnhancer.slnx -c Release -p:HostBin=C:/Users/maxzr/AppData/Local/Temp/3fui-core-compat-host 成功，0 警告/0 错误；Python unittest 33/33；临时 UI 运行时探针 33 断言通过，覆盖八种开关组合、两个分类安装汇总、批次互斥、1500/900/1700/1000 宽度扩缩、100KB stderr 排空和超时结束子进程。探针使用 LakeUI 5.9 与 Vortice 3.8.3，未启动真实宿主。git diff --check 通过。首次探针缺 Vortice 依赖，补齐项目内探针包引用后通过。
+- Packaging verification: release/test-installer.ps1 通过目录门禁、GUI/控制台子系统、载荷哈希及注入故障回滚；只使用项目内临时夹具，未替换真实 3FUI 安装。
+- Artifacts/environment: 最新候选 Artifacts/VideoEnhancerInstaller.exe、VideoEnhancer.zip、videoenhancer.exe 和 VideoEnhancerPlugin/obj/plugin-artifact/videoenhancer.3fui.dll；临时文件和探针在项目内 Artifacts/.refactor-tmp。版本保持 1.3.5，未部署、未发布、未推送。
+- Remaining/Git: 用户安装候选后在真实 3FUI 复验拉伸/滚动/最大化恢复、功能开关和下载全部。长视频、四宫格及暂停/恢复/停止仍是既有实机待办。5 个源码文件及 STATUS、中文工作进度未提交；main ahead 14，工作树非干净，建议提交后再切换工具/设备。
+
+### 2026-09-30 10:55 - Codex
+
+- Request/orientation: 用户反馈插件开关命令必须切换页面才更新参数面板，要求完善通知。续作；沿用已读取的 AGENTS.md/INDEX.md，重读 STATUS 与 HandShake；git pull --ff-only 已最新，main=0210f8b ahead 14，保留上轮 7 个文件的未提交修复。
+- Diagnosis: 开关只更新 QueueHook 和 设置_v6.实例对象.替代进程文件名，没有刷新宿主参数总览。读取官方 FFmpegFreeUI main 的 Form_v6_参数面板.vb、参数总览和预设面板总览_参数文本_v6.vb（项目内 Artifacts/.refactor-tmp/host-*.vb）；当前 请求刷新参数状态() 为空通知，切入总览才调用实际刷新。现有 LakeUI 5.9 兼容宿主程序集确认存在可编译的 预设管理_v6.刷新参数总览(panel) 入口。
+- Changes: PluginConfig.Saved 在配置文件替换成功后触发；PluginPanel 在 InitializeUi 后订阅、Dispose 时解除。新增 PluginPanel.HostNotifications.vb，通过 BeginInvoke 合并通知、延迟到配置和替代程序状态更新结束，直接调用实际总览刷新（同时更新命令模板）；无句柄保留 pending、句柄重建重发、销毁丢弃回调。Disable 与 UpdateHookState 也显式通知，覆盖不保存配置的钩子同步。刷新异常写 Trace，不中断开关操作。未改宿主文件或正在执行的队列任务。
+- Verification: Release build/publish 0 警告/0 错误，Python 33/33；链接真实通知源码、使用宿主测试替身的 WinForms 消息循环探针 5/5（句柄前保留、连续请求合并/读取最终状态、关闭后不切页刷新、句柄重建只发送一次、Dispose 丢弃）；git diff --check 通过。探针不是实际宿主视觉验收，用户仍需在本机验证命令模板随开关变化。
+- Artifacts/Git: 候选 Artifacts/VideoEnhancerInstaller.exe、VideoEnhancer.zip 和插件 DLL 已更新，版本保持 1.3.5；未部署、未提交、未推送、未发布。工作树含上一轮修复及本次通知改动（9 个文件），main ahead 14；建议提交后再切换工具/设备。下一步覆盖安装候选并复验总开关、超分/补帧/HDR及参数变化，无需切页触发更新；上轮黑块真实窗口验收仍待完成。
+
+### 2026-09-30 11:59 - Codex
+
+- Request/orientation: 用户纠正独立 videoenhancer.exe 双击时不是可见帮助，而是黑色控制台一闪。沿用本轮 AGENTS.md/INDEX.md、STATUS.md 和 HandShake 取向；git pull --ff-only 已最新，起点 main=0210f8b ahead 14，保留前两轮未提交改动。用户明确放弃全 GPU 编码改造，本轮未修改该链路。
+- Diagnosis/decision: cli/Program.cs 无参数的独立 EXE 输出帮助并立即退出；Windows Explorer 双击时新建控制台随退出关闭。图形自安装需要 InstallerBundle 尾部载荷，独立 EXE 无该载荷，不能直接作为安装包；命令行帮助仍应在终端可用。
+- Changes: cli/InstallerManager.cs 使用 GetConsoleProcessList 区分独占控制台，隐藏临时窗口，显示持久的 VideoEnhancerInstaller.exe 与 --help 指引；cli/Program.cs 无参数分支优先保留有载荷的安装器原交互入口，独立 EXE 才按启动场景分流。未更改处理参数或正在运行任务。
+- Verification: Release build/publish VideoEnhancer.slnx -p:HostBin=C:/Users/maxzr/AppData/Local/Temp/3fui-core-compat-host 0 警告/0 错误。项目内临时 Python Win32 探针验证 --help、重定向零参数和 CREATE_NEW_CONSOLE 启动时消息框保持显示并关闭后退出；release/test-installer.ps1 所有目录检查、载荷哈希、回滚等门禁通过；git diff --check 通过。候选 Artifacts/videoenhancer.exe 与 VideoEnhancerInstaller.exe 已更新。未部署、未发布、未推送；版本仍 1.3.5。
+- Git/remaining: 本轮 cli/Program.cs、cli/InstallerManager.cs 与 STATUS、中文进度新增改动叠加原有未提交改动，main ahead 14，工作树非干净；建议提交后再切换工具/设备。真实用户机器双击视觉可再确认。

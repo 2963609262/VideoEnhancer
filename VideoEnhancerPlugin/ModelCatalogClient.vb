@@ -7,6 +7,20 @@ Imports System.Text.Json
 
 Namespace videoenhancer
     Friend NotInheritable Class ModelCatalogClient
+        Private Shared Function ReadCatalogOutput(child As Process, timeoutMs As Integer) As String
+            ' 必须先并行排空管道，再等待退出，否则大量诊断输出会阻塞目录加载。
+            Dim output = child.StandardOutput.ReadToEndAsync()
+            Dim errors = child.StandardError.ReadToEndAsync()
+            If Not child.WaitForExit(timeoutMs) Then
+                child.Kill(True)
+                Throw New TimeoutException("模型目录查询超时")
+            End If
+            Dim stderr = errors.GetAwaiter().GetResult()
+            Dim stdout = output.GetAwaiter().GetResult()
+            If child.ExitCode <> 0 Then Throw New InvalidOperationException(PluginPanel.LastNonEmptyLine(stderr))
+            Return stdout
+        End Function
+
         Friend Shared Function RunListModels(exePath As String, ParamArray extraArgs As String()) As List(Of String)
             Dim models As New List(Of String)
             Try
@@ -29,8 +43,7 @@ Namespace videoenhancer
                     If p Is Nothing Then
                         Return models
                     End If
-                    Dim stdout = p.StandardOutput.ReadToEnd()
-                    p.WaitForExit(60000)
+                    Dim stdout = ReadCatalogOutput(p, 60000)
                     Dim firstLine = stdout.Split(Convert.ToChar(10)).FirstOrDefault(Function(l) l.Trim().StartsWith("["c))
                     If Not String.IsNullOrWhiteSpace(firstLine) Then
                         Try
@@ -41,6 +54,7 @@ Namespace videoenhancer
                                         models.Add(modelName.Trim())
                                     End If
                                 Next
+                                Return models.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
                             End If
                         Catch
                             models.Clear()
@@ -87,8 +101,7 @@ Namespace videoenhancer
                 Next
                 Using child = Diagnostics.Process.Start(psi)
                     If child Is Nothing Then Return models
-                    Dim stdout = child.StandardOutput.ReadToEnd()
-                    child.WaitForExit(180000)
+                    Dim stdout = ReadCatalogOutput(child, 180000)
                     Dim jsonLine = stdout.Replace(Convert.ToChar(13).ToString(), "").
                         Split(New Char() {Convert.ToChar(10)}, StringSplitOptions.RemoveEmptyEntries).
                         LastOrDefault(Function(line) line.Trim().StartsWith("["c))
@@ -122,10 +135,7 @@ Namespace videoenhancer
             psi.ArgumentList.Add("--list-user-models")
             Using child = Diagnostics.Process.Start(psi)
                 If child Is Nothing Then Throw New InvalidOperationException("无法启动用户模型清单进程")
-                Dim stdout = child.StandardOutput.ReadToEnd()
-                Dim stderr = child.StandardError.ReadToEnd()
-                child.WaitForExit(30000)
-                If child.ExitCode <> 0 Then Throw New InvalidOperationException(PluginPanel.LastNonEmptyLine(stderr))
+                Dim stdout = ReadCatalogOutput(child, 30000)
                 Dim jsonLine = stdout.Replace(Convert.ToChar(13).ToString(), "").
                     Split(New Char() {Convert.ToChar(10)}, StringSplitOptions.RemoveEmptyEntries).
                     LastOrDefault(Function(line) line.Trim().StartsWith("["c))
