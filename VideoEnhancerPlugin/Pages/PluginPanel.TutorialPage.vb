@@ -20,6 +20,7 @@ Namespace videoenhancer
     Public Partial Class PluginPanel
         Private Const TutorialUrl As String = "https://www1.arxchem.top/docs/6-videoenhancer"
         Private Const TutorialApiUrl As String = "https://www1.arxchem.top/api/articles/doc-6-videoenhancer"
+        Private Const TutorialImageBaseUrl As String = "https://www1.arxchem.top"
 
         Private Shared Function BeginnerTutorialMarkdown() As String
             Return "# 使用教程" & Environment.NewLine & Environment.NewLine &
@@ -37,8 +38,7 @@ Namespace videoenhancer
                     Using document = JsonDocument.Parse(response)
                         Dim markdown = document.RootElement.GetProperty("article").GetProperty("content").GetString()
                         If String.IsNullOrWhiteSpace(markdown) Then Throw New InvalidDataException("在线教程内容为空")
-                        ' 站点文章中的图片使用根路径，补全地址后交给 LakeUI Markdown 阅读器。
-                        markdown = markdown.Replace("](/media/", "](https://www1.arxchem.top/media/")
+                        markdown = Await CacheTutorialImagesAsync(client, markdown)
                         If Me.IsDisposed OrElse viewer.IsDisposed Then Return
                         viewer.SetMarkdownImmediate("[在浏览器打开原教程](" & TutorialUrl & ")" &
                             Environment.NewLine & Environment.NewLine & markdown)
@@ -51,6 +51,89 @@ Namespace videoenhancer
                     "[打开 ARXChem 的 VideoEnhancer 教程](" & TutorialUrl & ")")
             End Try
         End Sub
+
+        Private Shared Async Function CacheTutorialImagesAsync(client As HttpClient, markdown As String) As Task(Of String)
+            Dim cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                              "VideoEnhancer", "TutorialImages")
+            Dim imageMatches = Regex.Matches(markdown, "!\[[^\]]*\]\((?<url>[^)]+)\)")
+            Dim downloads As New Dictionary(Of String, Task(Of String))(StringComparer.OrdinalIgnoreCase)
+            Using limiter As New Threading.SemaphoreSlim(4)
+                For Each imageMatch As Match In imageMatches
+                    Dim imageUrl = imageMatch.Groups("url").Value
+                    If imageUrl.StartsWith("/media/", StringComparison.OrdinalIgnoreCase) Then
+                        imageUrl = TutorialImageBaseUrl & imageUrl
+                    End If
+                    If imageUrl.StartsWith(TutorialImageBaseUrl & "/media/", StringComparison.OrdinalIgnoreCase) AndAlso
+                       Not downloads.ContainsKey(imageUrl) Then
+                        downloads(imageUrl) = DownloadTutorialImageAsync(client, imageUrl, cacheDirectory, limiter)
+                    End If
+                Next
+                If downloads.Count > 0 Then Await Task.WhenAll(downloads.Values)
+
+                For Each imageMatch As Match In imageMatches
+                    Dim imageUrl = imageMatch.Groups("url").Value
+                    If Regex.IsMatch(imageUrl, "^[A-Za-z]:[\\/]") Then
+                        ' 原文中有作者电脑上的 Typora 路径，无法从网站取得这张图片。
+                        markdown = markdown.Replace(imageMatch.Value, "*原教程中的这张图片未上传，暂时无法显示。*")
+                        Continue For
+                    End If
+                    If imageUrl.StartsWith("/media/", StringComparison.OrdinalIgnoreCase) Then
+                        imageUrl = TutorialImageBaseUrl & imageUrl
+                    ElseIf Not imageUrl.StartsWith(TutorialImageBaseUrl & "/media/", StringComparison.OrdinalIgnoreCase) Then
+                        Continue For
+                    End If
+                    Dim imagePath = Await downloads(imageUrl)
+                    If imagePath Is Nothing Then
+                        ' 单张图片下载失败时保留可点击的原图地址，不影响其余教程内容。
+                        markdown = markdown.Replace(imageMatch.Value, "[图片暂时无法加载，点击查看原图](" & imageUrl & ")")
+                    Else
+                        markdown = markdown.Replace(imageMatch.Groups("url").Value, imagePath.Replace("\", "/"))
+                    End If
+                Next
+            End Using
+            Return markdown
+        End Function
+
+        Private Shared Async Function DownloadTutorialImageAsync(client As HttpClient, imageUrl As String,
+                                                                  cacheDirectory As String,
+                                                                  limiter As Threading.SemaphoreSlim) As Task(Of String)
+            Await limiter.WaitAsync().ConfigureAwait(False)
+            Try
+                Dim urlHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(imageUrl)))
+                Dim imagePath = Path.Combine(cacheDirectory, urlHash & "-fit960.png")
+                If Not File.Exists(imagePath) Then
+                    Using response = Await client.GetAsync(imageUrl).ConfigureAwait(False)
+                        response.EnsureSuccessStatusCode()
+                        If response.Content.Headers.ContentType?.MediaType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) <> True Then
+                            Throw New InvalidDataException("教程图片响应不是图片")
+                        End If
+                        Dim imageBytes = Await response.Content.ReadAsByteArrayAsync().ConfigureAwait(False)
+                        Directory.CreateDirectory(cacheDirectory)
+                        Using imageStream As New MemoryStream(imageBytes)
+                            Using sourceImage = Image.FromStream(imageStream)
+                                ' 教程图片总解码量过大，滚动时会触发 LakeUI 共享缓存回收。
+                                Dim targetWidth = Math.Min(sourceImage.Width, 960)
+                                Dim targetHeight = Math.Max(1, CInt(Math.Round(sourceImage.Height * CDbl(targetWidth) / sourceImage.Width)))
+                                Using opaqueImage As New Bitmap(targetWidth, targetHeight,
+                                                                Imaging.PixelFormat.Format24bppRgb)
+                                    Using canvasGraphics = Graphics.FromImage(opaqueImage)
+                                        canvasGraphics.Clear(Color.FromArgb(32, 34, 38))
+                                        canvasGraphics.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
+                                        canvasGraphics.DrawImage(sourceImage, 0, 0, targetWidth, targetHeight)
+                                    End Using
+                                    opaqueImage.Save(imagePath, Imaging.ImageFormat.Png)
+                                End Using
+                            End Using
+                        End Using
+                    End Using
+                End If
+                Return imagePath
+            Catch
+                Return Nothing
+            Finally
+                limiter.Release()
+            End Try
+        End Function
 
         Private Sub BuildMarkdownPage(page As ModernPanel, markdown As String)
             page.Dock = DockStyle.Fill

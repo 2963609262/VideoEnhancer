@@ -1,9 +1,21 @@
 # Project Status
 
-Last updated: 2026-09-30 15:17
+Last updated: 2026-09-30 18:18
 Updated by: Codex
 
 ## Current Snapshot
+
+- Release 1.3.7 in progress (2026-09-30): 用户实机确认教程图片滚动后似乎正常，明确授权发布 1.3.7 Release。沿用 EXE、安装器、手动 ZIP 三产物及安装器醒目提示。main=a980f4b 与 origin/main 同步，起点工作树包含此前教程图片修复及交接记录。插件和 CLI 版本已升 1.3.7，Notes 改为在线教程、图片滚动缓存及未来五代后端增量链。Release publish 0 警告/0 错误；Python 33/33、发布门禁 5/5、后端更新器 6/6、后端历史 5/5 通过。以 2026.09.30.1 目标后端目录同目录审计 29,709 文件，结果 UNCHANGED，故本版不重传 3.07 GB 后端包。待提交推送代码、运行正式双源发布并回读核对；本机 3FUI 目前未运行。线上最新仍 v1.3.6，暂无 v1.3.7 Release。
+
+- Latest tutorial scroll/cache fix (2026-09-30 18:18): 用户发现教程图片初次可见，滚动后消失，推翻单纯 RGBA 下载/格式假设。LakeUI 5.9 MarkdownViewerCore 每张图片保留 GDI 解码图并由共享 D3D_CpuCache 回收；全教程 15 张图解码约 62.6 MiB，而 LakeUI 默认 CPU 缓存预算 96 MiB；全局回收可能处置图片对象，已排版的 VisualFragment 仍持有旧引用，D3D_ImageCache 读尺寸异常后静默返回空，留下原尺寸空白。插件现将图片限制至 960px 宽、转不透明 RGB，预计教程图解码量约 28.5 MiB；新 `-fit960.png` 键避开旧缓存，原文链接保留供看大图。Release build 0 警告/0 错误，git diff --check 通过；确认 3FUI 未运行后安装新 DLL，备份 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-cache-fix-20260930-181829，安装 SHA-256 C9916969BCED8F60F477C637FD925CE0AD83E8749BD762240161771D51A19039 与构建源一致。仅本机 DLL 更换，待用户实测滚动离开再返回；版本仍 1.3.6、线上未重发、工作树未提交。
+
+- Latest tutorial PNG rendering follow-up (2026-09-30 17:42): 用户再次截图报告教程图片仍部分空白。确认 15 张站点图片均实际缓存到 `%LOCALAPPDATA%\VideoEnhancer\TutorialImages`，截图空白处对应图片可正常解码；前 9 张站点图片是 RGBA PNG（alpha 全 255），后 6 张是 RGB PNG，空白发生在 RGBA 区域，故怀疑 LakeUI D3D 图片纹理对该格式处理异常。下载后现转为 24bpp 不透明 RGB PNG，使用新 `-opaque.png` 缓存名避免旧文件复用；样张转换验证 PIL=RGB/944×466。Release build 0 警告/0 错误，git diff --check 通过。确认 3FUI 未运行后，仅替换插件 DLL，旧 DLL 备份到 Artifacts/.refactor-tmp/backup-3fui-before-opaque-tutorial-images-20260930-174218；安装哈希 71806CA18039FE4EA2CB4AB9C8EBE1ADD97BA84C481137A7A22E233A95C57507 与构建源一致。EXE、后端、模型、配置未动；待用户再次启动 3FUI 目视确认。工作树源码和记录未提交，线上 1.3.6 未重发。
+
+- Latest tutorial image fix deployment (2026-09-30 17:21): 用户确认关闭 3FUI 后复查 FFmpegFreeUI.exe/videoenhancer.exe 均未运行；git pull --ff-only 已最新，起点工作树保留教程图片修复和交接记录。将新 DLL 安装到 C:\Program portable\3FUI\3FUI\Plugin\videoenhancer.3fui.dll；原件备份至 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-image-fix-20260930-172141，备份哈希核对通过。安装 DLL SHA-256 4B757A30B3AF61BE92359909C125F770EDAE5AB3A18B8718B88918F710F20498，与构建源一致；EXE、后端、模型、配置未动。Release build 0 警告/0 错误，文章中 15 张远程图片 HTTP/1.1 均返回 200。待用户启动 3FUI 目视复验图片；版本仍 1.3.6、线上资产未重发。工作树中源码及交接记录待提交。
+
+- Latest tutorial image repair (2026-09-30 15:50): 用户实机截图显示在线教程部分图片空白。文章中一张图引用作者本机 `C:\Users\Admin\AppData\Roaming\Typora\...`，必然失效；前两张站点图片 URL 直接请求返回 HTTP 200/image/png。LakeUI 的 MarkDownViewer 使用独立静态 HttpClient 重取远程图，上一轮已证实站点默认连接偶发 SSL/EOF。教程页现用固定 HTTP/1.1 的现有客户端并发预取本站图片到 `%LOCALAPPDATA%\VideoEnhancer\TutorialImages`，阅读器加载本地文件；作者本机路径改为明示未上传，单图下载失败显示可点击原图链接。Release build 0 警告/0 错误，git diff --check 通过。3FUI 当前 PID 29008 仍运行，新 DLL 暂未覆盖；已请用户关闭后安装复验。起点 main=a980f4b 与 origin/main 同步，工作树含前次交接记录和本轮源码修改，未提交。
+
+- Latest local tutorial deployment (2026-09-30 15:37): 用户要求把已提交的 ARXChem 教程页改动安装到本机 3FUI 测试。起点 main=a980f4b、与 origin/main 同步且工作树干净；Release publish 0 警告/0 错误。确认 FFmpegFreeUI.exe 与 videoenhancer.exe 未运行后，将新建 DLL/EXE 安装至 C:\Program portable\3FUI\3FUI；原文件备份在 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-20260930-153715，备份哈希与原文件一致。安装后 DLL SHA-256 6DA20F1E258E10B6828BFE0FB40159B784F916053C3D492BA3C6BEC91D8F0F30，EXE SHA-256 42A013631FF29352AFBE709B4A73B1E7F6BDFED3A23B7744012A771A238062E7，均与本轮构建产物一致；CLI --version=1.3.6。后端、模型和配置未动；待用户启动 3FUI 验收教程正文及图片。线上 v1.3.6 安装包未重发；仅本机测试安装。交接记录待提交，工作树因此非干净。
 
 - Latest tutorial/backend history work (2026-09-30 15:10): 使用教程页改为进入时读取 ARXChem https://www1.arxchem.top/docs/6-videoenhancer 的文章 API，并交给 LakeUI MarkDownViewer 显示，补全图片根路径，失败时提供原文链接；旧内置长教程已移除；站点文章接口间歇性 HTTP/2/SSL 错误，固定 HTTP/1.1 后已回读成功。后端发布脚本读取上一版 channel，保留最近五条连续补丁和对应 legacy 哨兵；超过窗口仍完整修复。代码提交 6733702 已推送 origin/main；Backend 历史专项 5/5、更新器 6/6、发布门禁 5/5、Release build 0 警告/0 错误。线上 channel 保持 latestVersion 2026.09.30.1、完整包不变，仅补录 09.12→09.19 补丁和 09.12 唯一哨兵；v1.3.6 CLI 实测从线上读取 09.12 版本为 patchCount=2、downloadSize=22,110，从 09.19 为 1 补丁。1.3.6 安装包本身未重发；教程 UI 改动须下一次插件版本发布。起点 main=ba47876，当前 main=6733702 已推送，工作树原本干净；仅收尾记录待提交。
 
@@ -2575,3 +2587,37 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Publication: 代码提交 6733702 已推送 origin/main；仅将历史 09.12→09.19 补丁及 09.12 旧版哨兵补入 ModelScope Backend/channel.json，不修改 latestVersion=2026.09.30.1、完整包或现有 09.19→09.30 补丁。上传后重新读取线上 JSON 与候选逐项一致；已发布 1.3.6 CLI 以线上通道检查带 09.12 版本标记的后端，得到 mode=patch、patchCount=2、downloadSize=22,110，09.19 版本为 1 补丁。未重发 v1.3.6 插件资产，教程 UI 更改需下一次版本发布才到达用户。
 - Remaining/Git: 本地未执行真实 09.12 全后端到 09.30 的端到端升级，也未在真实 3FUI 中目视教程页面和图片；下一版发布前需验收。当前仅 STATUS、中文进度和版本记录收尾待提交推送，原先工作树干净。
 - Follow-up (2026-09-30 15:17): 最终教程文章接口回读发现默认 HTTP 连接偶发 SSL/EOF，Invoke-WebRequest -HttpVersion 1.1 和 curl --http1.1 都返回 200；TutorialPage 的 HttpClient 固定 HTTP/1.1，重新 Release build 0 警告/0 错误。GitHub ls-remote 一次返回 502，稍后重试；先前代码与记录 push 均已成功。
+
+### 2026-09-30 15:37 - Codex
+
+- Request/orientation: 用户要求将最新教程页候选安装到本机 3FUI 测试；同工具接续，读取 AGENTS.md、INDEX.md、STATUS.md 的既有项目方向，git pull --ff-only 已最新，起点 main=a980f4b、工作树干净。
+- Changes: Release publish 后仅替换 C:\Program portable\3FUI\3FUI 内的 Plugin\videoenhancer.3fui.dll 与 Plugin\videoenhancer\videoenhancer.exe。原件备份在 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-20260930-153715；未改后端、模型或配置，未重发线上 v1.3.6。
+- Verification: 发布构建成功、0 警告/0 错误；复制前无 FFmpegFreeUI.exe 或 videoenhancer.exe 进程；备份哈希与原件一致，安装 DLL/EXE 哈希与构建源一致，CLI --version 返回 1.3.6。真实教程页面及图片待用户启动 3FUI 目视确认。
+- Git/next: 仅 HandShake 记录发生变动，尚未提交；切换工具或设备前建议提交。若页面显示异常，请收集具体表现以继续修复。
+
+### 2026-09-30 15:50 - Codex
+
+- Request/orientation: 用户在本机测试后报告在线教程部分图片空白，附图显示段落后留出整块空白；沿同一工具继续，检查 STATUS 与 Git，git pull --ff-only 已最新，已有交接记录修改予以保留。
+- Diagnosis: 文章共 16 个 Markdown 图片引用，其中 1 个指向作者的 `C:\Users\Admin\AppData\Roaming\Typora\...`，不可跨电脑加载；其余是本站 `/media/external/`，前两张实测 HTTP 200 且内容为 PNG。LakeUI 的远程图加载由独立静态 HttpClient 发起，先前本站默认 HTTP 连接存在偶发 SSL/EOF，故作为其余空白图片的可能原因。
+- Changes: 教程页在读取文章后，以固定 HTTP/1.1 的客户端并发（最多 4）缓存本站图片到本机应用数据目录，替换 Markdown 为本地绝对路径；作者本机图片显示未上传说明，单张请求失败提供原图链接。
+- Verification/next: Release build 0 警告/0 错误，git diff --check 通过；文章中 15 张本站图片使用 HTTP/1.1 并发回读均为 HTTP 200。3FUI 当前 PID 29008 正运行，已请求用户关闭；关闭后需备份并替换 DLL、核对哈希，再由用户目视复验。源码及交接记录未提交，后端/模型/配置未动。
+
+### 2026-09-30 17:21 - Codex
+
+- Request/orientation: 用户确认已关闭 3FUI，要求接续安装图片修复候选。同工具续作，复读 STATUS，git pull --ff-only 已最新；保留此前源码和交接记录修改。
+- Deployment: 复查 FFmpegFreeUI.exe/videoenhancer.exe 无运行进程。备份旧 DLL 到 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-image-fix-20260930-172141，哈希与安装前文件一致；替换本机 3FUI 的 Plugin\videoenhancer.3fui.dll，安装哈希 4B757A30B3AF61BE92359909C125F770EDAE5AB3A18B8718B88918F710F20498，与 Release 构建源一致。仅 DLL 变动，EXE、后端、模型、配置未动。
+- Verification/next: Release build 0 警告/0 错误，15 张站点图片实测 HTTP 200；待用户重启 3FUI 目视检查。线上 1.3.6 未重发；本轮源码和交接记录未提交，工作树非干净，建议实机确认后提交。
+
+### 2026-09-30 17:42 - Codex
+
+- Request/orientation: 用户重启后截图显示部分图片仍是大面积空白；按既有 STATUS、Git 状态和 `git pull --ff-only` 接续，保留未提交修改。
+- Diagnosis: 15 张站点图片均出现在本机插件缓存，截图空白段对应的 e18a94… PNG 可单独打开。图片在 Markdown 布局中占约 466px 高度，说明文件已读入但绘制失败；前 9 张图片格式为 RGBA、alpha 255，后 6 张为 RGB，怀疑 LakeUI 的 D3D 图片纹理路径对 RGBA PNG 有问题。
+- Changes/verification: 图片预取后统一转成 24bpp 不透明 RGB PNG，缓存键加 `-opaque` 强制更新。样张转换后用 PIL 验证 RGB/944×466；Release build 0 警告/0 错误，git diff --check 通过。确认 3FUI 未运行，旧 DLL 备份至 Artifacts/.refactor-tmp/backup-3fui-before-opaque-tutorial-images-20260930-174218，安装 DLL SHA-256 71806CA18039FE4EA2CB4AB9C8EBE1ADD97BA84C481137A7A22E233A95C57507，与构建产物一致。
+- Remaining/Git: 用户需再次启动 3FUI 验证图片是否显示；仅本地 DLL 更换，EXE/后端/配置不变。源码和交接记录未提交，工作树非干净，确认后建议提交；线上 1.3.6 未重发。
+
+### 2026-09-30 18:18 - Codex
+
+- Request/orientation: 用户指出图片初次可见，滚动窗口后消失；同工具接续，读取 STATUS、核查 Git，git pull --ff-only 已最新，保留现有未提交修复。
+- Diagnosis: LakeUI 5.9 MarkdownViewerCore 的图片解码缓存挂在 D3D_CpuCache 全局预算上，默认 96 MiB；本教程 15 张原图合计约 62.6 MiB。全局 TrimOldest 会 Dispose 缓存图，而视觉行 Fragment 仍可能持旧 ImageObj；D3D_ImageCache.GetBitmap 捕获图片尺寸异常并返回空，与“原图片区域留白、滚动后消失”吻合。上一轮对 RGBA 的猜测不充分。
+- Changes/verification: 教程图片转 RGB 时将最大宽度限制为 960px，图片解码量估计降至 28.5 MiB，使用新 `-fit960.png` 缓存键。Release build 0 警告/0 错误，git diff --check 通过；确认 3FUI 未运行，旧 DLL 备份至 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-cache-fix-20260930-181829，新 DLL 哈希 C9916969BCED8F60F477C637FD925CE0AD83E8749BD762240161771D51A19039 与构建源一致。
+- Remaining/Git: 用户需重新启动 3FUI，验证图片显示、滚动离开再返回；此处仍是插件侧内存压力缓解，若复现需继续修复 LakeUI 缓存失效联动。仅本机 DLL 更换；版本 1.3.6 线上包未重发，源码与记录未提交，工作树非干净，建议实机确认后提交。
