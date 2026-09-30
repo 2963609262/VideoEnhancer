@@ -1,11 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-30 15:05
+Last updated: 2026-09-30 15:10
 Updated by: Codex
 
 ## Current Snapshot
 
-- Current work (2026-09-30 15:05): 用户要求使用 ARXChem 的 https://www1.arxchem.top/docs/6-videoenhancer 替换插件内置教程，并让后端通道滚动支持最近五代增量。教程正文由站点 /api/articles/doc-6-videoenhancer 返回（截至 09-22 内容约 4.8K 字符）；现进入教程页时异步读取并用 LakeUI MarkDownViewer 显示，站内图片路径补绝对地址，失败则显示原文链接。发布脚本读取上版 channel 并保留最近五条连续补丁及对应 legacy 哨兵；旧版超出窗口仍走完整包。Release build 0/0、Backend 历史 5/5、更新器 6/6、发布门禁 5/5。线上现有 09.12→09.19 补丁文件仍在，已制作只增补历史边/哨兵的 channel 候选并核验本地路由 09.12→09.30 为 2 补丁 22,110 字节；尚未提交/推送代码或上传 channel，1.3.6 Release 不变。起点 main=ba47876、origin/main 同步、工作树原本干净。
+- Latest tutorial/backend history work (2026-09-30 15:10): 使用教程页改为进入时读取 ARXChem https://www1.arxchem.top/docs/6-videoenhancer 的文章 API，并交给 LakeUI MarkDownViewer 显示，补全图片根路径，失败时提供原文链接；旧内置长教程已移除。后端发布脚本读取上一版 channel，保留最近五条连续补丁和对应 legacy 哨兵；超过窗口仍完整修复。代码提交 6733702 已推送 origin/main；Backend 历史专项 5/5、更新器 6/6、发布门禁 5/5、Release build 0 警告/0 错误。线上 channel 保持 latestVersion 2026.09.30.1、完整包不变，仅补录 09.12→09.19 补丁和 09.12 唯一哨兵；v1.3.6 CLI 实测从线上读取 09.12 版本为 patchCount=2、downloadSize=22,110，从 09.19 为 1 补丁。1.3.6 安装包本身未重发；教程 UI 改动须下一次插件版本发布。起点 main=ba47876，当前 main=6733702 已推送，工作树原本干净；仅收尾记录待提交。
 
 - Latest release (2026-09-30 14:26): 用户授权正式发布 VideoEnhancer 1.3.6，并追加要求同步后端更新。GitHub v1.3.6 已发布，标签指向 0579b3e；main 与标签已推送 origin。程序提供运行 EXE、安装器、手动 ZIP，stable.json 继续指向运行 EXE，Release Notes 末行用 Markdown 标题提示下载 VideoEnhancerInstaller-1.3.6-win-x64.exe。Python Backend 从 2026.09.19.1 增至 2026.09.30.1，完整包 3,070,523,121 bytes / FFE46F17…，增量 13,818 bytes / E264C6EA…；仅替换 4 个脚本（2 个仅行尾变化），图片/分段桥支持跨后端与模型分段、NCNN 分块、尺寸验证和处理统计。完整包解压后 29,709 文件逐一校验，审计 +0/~4/-0。Release build 0 警告/0 错误；Python 33/33、发布门禁 5/5、后端更新器 6/6、安装器/自更新门禁通过。GitHub/ModelScope 五项发布文件实际下载哈希一致；Backend 完整包与补丁远端 HTTP 大小、X-Linked-ETag 均匹配，本体备用 EXE 亦一致。真实 3FUI 窗口视觉与长视频链路仍待用户实机验收；当前只需提交/推送收尾记录。
 
@@ -2565,3 +2565,12 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Publication/readback: 代码提交 0579b3e 已推送 origin/main，注释标签 v1.3.6 解引用到该提交。GitHub 正式 Release 与 ModelScope Releases/Models 已发布；五项 Release 资产全部从两个站点实际下载并逐项哈希一致：运行 EXE 15,115,173 / 9DB8C08D…；安装器 11,786,730 / B66437B3…；手动 ZIP 14,207,850 / 14F7B93B…；GPL 源码归档 2,493,064 / 0A1E324C…；stable.json 936 / B6B11B2D…。Models 备用 EXE 与运行 EXE 相同。GitHub body 的末行确为安装器 Markdown 标题，stable.json 指向运行 EXE，保留旧版自动升级路径。
 - Changed files/Git: 代码发布提交包括 VideoEnhancerPlugin 的修复/HostNotifications、CLI 安装提示、两个 csproj/vbproj 版本、release/build-modelscope-release.ps1、release/prepare-backend-update.ps1、release/release-notes.txt、release/发布流程.md，以及此前待提交的 HandShake 记录；当前版本记录、STATUS 和中文进度作为收尾文档待第二次提交推送。没有修改真实 3FUI 安装目录，本地已安装 Backend 仍是 2026.09.19.1。
 - Remaining: 用户从新安装器安装后在真实 3FUI 中目视复验窗口拉伸黑块、开关联动、分类状态和参数面板即时刷新，长视频跨后端/模型处理另需实跑；没有远端发布阻塞。
+
+### 2026-09-30 15:10 - Codex
+
+- Request/orientation: 用户提供 ARXChem 教程 URL，要求用 LakeUI 能力替换插件教程，并支持未来最近五代后端增量。读取 AGENTS.md、INDEX.md、STATUS.md 和 HandShake，git pull --ff-only 已最新，起点 main=ba47876/工作树干净；同工具接续。
+- Source check: 站点页面 HTTP 200，是 JS 动态文档；文章接口 /api/articles/doc-6-videoenhancer 返回标题“6. VideoEnhancer超分补帧插件”和约 4.8K 字符 Markdown，正文更新于 2026-09-22，含站内 /media/external/ 图片路径。浏览工具不能直接渲染该 SPA，改用站点公开文章 API 核验原文；不复制第三方正文入仓库。
+- Changes: PluginPanel.TutorialPage.vb 删除内置长教程，进入页签时异步获取文章并用 LakeUI MarkDownViewer 渲染，站内相对图片补绝对 URL，异常时保留原文浏览器链接。prepare-backend-update.ps1 增加 PreviousChannel/PatchRetentionCount，沿上一版连续补丁链保留最近五条边及 legacyBaselines；build-modelscope-release.ps1 正式发布默认读取在线上一版 channel 并回读核对完整历史；发布流程文档更新；新增 release/test-backend-channel-history.ps1 验证滚动保留与 CLI 路由。
+- Verification: dotnet build VideoEnhancer.slnx Release 0 警告/0 错误；后端历史测试 5 条保留、超过窗口完整包回退通过，Backend 更新器 6/6、发布门禁 5/5、git diff --check 通过。当前线上旧补丁 Backend/patches/2026.09.12.1_to_2026.09.19.1.7z 为 8,292 bytes / 12CCD23C…，补丁 manifest 中 rve-image-backend.py 旧版 SHA 460B4ADA… 与 09.19 目标 SHA F5455D14… 不同，适合 legacy 哨兵。
+- Publication: 代码提交 6733702 已推送 origin/main；仅将历史 09.12→09.19 补丁及 09.12 旧版哨兵补入 ModelScope Backend/channel.json，不修改 latestVersion=2026.09.30.1、完整包或现有 09.19→09.30 补丁。上传后重新读取线上 JSON 与候选逐项一致；已发布 1.3.6 CLI 以线上通道检查带 09.12 版本标记的后端，得到 mode=patch、patchCount=2、downloadSize=22,110，09.19 版本为 1 补丁。未重发 v1.3.6 插件资产，教程 UI 更改需下一次版本发布才到达用户。
+- Remaining/Git: 本地未执行真实 09.12 全后端到 09.30 的端到端升级，也未在真实 3FUI 中目视教程页面和图片；下一版发布前需验收。当前仅 STATUS、中文进度和版本记录收尾待提交推送，原先工作树干净。
