@@ -31,6 +31,8 @@ Namespace videoenhancer
             Try
                 Using client As New HttpClient()
                     client.Timeout = TimeSpan.FromSeconds(20)
+                    client.DefaultRequestVersion = System.Net.HttpVersion.Version11
+                    client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact
                     Dim response = Await client.GetStringAsync(TutorialApiUrl)
                     Using document = JsonDocument.Parse(response)
                         Dim markdown = document.RootElement.GetProperty("article").GetProperty("content").GetString()
