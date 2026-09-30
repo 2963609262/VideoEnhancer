@@ -1,11 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-30 18:18
+Last updated: 2026-09-30 18:57
 Updated by: Codex
 
 ## Current Snapshot
 
-- Release 1.3.7 in progress (2026-09-30): 用户实机确认教程图片滚动后似乎正常，明确授权发布 1.3.7 Release。沿用 EXE、安装器、手动 ZIP 三产物及安装器醒目提示。main=a980f4b 与 origin/main 同步，起点工作树包含此前教程图片修复及交接记录。插件和 CLI 版本已升 1.3.7，Notes 改为在线教程、图片滚动缓存及未来五代后端增量链。Release publish 0 警告/0 错误；Python 33/33、发布门禁 5/5、后端更新器 6/6、后端历史 5/5 通过。以 2026.09.30.1 目标后端目录同目录审计 29,709 文件，结果 UNCHANGED，故本版不重传 3.07 GB 后端包。待提交推送代码、运行正式双源发布并回读核对；本机 3FUI 目前未运行。线上最新仍 v1.3.6，暂无 v1.3.7 Release。
+- Release 1.3.7 completed (2026-09-30 18:57): 用户实机确认教程图片滚动后似乎正常并授权发布。源码/版本/Notes 提交 e634869 已推送 origin/main，注释标签 v1.3.7 指向该提交；GitHub 正式 Release、ModelScope Releases 及 Models 备用 EXE 已上传。EXE、安装器、ZIP、GPL 对应源码和 stable.json 共五项；Release Notes 末尾保留大字号安装器提示。Backend 2026.09.30.1 的 29,709 文件同目录审计 UNCHANGED，未重传 3 GB 包；线上 channel latestVersion=2026.09.30.1、patches=2 不变。Release publish 0 警告/0 错误；Python 33/33、发布门禁 5/5、后端更新器 6/6、后端历史 5/5、安装器和自更新门禁通过。ModelScope 五项及 Models 备用 EXE 实际下载哈希与本地一致，GitHub stable.json 和 GPL 源码包实际下载哈希一致，GitHub 三个大资产的 API digest/大小与本地一致；GitHub CDN 实际下载大资产持续超时，需后续网络恢复再补充实际下载校验。双源 stable.json 版本/路径/大小/哈希和 GitHub Notes 已核对一致。本机 3FUI 未运行时已安装 1.3.7 DLL/EXE，备份在 Artifacts/.refactor-tmp/backup-3fui-before-1.3.7-release-20260930-185708，安装哈希与构建源一致；EXE --version=1.3.7。版本记录、STATUS 和中文进度收尾待提交推送；真实用户升级后仍需观察教程滚动。
 
 - Latest tutorial scroll/cache fix (2026-09-30 18:18): 用户发现教程图片初次可见，滚动后消失，推翻单纯 RGBA 下载/格式假设。LakeUI 5.9 MarkdownViewerCore 每张图片保留 GDI 解码图并由共享 D3D_CpuCache 回收；全教程 15 张图解码约 62.6 MiB，而 LakeUI 默认 CPU 缓存预算 96 MiB；全局回收可能处置图片对象，已排版的 VisualFragment 仍持有旧引用，D3D_ImageCache 读尺寸异常后静默返回空，留下原尺寸空白。插件现将图片限制至 960px 宽、转不透明 RGB，预计教程图解码量约 28.5 MiB；新 `-fit960.png` 键避开旧缓存，原文链接保留供看大图。Release build 0 警告/0 错误，git diff --check 通过；确认 3FUI 未运行后安装新 DLL，备份 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-cache-fix-20260930-181829，安装 SHA-256 C9916969BCED8F60F477C637FD925CE0AD83E8749BD762240161771D51A19039 与构建源一致。仅本机 DLL 更换，待用户实测滚动离开再返回；版本仍 1.3.6、线上未重发、工作树未提交。
 
@@ -2621,3 +2621,10 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Diagnosis: LakeUI 5.9 MarkdownViewerCore 的图片解码缓存挂在 D3D_CpuCache 全局预算上，默认 96 MiB；本教程 15 张原图合计约 62.6 MiB。全局 TrimOldest 会 Dispose 缓存图，而视觉行 Fragment 仍可能持旧 ImageObj；D3D_ImageCache.GetBitmap 捕获图片尺寸异常并返回空，与“原图片区域留白、滚动后消失”吻合。上一轮对 RGBA 的猜测不充分。
 - Changes/verification: 教程图片转 RGB 时将最大宽度限制为 960px，图片解码量估计降至 28.5 MiB，使用新 `-fit960.png` 缓存键。Release build 0 警告/0 错误，git diff --check 通过；确认 3FUI 未运行，旧 DLL 备份至 Artifacts/.refactor-tmp/backup-3fui-before-tutorial-cache-fix-20260930-181829，新 DLL 哈希 C9916969BCED8F60F477C637FD925CE0AD83E8749BD762240161771D51A19039 与构建源一致。
 - Remaining/Git: 用户需重新启动 3FUI，验证图片显示、滚动离开再返回；此处仍是插件侧内存压力缓解，若复现需继续修复 LakeUI 缓存失效联动。仅本机 DLL 更换；版本 1.3.6 线上包未重发，源码与记录未提交，工作树非干净，建议实机确认后提交。
+
+### 2026-09-30 18:57 - Codex
+
+- Request/orientation: 用户认为教程滚动图片问题已改善，明确授权发布 1.3.7。读取 AGENTS.md、INDEX.md、STATUS.md 与发布流程；git pull --ff-only 已最新，起点 main=a980f4b，工作树含前轮教程修复和交接记录；同工具续作。
+- Changes/Git: 插件和 CLI 版本升 1.3.7，Release Notes 改为在线教程、图片缓存和五代后端增量链，保留安装器下载标题及运行 EXE/安装器/手动 ZIP 三产物。代码与 Notes 提交 e634869 已推送 origin/main；Git 标签 v1.3.7 指向该提交。GitHub Release 正式发布，ModelScope Releases 和 Models 备用 EXE 同步。仅本机 3FUI 的 DLL/EXE 已更新，备份至 Artifacts/.refactor-tmp/backup-3fui-before-1.3.7-release-20260930-185708，安装哈希与构建源一致，EXE --version=1.3.7。
+- Verification: dotnet publish 0 警告/0 错误；Python 33/33、release gates 5/5、Backend updater 6/6、Backend history 5/5、安装器/自更新门禁通过。Backend 2026.09.30.1 目标目录 29,709 文件同目录审计 UNCHANGED，未重传 3.07 GB；线上 channel 保持 latestVersion 2026.09.30.1、2 条补丁。GitHub Release 非 draft/非 prerelease，五资产大小和 API digest 与本地一致；GitHub stable.json 和 GPL 源码包实际下载哈希一致。ModelScope 四资产、stable.json 及 Models 备用 EXE 实际下载哈希均与本地一致，三份 stable.json 内容和 GitHub Notes 均核对一致。
+- Limitation/next: GitHub 大资产经 gh release download 与资产 API 下载均在 CDN 连接超时，故三项大文件的 GitHub 端仅通过 API digest/大小核验，待网络恢复可补实际下载校验。原教程一张作者本地路径图片无法展示；用户实机尚需继续观察滚动。版本记录、STATUS 和中文进度收尾更改待提交推送。
