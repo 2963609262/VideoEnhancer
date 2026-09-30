@@ -1,11 +1,11 @@
 # Project Status
 
-Last updated: 2026-09-30 13:20
+Last updated: 2026-09-30 14:26
 Updated by: Codex
 
 ## Current Snapshot
 
-- Release in progress (2026-09-30 13:20): 用户要求同步发布开发期间引入的后端桥。线上基线 Backend 2026.09.19.1 的归档哈希与 channel 一致；目标 Backend 2026.09.30.1 由线上全树 29,709 个文件加仓库 cli/embedded-tools 中 4 个脚本精确替换而成，4 文件与本机安装相同，其中 2 个只变了行尾，图片桥/分段桥新增跨后端及模型分段、NCNN 分块、输出尺寸验证、处理统计。先前托管 7z 压缩耗时异常已终止；本机 NanaZip/7z 现已成功压缩 29,709 文件、6,261,294,654 解压字节为 3,070,523,121 字节完整包，等待发布脚本解压校验与补丁制作。旧版哨兵改用 09.19 的 rve-image-backend.py 哈希，以区分更旧的 09.12；发布脚本现允许被替换文件做旧版哨兵。插件/CLI 1.3.6 三种程序资产已本地构建并通过安装器/自更新门禁，发布说明末尾保留安装器标题；尚未提交、推送或上传。起点 main=0210f8b，ahead origin/main 14。
+- Latest release (2026-09-30 14:26): 用户授权正式发布 VideoEnhancer 1.3.6，并追加要求同步后端更新。GitHub v1.3.6 已发布，标签指向 0579b3e；main 与标签已推送 origin。程序提供运行 EXE、安装器、手动 ZIP，stable.json 继续指向运行 EXE，Release Notes 末行用 Markdown 标题提示下载 VideoEnhancerInstaller-1.3.6-win-x64.exe。Python Backend 从 2026.09.19.1 增至 2026.09.30.1，完整包 3,070,523,121 bytes / FFE46F17…，增量 13,818 bytes / E264C6EA…；仅替换 4 个脚本（2 个仅行尾变化），图片/分段桥支持跨后端与模型分段、NCNN 分块、尺寸验证和处理统计。完整包解压后 29,709 文件逐一校验，审计 +0/~4/-0。Release build 0 警告/0 错误；Python 33/33、发布门禁 5/5、后端更新器 6/6、安装器/自更新门禁通过。GitHub/ModelScope 五项发布文件实际下载哈希一致；Backend 完整包与补丁远端 HTTP 大小、X-Linked-ETag 均匹配，本体备用 EXE 亦一致。真实 3FUI 窗口视觉与长视频链路仍待用户实机验收；当前只需提交/推送收尾记录。
 
 - Latest standalone launch fix (2026-09-30 11:59): 用户指出双击独立 videoenhancer.exe 会出现一闪而过的黑框。确认运行 EXE 无安装载荷，零参数从终端打印帮助后退出；现在检测独占控制台（资源管理器双击），隐藏临时控制台并显示安装包与 --help 的持久说明。终端/重定向零参数保持帮助文本；安装器保留原交互入口。重新 publish/打包成功，独立新控制台窗口、CLI --help/重定向零参数、安装器目录/哈希/回滚门禁通过。候选在 Artifacts，未部署、提交或发布，版本 1.3.5；此前工作树未提交改动保留。
 
@@ -2554,3 +2554,12 @@ Append new entries below this line. Use `YYYY-MM-DD HH:MM` so same-day work rema
 - Changes: cli/InstallerManager.cs 使用 GetConsoleProcessList 区分独占控制台，隐藏临时窗口，显示持久的 VideoEnhancerInstaller.exe 与 --help 指引；cli/Program.cs 无参数分支优先保留有载荷的安装器原交互入口，独立 EXE 才按启动场景分流。未更改处理参数或正在运行任务。
 - Verification: Release build/publish VideoEnhancer.slnx -p:HostBin=C:/Users/maxzr/AppData/Local/Temp/3fui-core-compat-host 0 警告/0 错误。项目内临时 Python Win32 探针验证 --help、重定向零参数和 CREATE_NEW_CONSOLE 启动时消息框保持显示并关闭后退出；release/test-installer.ps1 所有目录检查、载荷哈希、回滚等门禁通过；git diff --check 通过。候选 Artifacts/videoenhancer.exe 与 VideoEnhancerInstaller.exe 已更新。未部署、未发布、未推送；版本仍 1.3.5。
 - Git/remaining: 本轮 cli/Program.cs、cli/InstallerManager.cs 与 STATUS、中文进度新增改动叠加原有未提交改动，main ahead 14，工作树非干净；建议提交后再切换工具/设备。真实用户机器双击视觉可再确认。
+
+### 2026-09-30 14:26 - Codex
+
+- Request/orientation: 用户先授权发布 1.3.6，随后明确保留运行 EXE、安装器、手动 ZIP 三种产物，并要求 Release Notes 最后一行用大字号提示下载 installer；再追加要求把开发中引入的后端桥一起更新。按 AGENTS.md/INDEX.md/STATUS.md 和 HandShake 续作；启动 git pull --ff-only 已最新，起点 main=0210f8b ahead origin/main 14，保留既有未提交修复。
+- Changes: 插件和 CLI 版本升至 1.3.6；发布门禁允许末行指定 Markdown installer 标题，Release Notes 只叙述用户可见改进；prepare-backend-update.ps1 允许目标版本替换的旧文件作 legacy sentinel，使 09.19 与 09.12 能区别。对已发布 Backend 2026.09.19.1 完整包（原 SHA-256 42A90717…）核验并解压；候选只替换仓库 embedded-tools 中的 4 个脚本，与本机安装字节一致。2 个 inspect 脚本仅行尾变动，图片和分段桥增加跨后端/模型分段、NCNN 分块、尺寸验证和统计。托管 7z 压缩异常缓慢时仅停止本轮进程，改用本机 NanaZip 7z 生成完整包；中断遗留的单个临时包仍在项目忽略目录，未清理。
+- Verification: Python 33/33、发布门禁 5/5、后端专项 6/6、正式 Release build 0 警告/0 错误、安装器和旧版自更新场景通过；完整包顺序解压后与 29,709 个候选文件逐一核对，后端审计 +0/~4/-0。完整包 3,070,523,121 bytes / FFE46F1706E8AA5A8D59A4425379BC006AD42D9EC6978FE4D49246A0E303A2E3；补丁 13,818 bytes / E264C6EA0E5E0446AD20B98EBD26A3C7A4C9029A83876376736ECA63E98AC6BA。先上传完整包/补丁/通道；ModelScope HTTP HEAD 的 Content-Length、X-Linked-ETag 与本地一致，channel latestVersion=2026.09.30.1。
+- Publication/readback: 代码提交 0579b3e 已推送 origin/main，注释标签 v1.3.6 解引用到该提交。GitHub 正式 Release 与 ModelScope Releases/Models 已发布；五项 Release 资产全部从两个站点实际下载并逐项哈希一致：运行 EXE 15,115,173 / 9DB8C08D…；安装器 11,786,730 / B66437B3…；手动 ZIP 14,207,850 / 14F7B93B…；GPL 源码归档 2,493,064 / 0A1E324C…；stable.json 936 / B6B11B2D…。Models 备用 EXE 与运行 EXE 相同。GitHub body 的末行确为安装器 Markdown 标题，stable.json 指向运行 EXE，保留旧版自动升级路径。
+- Changed files/Git: 代码发布提交包括 VideoEnhancerPlugin 的修复/HostNotifications、CLI 安装提示、两个 csproj/vbproj 版本、release/build-modelscope-release.ps1、release/prepare-backend-update.ps1、release/release-notes.txt、release/发布流程.md，以及此前待提交的 HandShake 记录；当前版本记录、STATUS 和中文进度作为收尾文档待第二次提交推送。没有修改真实 3FUI 安装目录，本地已安装 Backend 仍是 2026.09.19.1。
+- Remaining: 用户从新安装器安装后在真实 3FUI 中目视复验窗口拉伸黑块、开关联动、分类状态和参数面板即时刷新，长视频跨后端/模型处理另需实跑；没有远端发布阻塞。
