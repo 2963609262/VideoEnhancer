@@ -60,6 +60,10 @@ Move useful content into `STATUS.md`:
 - [中文工作进度](../../version/工作进度.md)
 - [中文版本迭代记录](../../version/版本迭代记录.md)
 
+## Historical Archive
+
+- [2026-10-01 完整历史记录](../archive/records-2026-10-01/README.md)：仅在追溯旧提交、验证或部署记录时读取。归档不是当前操作状态来源，不必在每次启动时加载。
+
 ## Can Work Continue?
 
 Work can continue when:

@@ -850,8 +850,12 @@ internal static class Program
         }
         catch (Exception ex)
         {
+            if (args.Any(arg => arg.StartsWith("--download", StringComparison.Ordinal) ||
+                                arg.StartsWith("--extract", StringComparison.Ordinal) || arg == "--update-backend"))
+                DownloadCancellation.Log("下载/解压入口", ex);
             Console.Error.WriteLine();
-            Console.Error.WriteLine("[错误] " + ex.Message);
+            Console.Error.WriteLine(ex is OperationCanceledException && DownloadCancellation.Token.IsCancellationRequested
+                ? "DOWNLOAD_CANCELLED|已取消" : "[错误] " + ex.Message);
             return 1;
         }
     }
@@ -1428,7 +1432,7 @@ internal static class Program
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
             CreateModelRepository().ApplyModelScopeAuthentication(client);
             client.DefaultRequestHeaders.UserAgent.ParseAdd("VideoEnhancer/" + ToolVersion);
-            json = client.GetStringAsync(uri).GetAwaiter().GetResult();
+            json = client.GetStringAsync(uri, DownloadCancellation.Token).GetAwaiter().GetResult();
         }
         else
         {
@@ -1478,6 +1482,8 @@ internal static class Program
     {
         try
         {
+            Console.WriteLine("DOWNLOAD_STAGE|连接更新服务");
+            DownloadCancellation.Check();
             var channel = LoadBackendChannel(configuredSource, out var source);
             var status = BackendUpdateManager.GetStatus(CoreRoot, channel);
             if (status.State == "current" && !forceFull)
@@ -1504,7 +1510,10 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            if (ModelRepositoryClient.IsNetworkFailure(ex) || ModelRepositoryClient.IsAuthenticationFailure(ex))
+            DownloadCancellation.Log("后端更新", ex);
+            if (ex is OperationCanceledException && DownloadCancellation.Token.IsCancellationRequested)
+                Console.Error.WriteLine("DOWNLOAD_CANCELLED|已取消");
+            else if (ModelRepositoryClient.IsNetworkFailure(ex) || ModelRepositoryClient.IsAuthenticationFailure(ex))
                 ModelRepositoryClient.WriteRemoteFailure("后端更新失败", ex);
             else
                 Console.Error.WriteLine("[错误] 后端更新失败：" + ex.Message);
@@ -1524,14 +1533,16 @@ internal static class Program
         if (string.IsNullOrWhiteSpace(safeName))
             throw new InvalidOperationException("后端更新包路径无效：" + artifactPath);
         var destination = Path.Combine(downloads, safeName);
-        if (File.Exists(destination))
+        if (File.Exists(destination) && !File.Exists(destination + ".aria2"))
         {
             try
             {
+                Console.WriteLine("DOWNLOAD_STAGE|校验下载包");
+                DownloadCancellation.Check();
                 BackendUpdateManager.VerifyArtifact(destination, expectedSize, expectedSha256);
                 return destination;
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 File.Delete(destination);
             }
@@ -1570,6 +1581,8 @@ internal static class Program
             if (!File.Exists(source)) throw new FileNotFoundException("找不到本地后端更新包", source);
             File.Copy(source, destination, true);
         }
+        Console.WriteLine("DOWNLOAD_STAGE|校验下载包");
+        DownloadCancellation.Check();
         BackendUpdateManager.VerifyArtifact(destination, expectedSize, expectedSha256);
         return destination;
     }
@@ -1584,6 +1597,8 @@ internal static class Program
         {
             var code = ExtractArchive(archive, extractRoot);
             if (code != 0) return code;
+            DownloadCancellation.Check();
+            Console.WriteLine("BACKEND_INSTALL_START|应用补丁");
             var version = BackendUpdateManager.ApplyExtractedPatch(CoreRoot, extractRoot);
             Console.WriteLine("BACKEND_PATCH_COMPLETE|" + version);
             return 0;
@@ -1612,13 +1627,18 @@ internal static class Program
             var stagedPython = File.Exists(Path.Combine(extractRoot, "python", "python", "python.exe"))
                 ? Path.Combine(extractRoot, "python")
                 : extractRoot;
+            DownloadCancellation.Check();
+            Console.WriteLine("BACKEND_INSTALL_START|检查并安装后端");
             BackendUpdateManager.ApplyStagedFullBackend(CoreRoot, stagedPython, targetVersion);
             Console.WriteLine("BACKEND_UPDATE_COMPLETE|" + targetVersion);
             return 0;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("[错误] 完整后端安装失败：" + ex.Message);
+            DownloadCancellation.Log("完整后端安装 " + archive, ex);
+            Console.Error.WriteLine(ex is OperationCanceledException
+                ? "DOWNLOAD_CANCELLED|已取消"
+                : "[错误] 完整后端安装失败：" + ex.Message);
             return 1;
         }
         finally
@@ -2106,6 +2126,7 @@ internal static class Program
                 StandardErrorEncoding = Encoding.UTF8
             };
             PortablePaths.ConfigureChildProcess(start);
+            DownloadCancellation.Check();
             foreach (var argument in new[]
             {
                 "--allow-overwrite=true", "--auto-file-renaming=false", "--continue=true",
@@ -2129,9 +2150,16 @@ internal static class Program
             };
             process.ErrorDataReceived += (_, e) => { if (e.Data is not null) Console.Error.WriteLine(e.Data); };
             if (!process.Start()) return Fail("无法启动 aria2-next", 1);
+            using var cancellation = DownloadCancellation.Token.Register(() =>
+            {
+                try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+                catch (InvalidOperationException) { }
+                catch (System.ComponentModel.Win32Exception) { }
+            });
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             process.WaitForExit();
+            DownloadCancellation.Check();
             if (process.ExitCode != 0) return Fail("aria2-next 下载失败，退出码：" + process.ExitCode, 1);
             if (!File.Exists(destination)) return Fail("下载结束但未找到输出文件：" + destination, 1);
             if (printComplete) Console.WriteLine("DOWNLOAD_COMPLETE|" + destination);
@@ -2139,7 +2167,9 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("[错误] 下载失败：" + ex.Message);
+            DownloadCancellation.Log("下载 " + destination, ex);
+            Console.Error.WriteLine(ex is OperationCanceledException && DownloadCancellation.Token.IsCancellationRequested
+                ? "DOWNLOAD_CANCELLED|已取消" : "[错误] 下载失败：" + ex.Message);
             return 1;
         }
     }
@@ -2157,7 +2187,10 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("[错误] 解压失败：" + ex.Message);
+            DownloadCancellation.Log("解压 " + archive, ex);
+            Console.Error.WriteLine(ex is OperationCanceledException
+                ? "DOWNLOAD_CANCELLED|已取消"
+                : "[错误] 解压失败：" + ex.Message);
             return 1;
         }
     }

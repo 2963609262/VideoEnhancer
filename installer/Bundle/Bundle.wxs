@@ -9,6 +9,8 @@
           DisableModify="yes"
           DisableRemove="yes"
           Compressed="yes">
+    <!-- 默认不在临时目录留下安装日志；排障时仍可用 /log 显式开启。 -->
+    <Log Disable="yes" />
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication
           Theme="rtfLicense"
@@ -26,11 +28,13 @@
               bal:Overridable="yes" />
 
     <Chain>
+      <!-- 安装载荷仅在执行期间缓存，流程结束后移除，避免长期占用 Package Cache。 -->
       <ExePackage Id="PortablePlugin"
                   SourceFile="$(var.PortablePayloadPath)"
                   Compressed="yes"
                   PerMachine="no"
                   Permanent="yes"
+                  Cache="remove"
                   DetectCondition="0"
                   Vital="yes"
                   InstallArguments='--install-folder "[InstallFolder]" --quiet' />

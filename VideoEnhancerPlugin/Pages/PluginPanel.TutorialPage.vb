@@ -53,8 +53,8 @@ Namespace videoenhancer
         End Sub
 
         Private Shared Async Function CacheTutorialImagesAsync(client As HttpClient, markdown As String) As Task(Of String)
-            Dim cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                                              "VideoEnhancer", "TutorialImages")
+            Dim cacheDirectory = Path.Combine(PortableRuntime.CacheRoot, "TutorialImages")
+            MigrateTutorialImageCache(cacheDirectory)
             Dim imageMatches = Regex.Matches(markdown, "!\[[^\]]*\]\((?<url>[^)]+)\)")
             Dim downloads As New Dictionary(Of String, Task(Of String))(StringComparer.OrdinalIgnoreCase)
             Using limiter As New Threading.SemaphoreSlim(4)
@@ -93,6 +93,29 @@ Namespace videoenhancer
             End Using
             Return markdown
         End Function
+
+        Private Shared Sub MigrateTutorialImageCache(cacheDirectory As String)
+            Dim oldDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                            "VideoEnhancer", "TutorialImages")
+            If Not Directory.Exists(oldDirectory) Then Return
+            Try
+                Directory.CreateDirectory(cacheDirectory)
+                For Each oldPath In Directory.EnumerateFiles(oldDirectory, "*.png")
+                    If Not Regex.IsMatch(Path.GetFileName(oldPath), "^[A-Fa-f0-9]{64}(-opaque|-fit960)?\.png$") Then Continue For
+                    Dim target = Path.Combine(cacheDirectory, Path.GetFileName(oldPath))
+                    If Not File.Exists(target) Then
+                        File.Move(oldPath, target)
+                    ElseIf SHA256.HashData(File.ReadAllBytes(oldPath)).SequenceEqual(SHA256.HashData(File.ReadAllBytes(target))) Then
+                        File.Delete(oldPath)
+                    End If
+                Next
+                If Not Directory.EnumerateFileSystemEntries(oldDirectory).Any() Then Directory.Delete(oldDirectory)
+                Dim oldRoot = Path.GetDirectoryName(oldDirectory)
+                If Directory.Exists(oldRoot) AndAlso Not Directory.EnumerateFileSystemEntries(oldRoot).Any() Then Directory.Delete(oldRoot)
+            Catch ex As Exception
+                Trace.WriteLine("迁移教程图片缓存失败：" & ex.ToString())
+            End Try
+        End Sub
 
         Private Shared Async Function DownloadTutorialImageAsync(client As HttpClient, imageUrl As String,
                                                                   cacheDirectory As String,

@@ -22,6 +22,8 @@ Namespace videoenhancer
                         If(category.Equals("Bin", StringComparison.OrdinalIgnoreCase),
                             Path.Combine(coreRoot, "bin"), Path.Combine(coreRoot, "models", category))))
                 Dim downloaded = Path.Combine(destinationRoot, suffix)
+                If File.Exists(downloaded & ".pending") OrElse File.Exists(downloaded & ".aria2") OrElse
+                   File.Exists(downloaded & ".part") Then Return False
                 Dim isArchive = String.Equals(Path.GetExtension(suffix), ".7z", StringComparison.OrdinalIgnoreCase) OrElse
                     String.Equals(Path.GetExtension(suffix), ".zip", StringComparison.OrdinalIgnoreCase)
                 ' Bin 压缩包可能已下载但只解压了一部分，不能把归档文件存在当作安装完成。

@@ -101,6 +101,10 @@ internal sealed class ModelDownloadManager
                     : Path.Combine(_coreRoot, "models", category);
         var destination = SafeCombine(destinationRoot, suffix);
         var url = _repository.ResolveRoot + string.Join("/", model.Path.Split('/').Select(Uri.EscapeDataString));
+        // 完成下载及解压后才移除标记，刷新列表不会把取消后的半成品认作已安装。
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        var pending = destination + ".pending";
+        File.WriteAllText(pending, model.Path, new UTF8Encoding(false));
         Console.WriteLine("DOWNLOAD_START|" + model.Path);
         var code = _token is null
             ? _downloadWithAria(url, destination, false)
@@ -112,7 +116,15 @@ internal sealed class ModelDownloadManager
         if (!string.IsNullOrWhiteSpace(model.Sha256))
         {
             using var stream = File.OpenRead(destination);
-            var actual = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+            using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+            var buffer = new byte[1024 * 1024];
+            int count;
+            while ((count = stream.Read(buffer)) > 0)
+            {
+                DownloadCancellation.Check();
+                hash.AppendData(buffer, 0, count);
+            }
+            var actual = Convert.ToHexString(hash.GetHashAndReset());
             if (!actual.Equals(model.Sha256, StringComparison.OrdinalIgnoreCase))
                 return _fail("下载文件 SHA256 校验失败：" + destination, 1);
         }
@@ -142,6 +154,8 @@ internal sealed class ModelDownloadManager
                 DeleteRtxVideoRuntimeArchives();
             }
         }
+        DownloadCancellation.Check();
+        File.Delete(pending);
         Console.WriteLine("DOWNLOAD_COMPLETE|" + destination);
         return 0;
     }
@@ -239,7 +253,7 @@ internal sealed class ModelDownloadManager
             using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
             _repository.ApplyModelScopeAuthentication(client);
             client.DefaultRequestHeaders.UserAgent.ParseAdd("VideoEnhancer/" + _toolVersion);
-            using var response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+            using var response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, DownloadCancellation.Token).GetAwaiter().GetResult();
             if (!response.IsSuccessStatusCode)
                 throw new HttpRequestException(
                     $"ModelScope 下载返回 HTTP {(int)response.StatusCode} ({response.ReasonPhrase})",
@@ -247,14 +261,14 @@ internal sealed class ModelDownloadManager
                     response.StatusCode);
 
             var total = response.Content.Headers.ContentLength ?? 0;
-            using var input = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+            using var input = response.Content.ReadAsStreamAsync(DownloadCancellation.Token).GetAwaiter().GetResult();
             using (var output = new FileStream(partial, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 var buffer = new byte[1024 * 1024];
                 long completed = 0;
                 var lastPercent = -1;
                 int read;
-                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                while ((read = input.ReadAsync(buffer.AsMemory(), DownloadCancellation.Token).AsTask().GetAwaiter().GetResult()) > 0)
                 {
                     output.Write(buffer, 0, read);
                     completed += read;
@@ -272,7 +286,10 @@ internal sealed class ModelDownloadManager
         catch (Exception ex)
         {
             try { if (File.Exists(partial)) File.Delete(partial); } catch { }
-            if (ModelRepositoryClient.IsAuthenticationFailure(ex))
+            DownloadCancellation.Log("下载 " + destination, ex);
+            if (ex is OperationCanceledException && DownloadCancellation.Token.IsCancellationRequested)
+                Console.Error.WriteLine("DOWNLOAD_CANCELLED|已取消");
+            else if (ModelRepositoryClient.IsAuthenticationFailure(ex))
                 Console.Error.WriteLine("AUTH_REQUIRED|ModelScope 私有文件需要有效令牌；请检查 VIDEOENHANCER_MODELSCOPE_TOKEN 或 MODELSCOPE_API_TOKEN");
             else
                 Console.Error.WriteLine("[错误] ModelScope 下载失败：" + ex.Message);

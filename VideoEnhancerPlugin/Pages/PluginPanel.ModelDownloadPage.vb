@@ -34,6 +34,8 @@ Namespace videoenhancer
         Private ReadOnly _downloadProcessLifetime As New DownloadProcessLifetime()
         Private _downloadActionsEnabled As Boolean = True
         Private _downloadAllBusy As Boolean = False
+        Private _downloadAllStopRequested As Boolean = False
+        Private ReadOnly _downloadCancellations As New Dictionary(Of String, DownloadCancellationRequest)(StringComparer.OrdinalIgnoreCase)
         Private _downloadListConfigured As Boolean = False
         Private ReadOnly _downloadItemsByPath As New Dictionary(Of String, UltraDetailListView.ListItem)(StringComparer.OrdinalIgnoreCase)
         Private ReadOnly _downloadGroupItems As New Dictionary(Of String, UltraDetailListView.ListItem)(StringComparer.OrdinalIgnoreCase)
@@ -66,6 +68,17 @@ Namespace videoenhancer
         Private NotInheritable Class DownloadExecutionResult
             Public Property ExitCode As Integer = -1
             Public Property Errors As String = ""
+            Public Property Cancelled As Boolean
+
+            Public ReadOnly Property Outcome As ModelDownloadCoordinator.ItemOutcome
+                Get
+                    If ExitCode = 0 Then Return ModelDownloadCoordinator.ItemOutcome.Succeeded
+                    If Cancelled Then Return ModelDownloadCoordinator.ItemOutcome.Cancelled
+                    If Errors.Contains("NO_NETWORK|") Then Return ModelDownloadCoordinator.ItemOutcome.Offline
+                    If Errors.Contains("AUTH_REQUIRED|") Then Return ModelDownloadCoordinator.ItemOutcome.AuthenticationRequired
+                    Return ModelDownloadCoordinator.ItemOutcome.Failed
+                End Get
+            End Property
         End Class
         Private Sub BuildOfficialModelDownloadPage()
             _pageDownloader.Dock = DockStyle.Fill
@@ -470,9 +483,41 @@ Namespace videoenhancer
 
         Private Async Sub OnDownloadListItemClick(sender As Object, e As UltraDetailListView.ListItemEventArgs)
             If e.ColumnIndex <> DownloadActionColumn OrElse e.Item Is Nothing Then Return
-            If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse _archiveCleanupBusy OrElse _downloadAllBusy Then Return
             Dim row = TryCast(e.Item.Tag, DownloadListRowTag)
             If row Is Nothing Then Return
+            If row.Entry IsNot Nothing AndAlso _downloadCoordinator.IsPathActive(row.Entry.RelativePath) Then
+                Dim cancellation As DownloadCancellationRequest = Nothing
+                If _downloadCancellations.TryGetValue(row.Entry.RelativePath, cancellation) Then
+                    If cancellation.Installing Then
+                        ShowStatus("正在安装后端，请等待事务完成。", False)
+                        Return
+                    End If
+                    Try
+                        cancellation.Cancel()
+                        SetDownloadRowState(row.Entry.RelativePath, "正在取消", "请稍候...", UiTextMuted, UiTextMuted)
+                    Catch ex As Exception
+                        ShowStatus(ex.Message, True)
+                    End Try
+                End If
+                Return
+            End If
+            If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse _archiveCleanupBusy Then Return
+            If row.Entry IsNot Nothing AndAlso Not row.Entry.Installed AndAlso Not row.Entry.IsBackend AndAlso
+                Not row.Entry.RelativePath.Equals("Plugin/videoenhancer.exe", StringComparison.OrdinalIgnoreCase) Then
+                Dim queued = _downloadCoordinator.Enqueue(DownloadCategory(row.Entry.RelativePath), row.Entry.RelativePath)
+                Select Case queued
+                    Case ModelDownloadCoordinator.EnqueueResult.Enqueued, ModelDownloadCoordinator.EnqueueResult.AlreadyQueued
+                        ' 调度可能立即开始，不用排队文案覆盖正在下载的百分比。
+                        If Not _downloadCoordinator.IsPathActive(row.Entry.RelativePath) Then
+                            SetDownloadRowState(row.Entry.RelativePath, "待下载", "排队中", UiTextMuted, UiTextMuted)
+                        End If
+                        Return
+                    Case ModelDownloadCoordinator.EnqueueResult.Stopping
+                        ShowStatus("队列正在停止，请结束后再重试。", False)
+                        Return
+                End Select
+            End If
+            If _downloadAllBusy Then Return
             If row.Entry IsNot Nothing Then
                 Await DownloadSingleItemAsync(row.Entry)
             ElseIf row.BatchPaths IsNot Nothing Then
@@ -605,13 +650,30 @@ Namespace videoenhancer
         End Function
 
         Private Async Sub OnDownloadAllClick(sender As Object, e As EventArgs)
+            If _downloadAllBusy Then
+                _downloadAllStopRequested = True
+                For Each cancellation In _downloadCancellations.Values.ToList()
+                    Try
+                        cancellation.Cancel()
+                    Catch ex As Exception
+                        Trace.WriteLine(ex)
+                    End Try
+                Next
+                UpdateDownloadUtilityButtons()
+                ShowStatus("正在停止全部下载，等待当前任务安全结束。", False)
+                Return
+            End If
             If Not _downloadActionsEnabled OrElse Not _downloadOnline OrElse _downloadsLoading OrElse
                 _archiveCleanupBusy OrElse _downloadCoordinator.ActiveCount > 0 OrElse _downloadAllBusy Then Return
             ' 插件 EXE 由自动更新流程管理；Backend 先按状态选择增量或完整事务安装。
-            Dim paths = _downloadItemsByPath.Keys.
-                Where(Function(path) Not path.Equals("Plugin/videoenhancer.exe", StringComparison.OrdinalIgnoreCase) AndAlso
-                    Not DownloadCategory(path).Equals("Backend", StringComparison.OrdinalIgnoreCase)).
-                ToList()
+            Dim paths As New List(Of String)()
+            For Each item As UltraDetailListView.ListItem In _downloadList.Items
+                Dim row = TryCast(item.Tag, DownloadListRowTag)
+                If row Is Nothing OrElse row.Entry Is Nothing Then Continue For
+                Dim path = row.Entry.RelativePath
+                If Not path.Equals("Plugin/videoenhancer.exe", StringComparison.OrdinalIgnoreCase) AndAlso
+                    Not DownloadCategory(path).Equals("Backend", StringComparison.OrdinalIgnoreCase) Then paths.Add(path)
+            Next
             Dim backendEntry As DownloadModelEntry = Nothing
             For Each pair In _downloadItemsByPath
                 If Not DownloadCategory(pair.Key).Equals("Backend", StringComparison.OrdinalIgnoreCase) Then Continue For
@@ -625,21 +687,31 @@ Namespace videoenhancer
                 ShowStatus("全部资源已安装。", False)
                 Return
             End If
+            _downloadAllStopRequested = False
             _downloadAllBusy = True
+            Dim modelQueueStarted = False
             UpdateDownloadUtilityButtons()
             Try
                 If backendEntry IsNot Nothing Then
                     Dim attemptedPatch = Not backendEntry.ForceBackendFull
                     Await DownloadSingleItemAsync(backendEntry)
+                    If _downloadAllStopRequested Then Return
                     If attemptedPatch AndAlso backendEntry.ForceBackendFull AndAlso Not backendEntry.Installed Then
                         ' 增量补丁校验失败时，沿用单项下载的确认与事务回滚流程尝试完整包。
                         Await DownloadSingleItemAsync(backendEntry)
                     End If
-                    If Not backendEntry.Installed Then Return
+                    If _downloadAllStopRequested OrElse Not backendEntry.Installed Then Return
                 End If
-                If paths.Count > 0 Then Await DownloadGroupItemsAsync("全部资源", paths)
+                If paths.Count > 0 Then
+                    modelQueueStarted = True
+                    Await DownloadGroupItemsAsync("全部资源", paths)
+                End If
             Finally
+                If _downloadAllStopRequested AndAlso Not modelQueueStarted Then
+                    ShowStatus("已停止全部下载，后续资源尚未启动。", False)
+                End If
                 _downloadAllBusy = False
+                _downloadAllStopRequested = False
                 UpdateDownloadUtilityButtons()
             End Try
         End Sub
@@ -676,6 +748,9 @@ Namespace videoenhancer
                 entry.Installed = True
                 SetDownloadRowState(relativePath, If(entry.IsBackend, "已更新", "本地已安装"), "已完成", UiSuccess, UiTextMuted)
                 ShowStatus(If(entry.IsBackend, "后端更新完成", "模型下载完成：" & relativePath), False)
+            ElseIf result.Cancelled Then
+                SetDownloadRowState(relativePath, "已取消", "重试", UiTextMuted, UiAccent)
+                ShowStatus("下载已取消，可点击重试。", False)
             ElseIf result.Errors.Contains("NO_NETWORK|") Then
                 SetDownloadRowState(relativePath, "网络中断", "重试", UiDanger, UiAccent)
                 _downloadOnline = False
@@ -715,8 +790,10 @@ Namespace videoenhancer
             End If
             Dim exePath = DownloadExecutablePath()
             If String.IsNullOrWhiteSpace(exePath) Then Return
-            Dim failureMessage = ""
-            SetDownloadGroupState(category, "0/" & paths.Count & " 已完成", "下载中", UiAccent)
+            SetDownloadGroupState(category, "待下载 " & paths.Count, "下载中", UiAccent)
+            For Each path In paths
+                SetDownloadRowState(path, "待下载", "排队中", UiTextMuted, UiTextMuted)
+            Next
             Dim batch = Await _downloadCoordinator.RunGroupAsync(Of DownloadExecutionResult)(
                 category, paths,
                 Function(relativePath)
@@ -732,55 +809,95 @@ Namespace videoenhancer
                             End Try
                         End Sub)
                 End Function,
-                Function(result) result.ExitCode = 0,
-                Sub(finishedPath, result, failedSoFar)
+                Function(result) result.Outcome,
+                Sub(finishedPath, result)
                     If result.ExitCode <> 0 Then
-                        failureMessage = CliErrorMessage(result.Errors, "模型下载失败")
                         SetDownloadRowState(finishedPath,
-                            If(result.Errors.Contains("AUTH_REQUIRED|"), "需要认证", "下载失败"),
-                            "重试", UiDanger, UiAccent)
+                            If(result.Cancelled, "已取消", If(result.Errors.Contains("AUTH_REQUIRED|"), "需要认证", "下载失败")),
+                            "重试", If(result.Cancelled, UiTextMuted, UiDanger), UiAccent)
                         If result.Errors.Contains("NO_NETWORK|") Then _downloadOnline = False
                     Else
                         MarkDownloadInstalled(finishedPath)
                     End If
                 End Sub,
-                Sub(done, failedSoFar)
-                    SetDownloadGroupState(category, done & "/" & paths.Count & " 已完成",
-                        If(failedSoFar, "等待当前任务", "下载中"),
-                        If(failedSoFar, UiTextMuted, UiAccent))
-                End Sub)
-            Dim completed = batch.Completed
-            Dim failed = batch.Failed
+                Sub(state)
+                    Dim stopping = state.StopReason <> ModelDownloadCoordinator.QueueStopReason.None
+                    SetDownloadGroupState(category, state.Summary,
+                        If(stopping, "等待当前任务", "下载中"), If(stopping, UiTextMuted, UiAccent))
+                    ShowStatus(state.Summary, False)
+                End Sub,
+                Function() _downloadAllBusy AndAlso _downloadAllStopRequested)
 
+            For Each item As UltraDetailListView.ListItem In _downloadList.Items
+                Dim row = TryCast(item.Tag, DownloadListRowTag)
+                If row IsNot Nothing AndAlso row.Entry IsNot Nothing AndAlso item.SubItems(DownloadActionColumn).Text = "排队中" AndAlso
+                    Not _downloadCoordinator.IsPathActive(row.Entry.RelativePath) AndAlso
+                    Not _downloadCoordinator.IsPathQueued(row.Entry.RelativePath) Then
+                    SetDownloadRowState(row.Entry.RelativePath, "未安装", "下载", UiTextMuted, UiAccent)
+                End If
+            Next
             For Each affectedCategory In paths.Select(Function(path) DownloadCategory(path)).Distinct(StringComparer.OrdinalIgnoreCase)
                 RefreshDownloadGroupSummary(affectedCategory)
             Next
+            SetDownloadGroupState(category, batch.Summary,
+                If(batch.Pending > 0 OrElse batch.Cancelled > 0 OrElse batch.Failed > 0, "下载本组", "已全部存在"), UiAccent)
             UpdateDownloadUtilityButtons()
-            If Not _downloadOnline Then
+            Dim summary = "下载结束：" & batch.Summary
+            If batch.StopReason = ModelDownloadCoordinator.QueueStopReason.Offline Then
                 SetDownloadActionsEnabled(False)
                 ShowOfflineDownloadStatus()
-                Return
-            End If
-            If failed Then
-                SetDownloadGroupState(category, completed & "/" & paths.Count & " 已完成", "继续下载", UiAccent)
-                ShowStatus("批量下载过程中有文件失败：" & failureMessage, True)
+                ShowStatus(summary & "；网络中断，检查网络后刷新并继续。", True)
+            ElseIf batch.StopReason = ModelDownloadCoordinator.QueueStopReason.AuthenticationRequired Then
+                ShowStatus(summary & "；需要认证，设置令牌后继续。", True)
+            ElseIf batch.StopReason = ModelDownloadCoordinator.QueueStopReason.UserStopped Then
+                ShowStatus(summary & "；已停止全部下载。", False)
+            ElseIf batch.Failed > 0 OrElse batch.Cancelled > 0 Then
+                ShowStatus(summary, batch.Failed > 0)
             Else
-                ShowStatus("该分类 " & completed & " 个文件已全部下载完成", False)
+                ShowStatus("该分类 " & batch.Succeeded & " 个文件已全部下载完成", False)
             End If
         End Function
 
         Private Async Function ExecuteDownloadAsync(exePath As String, relativePath As String,
                                                      progress As Action(Of String),
                                                      Optional forceBackendFull As Boolean = False) As Task(Of DownloadExecutionResult)
+            Dim cancellation As New DownloadCancellationRequest()
+            _downloadCancellations(relativePath) = cancellation
+            Dim watch = Stopwatch.StartNew()
             Try
-                Return Await Task.Run(Function() ExecuteModelDownload(exePath, relativePath, progress, forceBackendFull))
+                Dim result = Await Task.Run(Function() ExecuteModelDownload(exePath, relativePath,
+                    Sub(text)
+                        If Not cancellation.Requested Then progress(text)
+                    End Sub, cancellation, forceBackendFull))
+                result.Cancelled = result.ExitCode <> 0 AndAlso
+                    (cancellation.Requested OrElse result.Errors.Contains("DOWNLOAD_CANCELLED|"))
+                If result.ExitCode <> 0 Then
+                    Try
+                        Dim folder = Path.Combine(PortableRuntime.ApplicationRoot, "logs")
+                        Directory.CreateDirectory(folder)
+                        File.AppendAllText(Path.Combine(folder, "downloads.log"),
+                            "[" & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & "] " & relativePath &
+                            " exit=" & result.ExitCode & " cancelled=" & result.Cancelled &
+                            " elapsed=" & watch.Elapsed.ToString() & Environment.NewLine & result.Errors &
+                            Environment.NewLine, New UTF8Encoding(False))
+                    Catch ex As Exception
+                        Trace.WriteLine(ex)
+                    End Try
+                End If
+                Return result
             Finally
+                _downloadCancellations.Remove(relativePath)
+                Try
+                    cancellation.Clean()
+                Catch ex As Exception
+                    Trace.WriteLine(ex)
+                End Try
                 EndDownload(relativePath)
             End Try
         End Function
 
         Private Function ExecuteModelDownload(exePath As String, relativePath As String, progress As Action(Of String),
-                                              Optional forceBackendFull As Boolean = False) As DownloadExecutionResult
+                                              cancellation As DownloadCancellationRequest, Optional forceBackendFull As Boolean = False) As DownloadExecutionResult
             Dim result As New DownloadExecutionResult()
             Dim errors As New StringBuilder()
             Try
@@ -797,6 +914,7 @@ Namespace videoenhancer
                     .StandardOutputEncoding = Encoding.UTF8, .StandardErrorEncoding = Encoding.UTF8
                 }
                 PortableRuntime.ConfigureProcess(psi)
+                psi.Environment("VIDEOENHANCER_CANCEL_FILE") = cancellation.Marker
                 If isBackendUpdate Then
                     psi.ArgumentList.Add("--update-backend")
                     If forceBackendFull Then psi.ArgumentList.Add("--force-backend-full")
@@ -810,18 +928,23 @@ Namespace videoenhancer
                             If ev.Data Is Nothing Then Return
                             If ev.Data.StartsWith("DOWNLOAD_PROGRESS|", StringComparison.Ordinal) Then
                                 Dim parts = ev.Data.Split("|"c)
-                                If parts.Length > 1 Then progress(parts(1) & "%")
+                                If parts.Length > 1 Then progress(parts(1) & "% · 取消")
                             ElseIf ev.Data.StartsWith("EXTRACT_START|", StringComparison.Ordinal) Then
-                                progress("解压安装中...")
+                                progress("准备解压 · 取消")
                             ElseIf ev.Data.StartsWith("EXTRACT_PROGRESS|", StringComparison.Ordinal) Then
                                 Dim parts = ev.Data.Split("|"c)
-                                If parts.Length > 1 Then progress("解压 " & parts(1) & "%")
+                                If parts.Length > 1 Then progress("解压 " & parts(1) & "% · 取消")
+                            ElseIf ev.Data.StartsWith("DOWNLOAD_STAGE|", StringComparison.Ordinal) Then
+                                progress(ev.Data.Substring("DOWNLOAD_STAGE|".Length) & " · 取消")
+                            ElseIf ev.Data.StartsWith("BACKEND_INSTALL_START|", StringComparison.Ordinal) Then
+                                cancellation.Installing = True
+                                progress(ev.Data.Substring("BACKEND_INSTALL_START|".Length))
                             ElseIf ev.Data.StartsWith("EXTRACT_COMPLETE|", StringComparison.Ordinal) Then
                                 progress("解压完成")
                             ElseIf ev.Data.StartsWith("BACKEND_PATCH_START|", StringComparison.Ordinal) Then
-                                progress("下载增量补丁")
+                                progress("连接增量下载 · 取消")
                             ElseIf ev.Data.StartsWith("BACKEND_FULL_START|", StringComparison.Ordinal) Then
-                                progress("下载完整修复包")
+                                progress("连接完整包下载 · 取消")
                             ElseIf ev.Data.StartsWith("BACKEND_PATCH_COMPLETE|", StringComparison.Ordinal) Then
                                 progress("补丁已应用")
                             End If
@@ -947,9 +1070,10 @@ Namespace videoenhancer
         Private Sub UpdateDownloadUtilityButtons()
             _btnRefreshDownloads.Enabled = Not _downloadsLoading AndAlso
                 _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy AndAlso Not _downloadAllBusy
-            _btnDownloadPluginUpdate.Enabled = _downloadsLoaded AndAlso _downloadActionsEnabled AndAlso
-                _downloadOnline AndAlso _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy AndAlso
-                Not _downloadAllBusy
+            _btnDownloadPluginUpdate.Text = If(_downloadAllBusy, If(_downloadAllStopRequested, "正在停止", "停止全部"), "下载全部")
+            _btnDownloadPluginUpdate.Enabled = If(_downloadAllBusy, Not _downloadAllStopRequested,
+                _downloadsLoaded AndAlso _downloadActionsEnabled AndAlso _downloadOnline AndAlso
+                _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy)
             _btnCleanArchives.Enabled = _downloadCoordinator.ActiveCount = 0 AndAlso Not _archiveCleanupBusy AndAlso Not _downloadAllBusy
         End Sub
 

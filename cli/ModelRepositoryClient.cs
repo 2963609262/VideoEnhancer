@@ -58,7 +58,7 @@ internal sealed class ModelRepositoryClient
         var fetchedEntries = 0;
         for (var pageNumber = 1; ; pageNumber++)
         {
-            var json = client.GetStringAsync(TreeApi(pageNumber)).GetAwaiter().GetResult();
+            var json = client.GetStringAsync(TreeApi(pageNumber), DownloadCancellation.Token).GetAwaiter().GetResult();
             using var document = JsonDocument.Parse(json);
             var rootElement = document.RootElement;
             var files = rootElement.GetProperty("Data").GetProperty("Files");

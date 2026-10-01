@@ -96,12 +96,14 @@ internal static class InstallerManager
             Install(args[1], args.Contains("--skip-legacy-cleanup"));
             return 0;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            LogInstallFailure(args[1], ex);
             return Fail("无法写入所选 3FUI 目录。请确认目录可写，或以管理员身份运行安装程序。");
         }
         catch (Exception ex)
         {
+            LogInstallFailure(args[1], ex);
             return Fail(ex.Message);
         }
     }
@@ -267,6 +269,21 @@ internal static class InstallerManager
         if (entries.Length == 0 || entries.Any(path =>
             !path.StartsWith("plugin/videoenhancer/", StringComparison.OrdinalIgnoreCase)))
             throw new InvalidDataException("安装器载荷必须位于 plugin/videoenhancer 下");
+    }
+
+    private static void LogInstallFailure(string folder, Exception error)
+    {
+        try
+        {
+            // 仅向已验证的 3FUI 插件目录记录完整错误，不向无效目录释放文件。
+            var hostRoot = ValidateRoot(folder);
+            var logRoot = Path.Combine(hostRoot, "Plugin", "videoenhancer", "logs");
+            Directory.CreateDirectory(logRoot);
+            File.AppendAllText(Path.Combine(logRoot, "installer.log"),
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] 安装失败{Environment.NewLine}{error}{Environment.NewLine}",
+                new System.Text.UTF8Encoding(false));
+        }
+        catch (Exception logError) { Trace.WriteLine(logError); }
     }
 
     private static int Fail(string message)

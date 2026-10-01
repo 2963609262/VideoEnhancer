@@ -21,3 +21,12 @@ SharpCompress 0.50.3
 项目：https://github.com/adamhathcock/sharpcompress
 许可证：MIT License。
 完整许可证：licenses/SharpCompress/LICENSE.txt
+
+7-Zip Extra 26.03
+----------------
+
+用途：bin/7zip/7za.exe 原生 7z 解压，支持压缩包允许的多线程解码。
+运行 EXE 携带该独立工具、许可证与源码，首次解压时按需释放至便携目录。
+项目：https://github.com/ip7z/7zip
+许可证：GNU LGPL 2.1 or later，部分代码使用 BSD 许可证。
+完整声明与对应源码：licenses/7zip/License.txt、SOURCE.txt、7z2603-src.tar.xz。

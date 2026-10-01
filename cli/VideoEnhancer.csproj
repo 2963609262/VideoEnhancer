@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>videoenhancer</AssemblyName>
     <RootNamespace>VideoEnhancer</RootNamespace>
-    <Version>1.3.7</Version>
+    <Version>1.3.8</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -47,6 +47,9 @@
     <Aria2NextLicensePath>$(MSBuildProjectDirectory)\third-party\aria2-next\COPYING</Aria2NextLicensePath>
     <Aria2NextAuthorsPath>$(MSBuildProjectDirectory)\third-party\aria2-next\AUTHORS</Aria2NextAuthorsPath>
     <Aria2NextSourcePath>$(MSBuildProjectDirectory)\third-party\aria2-next\SOURCE.txt</Aria2NextSourcePath>
+    <SevenZipCacheDirectory>$(MSBuildProjectDirectory)\obj\third-party\7zip\26.03</SevenZipCacheDirectory>
+    <SevenZipExecutablePath>$(SevenZipCacheDirectory)\extra\x64\7za.exe</SevenZipExecutablePath>
+    <SevenZipSourceInfoPath>$(MSBuildProjectDirectory)\third-party\7zip\SOURCE.txt</SevenZipSourceInfoPath>
     <SharpCompressLicensePath>$(MSBuildProjectDirectory)\third-party\SharpCompress\LICENSE.txt</SharpCompressLicensePath>
   </PropertyGroup>
 
@@ -70,6 +73,14 @@
   <ItemGroup Label="Package references">
     <!-- 代替原先随程序分发的 7za.exe；许可证文本随安装包一同发布。 -->
     <PackageReference Include="SharpCompress" Version="0.50.3" />
+  </ItemGroup>
+
+  <ItemGroup Label="Portable 7-Zip resources">
+    <!-- 作为独立便携程序释放，单 EXE 更新也携带许可证及对应源码。 -->
+    <EmbeddedResource Include="$(SevenZipExecutablePath)" LogicalName="VideoEnhancer.Embedded.SevenZip.7za.exe" />
+    <EmbeddedResource Include="$(SevenZipCacheDirectory)\extra\License.txt" LogicalName="VideoEnhancer.Embedded.SevenZip.License.txt" />
+    <EmbeddedResource Include="$(SevenZipSourceInfoPath)" LogicalName="VideoEnhancer.Embedded.SevenZip.SOURCE.txt" />
+    <EmbeddedResource Include="$(SevenZipCacheDirectory)\7z2603-src.tar.xz" LogicalName="VideoEnhancer.Embedded.SevenZip.7z2603-src.tar.xz" />
   </ItemGroup>
 
   <ItemGroup Label="Embedded resources">
@@ -115,6 +126,10 @@
            Text="缺少 SharpCompress 许可证：$(SharpCompressLicensePath)" />
   </Target>
 
+  <Target Name="AcquireSevenZip" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(VideoEnhancerRepositoryRoot)release\acquire-7zip.ps1&quot; -CacheDirectory &quot;$(SevenZipCacheDirectory)&quot;" />
+  </Target>
+
   <Target Name="AcquireAria2Next"
           Condition="'$(BuildingSolutionFile)' == 'true'">
     <MakeDir Directories="$(Aria2NextCacheDirectory)" />
@@ -151,7 +166,7 @@
   <Target Name="CreateSolutionArtifacts"
           AfterTargets="Publish"
           Condition="'$(BuildingSolutionFile)' == 'true'"
-          DependsOnTargets="AcquireAria2Next">
+          DependsOnTargets="AcquireAria2Next;AcquireSevenZip">
     <PropertyGroup>
       <PublishedExecutable>$(PublishDir)$(AssemblyName).exe</PublishedExecutable>
       <ManualPackageStage>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)manual-install'))</ManualPackageStage>
@@ -168,6 +183,14 @@
           DestinationFiles="$(RuntimeArtifactPath)" />
     <RemoveDir Directories="$(ManualPackageStage)" />
     <RemoveDir Directories="$(InstallerPayloadStage)" />
+    <Copy SourceFiles="$(SevenZipExecutablePath)" DestinationFiles="$(ArtifactsDirectory)bin\7zip\7za.exe" />
+    <Copy SourceFiles="$(SevenZipCacheDirectory)\extra\License.txt;$(SevenZipSourceInfoPath);$(SevenZipCacheDirectory)\7z2603-src.tar.xz" DestinationFolder="$(ArtifactsDirectory)licenses\7zip" />
+    <Copy SourceFiles="$(SevenZipExecutablePath)" DestinationFiles="$(PublishDir)bin\7zip\7za.exe" />
+    <Copy SourceFiles="$(SevenZipCacheDirectory)\extra\License.txt;$(SevenZipSourceInfoPath);$(SevenZipCacheDirectory)\7z2603-src.tar.xz" DestinationFolder="$(PublishDir)licenses\7zip" />
+    <Copy SourceFiles="$(SevenZipExecutablePath)" DestinationFiles="$(ManualPackageStage)\plugin\videoenhancer\bin\7zip\7za.exe" />
+    <Copy SourceFiles="$(SevenZipCacheDirectory)\extra\License.txt;$(SevenZipSourceInfoPath);$(SevenZipCacheDirectory)\7z2603-src.tar.xz" DestinationFolder="$(ManualPackageStage)\plugin\videoenhancer\licenses\7zip" />
+    <Copy SourceFiles="$(SevenZipExecutablePath)" DestinationFiles="$(InstallerPayloadStage)\plugin\videoenhancer\bin\7zip\7za.exe" />
+    <Copy SourceFiles="$(SevenZipCacheDirectory)\extra\License.txt;$(SevenZipSourceInfoPath);$(SevenZipCacheDirectory)\7z2603-src.tar.xz" DestinationFolder="$(InstallerPayloadStage)\plugin\videoenhancer\licenses\7zip" />
     <MakeDir Directories="$(ManualPackageStage)\plugin\videoenhancer\bin\aria2-next;$(ManualPackageStage)\plugin\videoenhancer\licenses\aria2-next;$(ManualPackageStage)\plugin\videoenhancer\licenses\SharpCompress" />
     <Copy SourceFiles="$(PluginArtifactPath)"
           DestinationFiles="$(ManualPackageStage)\plugin\$(PluginArtifactFileName)" />

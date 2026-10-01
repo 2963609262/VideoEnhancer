@@ -646,7 +646,15 @@ internal static class BackendUpdateManager
     {
         if (string.IsNullOrWhiteSpace(expected)) return false;
         using var stream = File.OpenRead(path);
-        var actual = Convert.ToHexString(SHA256.HashData(stream));
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var buffer = new byte[1024 * 1024];
+        int count;
+        while ((count = stream.Read(buffer)) > 0)
+        {
+            DownloadCancellation.Check();
+            hash.AppendData(buffer, 0, count);
+        }
+        var actual = Convert.ToHexString(hash.GetHashAndReset());
         return actual.Equals(expected, StringComparison.OrdinalIgnoreCase);
     }
 

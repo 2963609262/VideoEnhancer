@@ -87,15 +87,39 @@ internal static class ManagedArchiveExtractor
     {
         using var archive = ArchiveFactory.OpenArchive(archivePath);
         var entries = archive.Entries.ToArray();
-        // 写盘前预检全部归档项，再按顺序提取，避免固实 7z 每项重复解码。
+        // 写盘前预检全部归档项；相同父目录只检查一次，避免数万文件重复查询磁盘。
+        var checkedDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { outputRoot };
         for (var index = 0; index < entries.Length; index++)
-            ResolveEntry(outputRoot, entries[index], archivePath, index);
+        {
+            DownloadCancellation.Check();
+            var destination = ResolveEntry(outputRoot, entries[index], archivePath, index);
+            var parent = Path.GetDirectoryName(destination)!;
+            var uncheckedParents = new Stack<string>();
+            while (!checkedDirectories.Contains(parent))
+            {
+                uncheckedParents.Push(parent);
+                parent = Path.GetDirectoryName(parent)!;
+            }
+            while (uncheckedParents.TryPop(out var directory))
+            {
+                EnsureSafeDirectory(directory);
+                checkedDirectories.Add(directory);
+            }
+            RejectExistingReparsePoint(destination);
+        }
+
+        if (NativeSevenZipExtractor.EnsureAvailable())
+        {
+            NativeSevenZipExtractor.Extract(archivePath, outputRoot, progress);
+            return;
+        }
 
         using var reader = archive.ExtractAllEntries();
         var completed = 0;
         var lastPercent = -1;
         while (reader.MoveToNextEntry())
         {
+            DownloadCancellation.Check();
             var entry = reader.Entry;
             var destination = ResolveEntry(outputRoot, entry, archivePath, completed);
             if (entry.IsDirectory)
@@ -121,6 +145,7 @@ internal static class ManagedArchiveExtractor
         var index = 0;
         while (reader.MoveToNextEntry())
         {
+            DownloadCancellation.Check();
             var entry = reader.Entry;
             var destination = ResolveEntry(outputRoot, entry, archivePath, index++);
             if (entry.IsDirectory)

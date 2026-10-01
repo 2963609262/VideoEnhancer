@@ -7,6 +7,10 @@ VideoEnhancer 手动安装包
 把解压出的 plugin 文件夹整体复制到 3FUI 根目录（与 FFmpegFreeUI.exe 同级），
 如提示已有同名文件选择覆盖即可。完成后启动 3FUI，在插件里执行一次环境检查。
 请保持包内目录结构。插件配置与运行缓存保存在 plugin\videoenhancer 目录内。
+教程图片缓存保存在 plugin\videoenhancer\cache\TutorialImages，旧缓存会在加载教程时迁入。
+下载和解压的完整错误日志保存在 plugin\videoenhancer\logs\downloads.log。
+下载、校验和解压时可点击进度取消；进入后端安装事务后请等待完成。
+7z 解压使用便携组件 bin\7zip\7za.exe，单独更新运行 EXE 时也会自动释放该组件及许可证、源码。
 项目 MIT 许可证在 plugin\videoenhancer\LICENSE.txt；第三方声明及对应许可证在同目录下。
 
 如果从旧版平铺目录升级，可在 3FUI 根目录打开 PowerShell，复制完成后执行：
