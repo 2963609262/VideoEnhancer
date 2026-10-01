@@ -53,6 +53,10 @@ Namespace videoenhancer
         Private ReadOnly _numRtxHdrSaturation As New RtxHdrNumericUpDown()
         Private ReadOnly _numRtxHdrMiddleGray As New RtxHdrNumericUpDown()
         Private ReadOnly _numRtxHdrMaxLuminance As New RtxHdrNumericUpDown()
+        Private ReadOnly _cmbOutputScale As New WheelLockedComboBox()
+        Private _outputScaleField As Control
+        Private _outputScaleHint As LakeTextLabel
+        Private _syncingOutputScale As Boolean
         Private ReadOnly _cmbRtxTarget As New WheelLockedComboBox()
         Private ReadOnly _cmbRtxQuality As New WheelLockedComboBox()
         Private _upscaleModelField As Control
@@ -541,7 +545,7 @@ Namespace videoenhancer
             Dim root As New ModernContextMenu()
             ConfigureModelMenu(root, reserveIconColumn:=False)
             Dim tooltipEntries As New Dictionary(Of ModernContextMenu.ModernMenuItem, String)()
-            For Each group In catalog.GroupBy(Function(item) If(String.IsNullOrWhiteSpace(item.Architecture), "其他模型", item.Architecture)).
+            For Each group In catalog.GroupBy(Function(item) If(String.IsNullOrWhiteSpace(item.ArchitectureGroup), If(String.IsNullOrWhiteSpace(item.Architecture), "其他模型", item.Architecture), item.ArchitectureGroup)).
                     OrderBy(Function(item) item.Key, StringComparer.CurrentCultureIgnoreCase)
                 Dim submenu As New ModernContextMenu()
                 ConfigureModelMenu(submenu, reserveIconColumn:=True)
@@ -565,7 +569,7 @@ Namespace videoenhancer
             Else
                 _modelMenu = root
             End If
-            Dim tooltipController = New ModelMenuToolTipController(root, anchor, tooltipEntries)
+            Dim tooltipController = New ModelMenuToolTipController(root, tooltipEntries)
             _modelMenuToolTipController = tooltipController
             AddHandler root.MenuClosed,
                 Sub(sender As Object, e As EventArgs)
@@ -588,13 +592,16 @@ Namespace videoenhancer
             Finally
                 If interpolation Then _syncingInterpModelSelection = False Else _syncingModelSelection = False
             End Try
-            If Not saveConfig Then Return
-            If interpolation Then
-                SaveInterpModelSelection(entry.Id)
-            Else
-                _config.Model = entry.Id
-                _config.Save()
+            If saveConfig Then
+                If interpolation Then
+                    SaveInterpModelSelection(entry.Id)
+                Else
+                    _config.Model = entry.Id
+                    _config.OutputScale = 0
+                    _config.Save()
+                End If
             End If
+            SyncOutputScaleControls()
         End Sub
 
         Private Sub ApplyModelList(models As List(Of String))
@@ -728,7 +735,9 @@ Namespace videoenhancer
                 Return
             End If
             _config.Model = model.Trim()
+            _config.OutputScale = 0
             _config.Save()
+            SyncOutputScaleControls()
         End Sub
 
         Private Sub OnInterpModelSelected(sender As Object, e As EventArgs)
@@ -1434,6 +1443,10 @@ Namespace videoenhancer
             _upscaleTileHint = CreateOfficialCaption("0=RVE默认；越小越省显存但更慢", UiTextMuted)
             _upscaleTileHint.TextAlign = ContentAlignment.BottomLeft
             _upscaleTileHint.Margin = Padding.Empty
+            ConfigureOutputScaleCombo(_cmbOutputScale)
+            _outputScaleField = CreateOfficialField("输出倍率", _cmbOutputScale)
+            _outputScaleHint = CreateOfficialCaption("原生推理倍率", UiTextMuted)
+            _outputScaleHint.TextAlign = ContentAlignment.BottomLeft
 
             _cmbRtxTarget.WaterText = "选择目标分辨率…"
             ConfigureCombo(_cmbRtxTarget)
@@ -1530,9 +1543,11 @@ Namespace videoenhancer
             AddWorkbenchControl(root, upscaleBackendField, 206, 76, 0.0F, 0.38F, 0, -12)
             AddWorkbenchControl(root, _upscaleModelField, 206, 76, 0.38F, 1.0F)
             AddWorkbenchControl(root, _rtxTargetField, 206, 76, 0.38F, 1.0F)
-            AddWorkbenchControl(root, _upscaleTileField, 282, 70, 0.0F, 0.46F, 0, -12)
+            AddWorkbenchControl(root, _upscaleTileField, 282, 70, 0.0F, 0.28F, 0, -12)
+            AddWorkbenchControl(root, _outputScaleField, 282, 70, 0.28F, 0.50F, 0, -12)
+            AddWorkbenchControl(root, _outputScaleHint, 282, 70, 0.50F, 1.0F)
             AddWorkbenchControl(root, _rtxQualityField, 282, 70, 0.0F, 0.46F, 0, -12)
-            AddWorkbenchControl(root, _upscaleTileHint, 282, 70, 0.46F, 1.0F)
+            _upscaleTileHint.Visible = False
             AddWorkbenchRow(root, hdrHeader, 630, 38)
             AddWorkbenchControl(root, hdrModeField, 668, 76, 0.0F, 0.46F, 0, -12)
             ' HDR 原生参数采用两列两行数字输入框；允许键盘输入范围内任意整数。
@@ -1659,6 +1674,44 @@ Namespace videoenhancer
                 _syncingProcessOrder = previousSync
             End If
             _lblProcessOrder.Visible = combined
+        End Sub
+
+        Private Sub ConfigureOutputScaleCombo(combo As WheelLockedComboBox)
+            ConfigureCombo(combo)
+            combo.Items.Add("原生")
+            For outputFactor As Integer = 1 To 16 : combo.Items.Add(outputFactor.ToString() & "x") : Next
+            combo.SelectedIndex = Math.Max(0, Math.Min(16, _config.OutputScale))
+            AddHandler combo.SelectedIndexChanged,
+                Sub(sender, e)
+                    If _syncingOutputScale Then Return
+                    _config.OutputScale = Math.Max(0, combo.SelectedIndex)
+                    _config.Save()
+                    SyncOutputScaleControls()
+                End Sub
+        End Sub
+
+        Private Sub SyncOutputScaleControls()
+            _syncingOutputScale = True
+            Try
+                For Each combo In New WheelLockedComboBox() {_cmbOutputScale, _cmbImageOutputScale}
+                    If combo.Items.Count > 0 Then combo.SelectedIndex = Math.Max(0, Math.Min(16, _config.OutputScale))
+                    combo.Enabled = _config.Enabled AndAlso _config.UpscaleEnabled AndAlso _config.Backend <> "rtxvsr"
+                Next
+                Dim selected = _modelCatalog.FirstOrDefault(Function(item) String.Equals(item.Id, _config.Model, StringComparison.OrdinalIgnoreCase))
+                Dim nativeScale = If(selected Is Nothing, 0, selected.Scale)
+                Dim text = If(nativeScale > 0, "原生 " & nativeScale.ToString() & "x", "原生倍率以模型为准")
+                If _config.OutputScale > 0 AndAlso _config.OutputScale <> nativeScale Then
+                    If selected IsNot Nothing AndAlso selected.InferenceScales.Contains(_config.OutputScale) Then
+                        text &= "；后端直接推理 " & _config.OutputScale.ToString() & "x"
+                    Else
+                        text &= "；原生推理后缩放至 " & _config.OutputScale.ToString() & "x"
+                    End If
+                End If
+                If _outputScaleHint IsNot Nothing Then _outputScaleHint.Text = text
+                If _imageOutputScaleHint IsNot Nothing Then _imageOutputScaleHint.Text = text
+            Finally
+                _syncingOutputScale = False
+            End Try
         End Sub
 
         Private Sub RefreshUi()
@@ -1798,9 +1851,12 @@ Namespace videoenhancer
             _cmbInterpBackend.Enabled = _config.Enabled AndAlso _config.InterpEnabled
             _cmbFactor.Enabled = _config.Enabled AndAlso _config.InterpEnabled
             Dim rtxVsr = String.Equals(_config.Backend, "rtxvsr", StringComparison.OrdinalIgnoreCase)
+            SyncOutputScaleControls()
+            If _outputScaleField IsNot Nothing Then _outputScaleField.Visible = Not rtxVsr
+            If _outputScaleHint IsNot Nothing Then _outputScaleHint.Visible = Not rtxVsr
             If _upscaleModelField IsNot Nothing Then _upscaleModelField.Visible = Not rtxVsr
             If _upscaleTileField IsNot Nothing Then _upscaleTileField.Visible = Not rtxVsr
-            If _upscaleTileHint IsNot Nothing Then _upscaleTileHint.Visible = Not rtxVsr
+            If _upscaleTileHint IsNot Nothing Then _upscaleTileHint.Visible = False
             If _rtxTargetField IsNot Nothing Then _rtxTargetField.Visible = rtxVsr
             If _rtxQualityField IsNot Nothing Then _rtxQualityField.Visible = rtxVsr
             _cmbRtxTarget.Enabled = _config.Enabled AndAlso _config.UpscaleEnabled AndAlso rtxVsr

@@ -69,14 +69,21 @@ Namespace videoenhancer
             }
             _btnPickImportFile.Text = "选择模型或压缩包"
             _btnPickImportFile.Dock = DockStyle.Left
-            _btnPickImportFile.Width = 180
+            _btnPickImportFile.Width = 210
             ConfigureOfficialImportButton(_btnPickImportFile)
             AddHandler _btnPickImportFile.Click, AddressOf OnPickImportFile
             _btnPickImportFolder.Text = "选择模型文件夹"
             _btnPickImportFolder.Dock = DockStyle.Left
-            _btnPickImportFolder.Width = 180
+            _btnPickImportFolder.Width = 210
             ConfigureOfficialImportButton(_btnPickImportFolder)
             AddHandler _btnPickImportFolder.Click, AddressOf OnPickImportFolder
+            ' 按当前字体测量文字，给高 DPI 和宿主字体预留按钮两侧空间。
+            Dim fitSourceButton As Action(Of ModernButton) =
+                Sub(button) button.Width = Math.Max(210, TextRenderer.MeasureText(button.Text, button.Font).Width + 48)
+            AddHandler _btnPickImportFile.FontChanged, Sub(sender, args) fitSourceButton(_btnPickImportFile)
+            AddHandler _btnPickImportFolder.FontChanged, Sub(sender, args) fitSourceButton(_btnPickImportFolder)
+            fitSourceButton(_btnPickImportFile)
+            fitSourceButton(_btnPickImportFolder)
             _lblImportSource.Text = "<font color=#888888>尚未选择；也可以拖入文件、文件夹或压缩包</font>"
             _lblImportSource.AutoSize = False
             _lblImportSource.TextAlign = HtmlColorLabel.TextAlignEnum.MiddleLeft
@@ -200,7 +207,7 @@ Namespace videoenhancer
                 New UltraDetailListView.ListColumn("用户模型（双击修正 / Delete 删除）", 300),
                 New UltraDetailListView.ListColumn("架构", 150),
                 New UltraDetailListView.ListColumn("用途", 110),
-                New UltraDetailListView.ListColumn("倍率", 70),
+                New UltraDetailListView.ListColumn("原生倍率", 80),
                 New UltraDetailListView.ListColumn("后端", 210),
                 New UltraDetailListView.ListColumn("格式", 100)
             })
@@ -335,11 +342,76 @@ Namespace videoenhancer
                     CloseUserModelContextMenu()
                     DeleteUserModelWithConfirmation(target)
                 End Sub
+            If model.Task <> "interpolation" Then
+                Dim inspectItem As New ModernContextMenu.ModernMenuItem("重新检测原生能力…") With {.CloseOnClick = True}
+                AddHandler inspectItem.Click,
+                    Sub(sender, e)
+                        Dim target = _contextUserModel
+                        CloseUserModelContextMenu()
+                        ReinspectUserModel(target)
+                    End Sub
+                menu.Items.Add(inspectItem)
+            End If
             menu.Items.Add(deleteItem)
             _contextUserModel = model
             _userModelContextMenu = menu
             menu.Show(_importModelList, location)
         End Sub
+
+        Private Async Sub ReinspectUserModel(model As UserModelItem)
+            If model Is Nothing OrElse _modelImportBusy Then Return
+            _modelImportBusy = True
+            _lblImportStatus.Text = "<font color=#479CFF>正在重新检测权重原生能力…</font>"
+            Try
+                Dim detected = Await Task.Run(Function() ReadUserModelInspection(model))
+                Dim differences = "架构：" & model.Architecture & " → " & detected.Architecture & Environment.NewLine &
+                    "原生倍率：" & model.Scale.ToString() & "x → " & detected.Scale.ToString() & "x" & Environment.NewLine &
+                    "输入尺寸倍数：" & model.InputMultiple.ToString() & " → " & detected.InputMultiple.ToString() & Environment.NewLine &
+                    "用途：" & model.Purpose & " → " & detected.Purpose & Environment.NewLine &
+                    "后端：" & String.Join(" / ", model.Backends) & " → " & String.Join(" / ", detected.Backends)
+                _lblImportStatus.Text = "<font color=#3FCD87>重新检测完成；现有清单尚未修改</font>"
+                If ShowLakeConfirm(Me, differences & Environment.NewLine & Environment.NewLine &
+                    "是否将检测值载入修正窗口？点击保存后才写入清单。", "重新检测结果", defaultYes:=False) Then
+                    ShowUserModelCapabilityEditor(detected)
+                End If
+            Catch ex As Exception
+                _lblImportStatus.Text = "<font color=#EB5D5D>重新检测失败：" & EscapeHtml(ex.Message) & "</font>"
+            Finally
+                _modelImportBusy = False
+            End Try
+        End Sub
+
+        Private Shared Function ReadUserModelInspection(model As UserModelItem) As UserModelItem
+            Dim psi As New ProcessStartInfo With {
+                .FileName = PluginConfig.ResolveInstalledExePath(), .UseShellExecute = False,
+                .RedirectStandardOutput = True, .RedirectStandardError = True, .CreateNoWindow = True,
+                .StandardOutputEncoding = Encoding.UTF8, .StandardErrorEncoding = Encoding.UTF8
+            }
+            PortableRuntime.ConfigureProcess(psi)
+            psi.ArgumentList.Add("--inspect-upscale-model")
+            psi.ArgumentList.Add(Path.Combine(PluginConfig.ApplicationRoot, "models", model.RelativePath))
+            Using child = Diagnostics.Process.Start(psi)
+                If child Is Nothing Then Throw New InvalidOperationException("无法启动模型检测")
+                Dim stdoutTask = child.StandardOutput.ReadToEndAsync()
+                Dim stderrTask = child.StandardError.ReadToEndAsync()
+                child.WaitForExit()
+                Dim output = stdoutTask.GetAwaiter().GetResult()
+                Dim errorText = stderrTask.GetAwaiter().GetResult()
+                If child.ExitCode <> 0 Then Throw New InvalidOperationException(LastNonEmptyLine(If(String.IsNullOrWhiteSpace(errorText), output, errorText)))
+                Dim line = output.Split(New Char() {Convert.ToChar(10)}, StringSplitOptions.RemoveEmptyEntries).
+                    Last(Function(value) value.Trim().StartsWith("{"c))
+                Dim options As New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True}
+                Dim detected = JsonSerializer.Deserialize(Of UserModelItem)(line, options)
+                detected.Id = model.Id
+                detected.DisplayName = model.DisplayName
+                detected.RelativePath = model.RelativePath
+                detected.Task = model.Task
+                detected.Sha256 = model.Sha256
+                detected.Size = model.Size
+                detected.ImportedAtUtc = model.ImportedAtUtc
+                Return detected
+            End Using
+        End Function
 
         Private Async Sub DeleteUserModelWithConfirmation(model As UserModelItem)
             If model Is Nothing OrElse _modelImportBusy Then Return
@@ -414,7 +486,7 @@ Namespace videoenhancer
                 .ShowInTaskbar = False,
                 .BackColor = Color.FromArgb(24, 24, 24),
                 .ForeColor = UiText,
-                .ClientSize = New Size(720, 570),
+                .ClientSize = New Size(820, 660),
                 .Font = New Font("Microsoft YaHei UI", 9.0F)
             }
                 Dim chrome As New ThisIsYourWindow With {
@@ -436,13 +508,13 @@ Namespace videoenhancer
                     .BackgroundSource = ModernPanel1,
                     .BorderSize = 0
                 }
-                grid.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150.0F))
+                grid.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180.0F))
                 grid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-                For row = 0 To 8
-                    grid.RowStyles.Add(New RowStyle(SizeType.Absolute, If(row = 8, 96.0F, 42.0F)))
+                ' 固定保留长字段、说明和按钮高度，避免剩余空间不足时裁切。
+                Dim rowHeights = New Single() {96, 96, 42, 42, 42, 42, 42, 42, 96, 56, 60}
+                For Each rowHeight As Single In rowHeights
+                    grid.RowStyles.Add(New RowStyle(SizeType.Absolute, rowHeight))
                 Next
-                grid.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-                grid.RowStyles.Add(New RowStyle(SizeType.Absolute, 52.0F))
 
                 Dim addCaption As Action(Of String, Integer) =
                     Sub(text, row)
@@ -454,6 +526,20 @@ Namespace videoenhancer
                     End Sub
                 Dim readonlyValue As Func(Of String, LakeTextLabel) =
                     Function(text) CreateTextLabel(text, 9.0F, FontStyle.Regular, UiTextMuted)
+
+                ' 长路径和连续校验值使用字符换行的只读文本框，完整原文可选择复制。
+                Dim readonlyDetails As Func(Of String, ModernTextBox) =
+                    Function(text)
+                        Dim box As New ModernTextBox With {.Text = text}
+                        ConfigureOfficialTextBox(box, "")
+                        box.Font = New Font("Microsoft YaHei UI", 9.0F)
+                        box.Margin = New Padding(0, 4, 0, 4)
+                        box.Padding = New Padding(8, 4, 8, 4)
+                        box.ReadOnly = True
+                        box.MultiLine = True
+                        box.WordWrap = True
+                        Return box
+                    End Function
 
                 Dim architectureBox As New ModernTextBox With {.Text = model.Architecture}
                 Dim purposeBox As New ModernTextBox With {.Text = model.Purpose}
@@ -526,19 +612,19 @@ Namespace videoenhancer
                     backendPanel.Controls.Add(check)
                 Next
 
-                addCaption("模型文件", 0) : grid.AddAt(readonlyValue(model.RelativePath), 1, 0)
-                addCaption("格式 / SHA-256", 1) : grid.AddAt(readonlyValue(model.Format.ToUpperInvariant() & "  ·  " & model.Sha256), 1, 1)
+                addCaption("模型文件", 0) : grid.AddAt(readonlyDetails(model.RelativePath), 1, 0)
+                addCaption("格式 / SHA-256", 1) : grid.AddAt(readonlyDetails(model.Format.ToUpperInvariant() & "  ·  " & model.Sha256), 1, 1)
                 addCaption("任务类别（只读）", 2) : grid.AddAt(readonlyValue(DisplayUserModelPurpose(model) & "  [" & model.Task & "]"), 1, 2)
                 addCaption("架构", 3) : grid.AddAt(architectureBox, 1, 3)
                 addCaption("用途", 4) : grid.AddAt(purposeBox, 1, 4)
-                addCaption("模型倍率", 5) : grid.AddAt(scaleBox, 1, 5)
+                addCaption("原生倍率", 5) : grid.AddAt(scaleBox, 1, 5)
                 addCaption("输入尺寸倍数", 6) : grid.AddAt(multipleBox, 1, 6)
                 Dim sizeRequirement = If(model.MinimumSize > 0, "最小 " & model.MinimumSize.ToString() & " px", "无额外最小值") &
                     If(model.Square, "；要求正方形", "") & If(String.IsNullOrWhiteSpace(model.Tiling), "", "；切片 " & model.Tiling)
                 addCaption("其他尺寸要求（只读）", 7) : grid.AddAt(readonlyValue(sizeRequirement), 1, 7)
                 addCaption("可用后端", 8) : grid.AddAt(backendPanel, 1, 8)
 
-                Dim hint = readonlyValue("保存前会校验模型格式、架构和后端组合；错误组合不会写入能力清单。")
+                Dim hint = readonlyValue("此处修正模型原生能力；目标输出倍率请在工作台设置。可用重新检测核对权重。")
                 hint.ForeColor = UiTextMuted
                 grid.AddAt(hint, 0, 9)
                 grid.SetColumnSpan(hint, 2)
@@ -574,8 +660,23 @@ Namespace videoenhancer
                 buttons.Controls.Add(cancelButton)
                 grid.AddAt(buttons, 0, 10)
                 grid.SetColumnSpan(buttons, 2)
-                dialog.Controls.Add(grid)
+                ' 小屏可滚动查看全部内容；窗口高度包含自绘标题栏占用。
+                Dim content As New ModernPanel With {
+                    .Dock = DockStyle.Fill,
+                    .BackColor = Color.Transparent,
+                    .BackColor1 = Color.Transparent,
+                    .BackgroundSource = ModernPanel1,
+                    .BorderSize = 0,
+                    .ScrollBarMode = ModernPanel.ScrollMode.Vertical
+                }
+                grid.Dock = DockStyle.Top
+                grid.Height = CInt(rowHeights.Sum()) + grid.Padding.Vertical
+                content.Controls.Add(grid)
+                dialog.Controls.Add(content)
                 chrome.Attach(dialog)
+                Dim workingArea = Screen.FromControl(Me).WorkingArea
+                dialog.ClientSize = New Size(Math.Min(820, workingArea.Width - 16),
+                    Math.Min(grid.Height + chrome.CaptionHeight + chrome.BorderSize * 2, workingArea.Height - 16))
                 Try
                     If dialog.ShowDialog(Me) = DialogResult.OK Then
                         LoadUserModels()

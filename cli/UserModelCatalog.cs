@@ -315,7 +315,8 @@ internal static class UserModelCatalog
         if (task == "interpolation")
             return architecture.StartsWith("RIFE", StringComparison.OrdinalIgnoreCase)
                 ? ["cuda", "tensorrt"] : ["cuda"];
-        if (task == "restoration") return ["cuda"];
+        if (task == "restoration") return ModelArchitectureGroups.Get(architecture) == "Compact"
+            ? ["cuda", "tensorrt"] : ["cuda"];
         return ["cuda", "tensorrt"];
     }
 
@@ -552,7 +553,9 @@ internal sealed class ModelImportManager
                 Backends = ["ncnn"],
             };
         }
-        var scale = DetectScaleFromName(Path.GetFileName(directory));
+        var signature = NcnnModelSignatures.Get(directory);
+        architecture = signature?.Architecture ?? "NCNN";
+        var scale = signature?.Scale ?? DetectScaleFromName(Path.GetFileName(directory));
         if (scale <= 0)
             return new ModelImportInspection { Path = directory, Error = "无法确定 NCNN 模型倍率，请在目录名中包含 1x/2x/3x/4x/8x" };
         return new ModelImportInspection

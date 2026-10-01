@@ -53,9 +53,12 @@ class ModelCapabilityManifestTests(unittest.TestCase):
             "ONNX/RealHatGAN-Universal-Illustration-2x-fix1": 16,
             "ONNX/RealHatGAN-x1-jp-Illustration-fix-only": 16,
             "PTH/AnimeSR-V2-4x": 4,
-            "PTH/AniScale2-ESRGAN-i16-110K-2x": 2,
-            "PTH/AniScale2-ESRGAN-Lite-i16-165K-2x": 2,
-            "PTH/APISR-RRDB-GAN-generator-2x": 2,
+            "PTH/AniScale2-DITN-i16-75K-2x": 8,
+            "PTH/AniSD-AC-CRAFT-92500-2x": 16,
+            "PTH/AniSD-DC-CRAFT-127500-2x": 16,
+            "PTH/AniScale2-ESRGAN-i16-110K-2x": 4,
+            "PTH/AniScale2-ESRGAN-Lite-i16-165K-2x": 4,
+            "PTH/APISR-RRDB-GAN-generator-2x": 4,
             "PTH/RealESRGAN_x2plus": 4,
         }
         self.assertEqual(expected, constrained)

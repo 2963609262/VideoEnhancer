@@ -1,11 +1,32 @@
 # Project Status
 
-Last updated: 2026-10-01 13:15
+Last updated: 2026-10-01 17:22
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-01 17:22：1.3.9本地构建和版本/清单/ZIP哈希通过，内层安装器与自更新隔离通过，Python33/33、倍率参数、UI12/悬停23、发布门禁5/后端更新6通过；独立Backend审计UNCHANGED。准备提交推送、标签和双源发布。
+
+- 2026-10-01 17:17：用户明确授权正式发布1.3.9；已同步Git、确认凭据和版本未复用，版本源/发行说明/版本记录更新。构建、后端逐文件审计及最终版本门禁进行中，之后提交推送并发布双源；不重复完整GPU矩阵。
+
+- 2026-10-01 17:01：用户截图反馈长路径/SHA-256仍裁切，已改为可选择复制的LakeUI只读多行文本框，字符自动换行并保留完整原文。两项长字段96高，实际落实固定说明/按钮行与小屏滚动；17项布局/字符覆盖检查通过，最终构建与本地部署哈希一致，配置保持。
+
+- 2026-10-01 16:42：修复能力编辑弹窗底部裁切，路径/校验值、说明与按钮预留独立行，小屏可滚动。导入选择按钮按实际字体测量宽度。9项布局检查、编译/publish及diff检查通过，已部署本机，配置哈希不变。
+
+- 2026-10-01 16:24：修复模型悬停提示窗释放后的复用与已显示状态阻止再次显示；提示关联当前菜单弹窗。介绍依据公开作者资料重写，纠正实拍/动漫定位、具体修复用途和过时限制，来源见[模型介绍依据](../model-introduction-sources.md)。23项提示/文案检查及12项倍率UI检查通过，已部署本机。
+
+- 2026-10-01 15:54：用户选择/重新选择超分模型即恢复原生输出倍率(OutputScale=0)，两页同步；清单刷新与补帧选择保留目标。12项UI检查通过并部署本机。缩放算法保留Lanczos，本机mpv HQ放大ewa_lanczossharp、缩小catmull_rom，仅核对比较未移植。
+
+- 2026-10-01 15:45：旧导入倍率已确认会传给RVE输出缩放覆盖；TRT用户改2x/3x可用源于真实推理后缩放，旧字段混合了两种倍率语义。
+
+- 2026-10-01 15:30：修复切换模型后倍率提示滞后；菜单保存新模型ID后刷新，旧列表入口也同步刷新工作台/图片提示。8项UI检查通过，完整构建并再次部署本机，DLL/EXE哈希一致，未自动启动宿主。
+
+- 2026-10-01 15:18：按用户要求已将模型架构/输出倍率改动部署到本机3FUI测试；正式自更新返回UPDATE_COMPLETE|1.3.8，DLL/EXE与完整构建产物哈希一致，现有插件配置哈希未变，未自动启动宿主。
+
+- 2026-10-01 15:10：模型架构家族统一与原生/输出倍率分离已完成；98项逐项审计，修正42项内置架构/输入约束/多倍率声明。详见[审计报告](../model-capability-audit.md)与[逐项证据](../model-capability-audit.json)。代码尚未提交；随后按用户要求已部署本机测试，版本号保持1.3.8，不发布远端。
+- 新增 `-output-scale 1–16` 与工作台/图片页选择，默认原生；固定权重先原生推理再Lanczos缩放，FlashVSR可直接2x/4x。TensorRT缓存按推理倍率复用。旧用户路径、ID与能力记录不自动改写；重新检测先展示差异、载入修正窗口后由用户保存。
 
 - 正式发布 **1.3.8 / 2026-10-01**：GitHub [v1.3.8](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.8)、ModelScope Releases及Models备用EXE已发布，标签指向源码提交 `2895ce8`；未覆盖旧版本。
 - 本日下载/解压/缓存/WiX改动已纳入1.3.8；本地构建与门禁、11项双源文件实际下载哈希、双源故障回退均通过。宿主退出后经正式自更新入口部署本机，备份与EXE/DLL哈希已核对；未自动启动宿主，重启后的真实窗口观察仍由用户完成。
@@ -18,7 +39,7 @@ Updated by: Codex
 
 ## Active TODO
 
-- [ ] 本机重启3FUI后继续观察1.3.8真实窗口与处理；已完成正式自更新及哈希核验，本次未自动启动宿主。
+- [ ] 本机重启3FUI测试能力修正弹窗/导入按钮宽度和模型菜单重复打开/切换分组后的悬停介绍、模型选择恢复原生倍率及导入重新检测；本轮已部署且哈希核验通过，未自动启动宿主。
 - [ ] 维护清理：本机旧版三份载荷缓存约 59 MB；项目三份完整解压验证输出约 18 GB。后者曾两次被自动审批以 blocked by policy 拒绝，未绕过。确认归属与路径后再单独处理，勿清系统共享缓存。
 - [ ] 历史发布验证补充：1.3.7 的 GitHub 大资产此前 CDN 下载超时，仅 API digest/大小核对；ModelScope 实际下载哈希通过。网络恢复后可补 GitHub 大资产实际下载校验。
 - [ ] 长期可选工作：发行自动化与上游选择性同步清单；模型镜像逐文件来源/授权审计。项目自身 MIT 已落实，不沿用旧的“项目许可证未定”说法。
@@ -59,7 +80,7 @@ Updated by: Codex
 - 本轮构建 HostBin：`C:/Users/maxzr/AppData/Local/Temp/3fui-core-compat-host`，LakeUI 5.9。实际宿主发布根不含可用 FFmpegFreeUI.dll，构建需显式 HostBin。
 - 安装位置：`C:/Program portable/3FUI/3FUI`，插件位于其 `Plugin` 下。覆盖前检查 FFmpegFreeUI/videoenhancer 均退出，备份再复制并校验哈希。
 - 最新发行部署备份：`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-release-1.3.8-20261001-131000`，含更新前DLL/EXE及installed-hashes.json。
-- 最新1.3.8部署SHA256：DLL `5A876926E10ABDCBEE9E786C27603B73717B2E68C4730986DAB8E6A3D9C39C26`；EXE `71D3F724FDAE745A84D1B97AFC5933F432EBE04561B7D04CF6845191BCAD7E64`。
+- 最新本地测试部署备份：`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-import-details-20261001-170035`，旧EXE/DLL及配置均保留。DLL SHA256 `1E92326495BCBD1F053AB3809DF45C5D53E012D79DB52387CFB56BB01C2AE505`；EXE `38F7532EBA0C783D8AC34F791D642A46B95D7600D4B20133294DE875F44070C6`。CLI实际位于Plugin/videoenhancer/videoenhancer.exe，版本仍1.3.8。
 - 构建获取固定版 Aria2 Next 与 7-Zip，校验哈希并打包许可/源码；上游曾返回 502，重试成功。构建脚本用 pwsh，不增加用户运行依赖。
 - 历史 GPU 矩阵存在真实 RTX 3060 测试证据；换机器或验证 GPU 专项时重查硬件、驱动与运行库。认证状态也需现查，Token 不进仓库。
 
@@ -145,3 +166,94 @@ git diff --check
 - VideoEnhancerInstaller-1.3.8-win-x64.exe: 16079246 bytes / SHA256 `bcbb86c4f5492ca8a55f94a288313e320677c569e814ff7756b49c279152342d`。
 - stable.json: 1175 bytes / SHA256 `b2cfb285ff406f3fb6c9d6f367c864f68936222f4a0c71ae9c82ce24ec786d13`。
 - Records/Git：STATUS、中文工作进度和版本记录更新；发行发布任务已完成，旧缓存/测试输出清理及历史专项/长期审计仍为独立待办。最后提交推送收尾文档并核对干净工作树。
+
+### 2026-10-01 14:30 - Codex：模型能力专项启动
+
+- 同工具续作，已读取AGENTS/INDEX/STATUS及HandShake；git pull --ff-only已最新，起始main工作树干净。
+- 用户确认按真实架构家族归组，覆盖全部超分/修复模型，原生倍率与1–16x目标输出倍率分开；补帧不纳入。
+- 本机Torch2.9.0+cu130/CUDA可用，ONNX1.22.0；本机模型只读，审计输出在Artifacts/model-audit。逐项98条读取完成，发现Compact/ESRGAN误归类、SPAN命名与内容不符、RRDB输入倍数不足，以及检测器架构字段为字符串时预检失败。
+- 代码实施与定向验证进行中；未发布、未部署、未更改现有用户模型记录。
+
+### 2026-10-01 15:10 - Codex：模型架构与倍率专项收尾
+
+- Changes：统一architectureGroup；修正Compact/ESRGAN/RRDB/HAT/SPANPlus等实际归类与RRDB/DITN/CRAFT输入约束；模型ID、安装路径、文件名和权重保持不变。模型清单仍schemaVersion1，新增字段向后兼容。新增原生/目标输出倍率接口、同步界面、导入重新检测；1x修复模型不再被工作台排除。
+- Detection：PTH由真实权重与描述器识别，处理字符串架构和AnimeSR专用类；ONNX架构来自图，22个动态图CPU探测输出倍率，不按文件名猜倍率；NCNN已审计图按param内容SHA256匹配，执行传真实param/bin基名，导入改目录名仍可用。检测缓存按文件路径/大小/修改时间，位于便携cache，旧用户清单不自动写回。
+- Scaling：新增-output-scale1–16，默认原生；视频在最终编码滤镜末尾Lanczos缩放、图片保存前缩放；显式目标替代预设-s尺寸。旧-scale只接受真实推理倍率；FlashVSR记录支持2x/4x。图片后端接收原生倍率，不再自行猜已知模型；固定TensorRT权重缓存不因目标倍率新增Engine。RTX与分段继续各自输出规格。
+- Files：cli能力清单/分组/检测缓存/NCNN图签名/倍率与参数/嵌入脚本；插件模型DTO/菜单/提示/导入管理/图片与工作台/队列配置；新增docs/model-capability-audit.md和.json、审计与定向运行脚本、C#倍率与UI探针；STATUS及中文工作进度。项目版本未改，版本迭代记录保持不变。
+- Verification：98项结构/倍率核对无未识别或预检错误，42项清单修正。37个不同实际运行场景通过（分三轮25/12/8，基础4项复核去重）：CUDA/TRT图片与视频原生/2x/3x/4x、原生4xEngine复用、重命名PTH/ONNX/NCNN、保留旧人工记录、1x修复与TRT、BasicVSR++、FlashVSR直接2x、两种组合顺序与NCNN→CUDA跨后端、现有crop和-s最终输出尺寸。全部模型没有逐个GPU推理；结构审计和代表推理证据分开。
+- Commands：python -m unittest discover -s cli/tests -p test_*.py（33/33；异常传播测试的预期traceback不是产品失败）；dotnet run cli/tests/ModelMetadata（倍率范围/滤镜/参数/分组）；dotnet run cli/tests/ModelMetadataUi（6项界面状态，不显示窗口）；solution Release build与最终CLI自包含裁剪publish均0警告0错误；git diff --check通过。最终代码变化只定向重验，不重跑下载/安装器/完整GPU矩阵。
+- Environment/evidence：实际Torch2.9.0+cu130/CUDA可用、ONNX1.22.0；HostBin仍用本机已记录temp兼容宿主。隔离测试在Artifacts/model-audit，后端为实际复制，python解释器及各只读模型目录为本机junction，User和TensorRT-Cache均在隔离目录；本机路径仅作环境记录。初次测试FFmpeg仅复制EXE缺DLL，补齐隔离目录DLL后通过；VB变量Scale与继承成员冲突、ChrW命名以及裁剪JSON反射在实施中修正，最终编译无警告。
+- Deployment/Git：未发布、未部署、未自动启动宿主；安装EXE SHA256仍为71D3F724FDAE745A84D1B97AFC5933F432EBE04561B7D04CF6845191BCAD7E64。main同步origin/main，但本轮代码/报告/记录未提交，工作树非干净；切换工具/设备前建议考虑git提交。原有长期TODO不变，专项实施已完成，下一步按用户指令决定提交或部署。
+### 2026-10-01 15:18 - Codex：模型专项部署本机测试
+
+- Authorization：用户明确要求“部署到我本地3fui测试”，覆盖先前不部署的默认限制；不发布远端、不递增版本、不自动启动宿主。
+- Startup/Git：同工具续作，沿用已读AGENTS/INDEX/STATUS及HandShake；git pull --ff-only已最新，main跟踪origin/main，本轮实施改动保留未提交。
+- Build：dotnet publish VideoEnhancer.slnx -c Release，HostBin沿用已核实兼容宿主目录；完整solution发布成功，更新EXE嵌入本轮插件DLL。附带本地打包产物没有上传或执行安装器，不重复下载/GPU压力测试。
+- Deployment：确认FFmpegFreeUI/videoenhancer均退出；备份旧DLL、EXE与插件配置到`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-model-architecture-20261001-151724`；用Artifacts/videoenhancer.exe --apply-update --update-package <同一构建EXE> --update-target <本机Plugin目录> --wait-pid 0，返回UPDATE_COMPLETE|1.3.8。
+- Verification：安装EXE SHA256 `F98B5B79BD20521E4E0A493FABABBBCB05EE9683DBEC78649E9E9AAE409C0221`，DLL `5047F0DC711329BCFD00CCF218B99E910269FC989A8AEDB89880CDC30858268A`，均与构建产物一致；现有videoenhancer.plugin.json哈希与备份一致，未手动改写用户能力记录或移动模型文件。部署证据Artifacts/model-audit/local-deployment.json；git diff --check通过（仅autocrlf提示）。
+- Closeout：STATUS与中文工作进度更新，版本迭代记录不变。工作树非干净，代码/审计/记录仍未提交，建议本机测试通过后考虑git提交；下一步由用户启动3FUI检查模型分组、倍率菜单和重新检测交互。
+### 2026-10-01 15:30 - Codex：模型切换自动更新倍率提示
+
+- 同工具续作；读取AGENTS/INDEX/STATUS及HandShake，git pull --ff-only已最新，main跟踪origin/main；保留前序未提交修改。
+- 原因：SetCatalogSelection先SyncOutputScaleControls后保存_config.Model，提示使用旧模型；旧OnModelSelected没有刷新提示。
+- 修复：菜单先保存选择再刷新倍率控件；旧列表选择保存后同样刷新。工作台与图片页同步，未添加额外弹窗。变更文件为PluginPanel.UpscalePage.vb和cli/tests/ModelMetadataUi/Program.cs。
+- 验证：插件Release build 0警告0错误；UI探针8项通过，新增实际模型切换2x→4x断言，立即展示“原生 4x；原生推理后缩放至 2x”，两个页面一致；完整solution publish成功，git diff --check通过。不重复GPU、下载或安装器测试。
+- 部署：沿用用户本地测试授权，检查FFmpegFreeUI/videoenhancer退出，备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-scale-hint-20261001-153010`后正式--apply-update --wait-pid 0成功；安装EXE `3D7CCA4A37D0C76ED40B3CC32E021188A9C72F3987E385F4E2B3677AD5637E8B`、DLL `E96E772DAC75C293BB890E7453E66F3EADEE931011081F060AAE6365F791BC83`与构建产物一致，现有配置哈希未变，未启动宿主/发布远端/更改版本。
+- 收尾：STATUS与中文工作进度更新；工作树非干净，本轮和前序修改尚未提交，建议测试通过后考虑git提交。下一步用户启动3FUI切换不同原生倍率模型检查即时提示。
+
+### 2026-10-01 15:45 - Codex：确认旧导入倍率与TRT缩放机制
+
+- 用户补充：同一内置AnimeVideo v3权重自行导入、修改记录倍率，在TensorRT使用2x/3x。只读核对HEAD旧Program/ModelCapabilityCatalog及本机实际RVE后端。
+- 旧清单直接使用user.Scale；CLI将倍率传给--override_upscale_scale。RenderVideo由模型/Engine获取真实modelScale，在超分后resize_image_bytes调整目标尺寸；缩小采用INTER_AREA，放大采用INTER_LANCZOS4。因此旧导入倍率混用了原生与目标输出语义，用户反馈不能据此证明固定4x权重原生2x/3x。
+- 本轮新增输出倍率是显式分离既有能力，而不是首次让TRT可以输出2x/3x；新版最终Lanczos与旧RVE缩小INTER_AREA不是完全相同的算法。未取得该用户运行日志，不能确认其当次Engine具体缓存状态。
+- 未改产品代码、未再次部署/测试，main前序改动仍未提交；已更新中文进度，建议本机验收后考虑git提交。
+
+### 2026-10-01 15:54 - Codex：模型选择恢复原生倍率与mpv算法核对
+
+- 用户要求模型重新选择自动采用其原生倍率，并询问Lanczos与本机mpv变体。沿用AGENTS/INDEX/STATUS及HandShake，同工具续作，git pull --ff-only已最新；main前序改动保留未提交。
+- Changes：SetCatalogSelection的保存超分选择分支及旧OnModelSelected设置OutputScale=0，随后保存并同步工作台/图片页。即使重新选择同一模型也恢复原生；清单刷新(saveConfig=False)与补帧选择不重置。
+- Verification：插件Release build 0警告0错误；ModelMetadataUi 12项通过，涵盖恢复原生/两页同步/清单刷新保留/补帧不影响/显式修改后提示；完整solution publish成功，git diff --check通过；未重复GPU、下载或安装器测试。
+- Algorithms：只读本机MPV Vanta Edition与mpv-full-private-v1.3.0的portable_config/mpv.conf和profiles.conf，两套启用HQ，scale=ewa_lanczossharp、dscale=catmull_rom、scale-antiring=0.5、sigmoid-upscaling=yes、correct-downscaling=yes、linear-downscaling=no。核对mpv官方manual stable：EWA为Jinc滤波，sharp有锐化；升降采样可分别设置，不是所有缩放均用同一Lanczos变体。建议当前输出仍保留Lanczos；未做画质A/B，不能宣称EWA必然更好。未修改本机mpv配置或产品缩放算法。
+- Deployment：检查FFmpegFreeUI/videoenhancer退出，备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-native-reset-20261001-155334`后正式自更新UPDATE_COMPLETE|1.3.8。EXE `9A824BE308BFE4ED88EE0176FE2AFFDFD631F05C40086416728FBBC8A7A5709B`、DLL `955D9EFBD7A3EB82CBE5F1FD12ED9748220A2A9D5D4A9751021CD5D3F75F4AA9`与构建一致，插件配置哈希保持，证据Artifacts/model-audit/native-reset-deployment.json；未启动宿主或发布远端，版本不变。
+- 收尾：STATUS与中文进度更新，代码/审计/记录尚未提交，工作树非干净；建议用户本机测试后考虑git提交。画质算法对比仅为建议，未新增为必须实施任务。
+
+### 2026-10-01 16:24 - Codex：模型菜单悬停与公开介绍修正
+
+- 启动：同工具续作，沿用已读AGENTS/HandShake，复读INDEX/STATUS；git pull --ff-only已最新，main跟踪origin/main，前序实施未提交。用户重复请求及“继续”均作为本任务续作。
+- Lifecycle：核对项目暂存的LakeUI源码，FloatingToolTipForm会因关联控件/窗体状态调用Close并释放；原控制器保留readonly窗体且已显示项直接短路。改为延迟创建、关联当前菜单popup、失效/换分组时重建；只有实际可见且未释放才认为已显示；菜单关闭仍释放计时器/窗体/字体。不修改LakeUI或用户mpv。
+- Descriptions：ModelDescriptionProvider重写并精简名称/倍率/来源重复。公开信息优先说明训练素材、处理问题与版本差异；纠正OpenProteus实拍、Nomos8k照片、AniSD AC/DC/DB/PS用途、AniScale2 DITN限制与Refiner顺序；解释GIMM RAFT/FlowFormer/LPIPS；删除FlashVSR不能与补帧组合的旧说法和无依据的架构画风/版本排名。RealHatGAN/fix导出、BHI/Sudo/ModernSpanimation训练差异仍待复核，不夸大支持。
+- Sources：新增docs/model-introduction-sources.md，记录21组作者仓库/模型卡/论文与限制；OpenProteus发布正文用GitHub API补读。网络搜索曾有错误仓库路径/页面不可读，最终使用正确官方地址；未把未取得内容的链接当证据。98条实际文案导出Artifacts/model-audit/model-introductions.json，长度均不超过180字符，结构能力以先前权重审计为准。
+- Files：PluginPanel.vb、PluginPanel.UpscalePage.vb、ModelDescriptionProvider.vb；ModelMetadataUi/Program.cs及新增Program.Tooltips.cs；公开依据文档、STATUS和中文进度。注释中文、UTF-8及源文件CRLF保持。
+- Verification：Release插件build 0警告0错误；完整solution publish成功。--tooltips在不切换到前台的独立Windows测试桌面运行，实际菜单三次打开、提示自关释放后重建、切换popup、关闭释放共15项；7项关键文案与98条长度检查共8项，总23项通过。既有倍率UI探针12项通过；git diff --check通过，仅autocrlf提示。未启动本机宿主、移动用户鼠标或重复GPU/下载/安装器测试。初次STA已占窗口资源无法SetThreadDesktop，改新线程先关联桌面后运行，最终无警告。
+- Deployment：沿用本地测试授权，确认FFmpegFreeUI/videoenhancer退出，备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-model-tooltips-20261001-162313`后正式自更新返回UPDATE_COMPLETE|1.3.8；EXE `C85DC315D40FF3D0312F46D326ADD29644516A47CF367F00F4ED9BE67EF1103F`、DLL `12E00DD13C5312865B99CCE97848FAD7517A560CAFEF02D5C5175A575E200A85`与完整构建一致，现有插件配置哈希未变。证据Artifacts/model-audit/tooltips-deployment.json；不自动启动宿主、不发布远端、版本不变。
+- 收尾：记录已更新，工作树非干净，前序和本轮代码/文档尚未提交；建议用户在实际窗口检查悬停交互后考虑git提交。无新增执行阻塞，实际宿主观察仍由用户完成。
+
+### 2026-10-01 16:42 - Codex：导入能力弹窗与按钮布局
+
+- 启动：同工具续作，读取AGENTS/INDEX/STATUS及HandShake；git pull --ff-only已最新，main同步origin/main，保留前序未提交改动。
+- 变更：PluginPanel.ModelImportPage.vb能力编辑窗口加宽、标签列180，路径/校验值64高，说明56与操作60各占独立行；内容高度与标题padding共同决定窗口高度，小屏用LakeUI垂直滚动。选择模型/文件夹按钮最小210，按实际字体文字宽度+48测量并随FontChanged更新。能力值与保存逻辑不变。
+- 验证：Release插件build和完整solution publish均0警告0错误，git diff --check通过。临时Artifacts/model-audit/import-layout-probe验证实际模态弹窗9项通过：两按钮12/18pt留白4项、说明和保存/取消完整3项、六后端及双行路径2项。96DPI客户区820x660，内容818x624；实际高DPI仍由用户观察。独立桌面创建完整插件页停滞，仅终止自有测试进程后改STA普通桌面短暂弹窗验证；路径高度初始断言未计margin，改按真实双行字高。DrawToBitmap是黑图，不作为视觉证据。未增加正式测试或重复GPU/下载/安装器测试。
+- 部署：确认宿主/CLI退出，备份旧DLL/配置到`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-import-layout-20261001-164012`；CLI备份和首次哈希路径误写为Plugin/videoenhancer.exe，非终止错误后正式自更新仍返回UPDATE_COMPLETE|1.3.8。按真实子目录重新验证EXE/DLL与构建一致，配置与更新前备份哈希一致。旧CLI未留存本轮备份，记录限制；没有重复更新。证据Artifacts/model-audit/import-layout-deployment.json；未自动启动3FUI、不发布远端、版本不变。
+- 收尾：STATUS与中文进度更新，main同步origin/main但工作树非干净，前序/本轮均未提交；建议用户本机验证后考虑git提交。
+
+### 2026-10-01 17:01 - Codex：长路径及SHA-256完整显示
+
+- 同工具续作，复核INDEX/STATUS，沿用AGENTS及HandShake；git pull --ff-only已最新，main同步origin/main，前序未提交改动保留。用户截图确认上次行高断言不能证明完整显示。
+- 变更：ModelImportPage两个只读长字段由LakeTextLabel换为LakeUI ModernTextBox，ReadOnly/MultiLine/WordWrap启用，完整文本可选择复制，多行滚动支持异常长值；字段各96高。固定说明56/按钮60行与LakeUI垂直滚动容器实际加入，窗口高度显式加标题/边框而不依赖Attach之后尚未生效的Padding。
+- 纠正上次记录：先前机械替换的多行片段因CRLF匹配未落实，实际仅窗口宽高/标签列加大；16:42记录关于固定行/滚动的描述超出当时源码。本轮按源码片段明确替换并复读确认，不改写历史日志。
+- 验证：插件Release build及最终solution publish均0警告0错误，git diff --check通过。临时UI探针17项通过：原9项布局加两个长字段各4项（只读换行、实际宽度与300px下每个字符均进入视觉行、完整选择）。测试使用真实弹窗/实际LakeUI视觉行，不以区域高度或黑色DrawToBitmap推断文本完整。96DPI窗口820x724、内容818x688。首次试改未命中原行配置，代码复读后落实；VB循环变量Height与控件属性冲突改rowHeight，窄宽度测试先SuspendLayout避免父布局重设，最终通过。未新增正式测试/重跑GPU或下载测试。
+- 部署：宿主/CLI退出后完整备份到`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-import-details-20261001-170035`，正式自更新UPDATE_COMPLETE|1.3.8；EXE/DLL均与最终构建一致，插件配置与备份哈希一致，证据Artifacts/model-audit/import-details-deployment.json。未发布远端、未更改版本、不自动启动3FUI。
+- 收尾：STATUS及中文进度更新；main同步远端但工作树非干净，代码与记录未提交。用户实际窗口查看仍待反馈，建议确认后考虑Git提交。
+
+### 2026-10-01 17:17 - Codex：1.3.9发行启动
+
+- 同工具续作，读取AGENTS/INDEX/STATUS及发布流程，沿用HandShake；git pull --ff-only已最新，main全部未提交变化属于本轮模型专项。
+- 用户“发布1.3.9release”授权提交/推送/标签/双源正式发布与流程内本机升级，覆盖先前不发布限制。两项目Version设1.3.9、逐行分类Notes及版本历史保留完成；后端独立包须脚本审计，Python检测/图片桥更新为CLI嵌入资源。
+- 前序模型结构/代表GPU验证沿用，运行最终发行所需门禁，不重复完整下载/安装器压力或完整GPU矩阵。下一步本地构建/验证→提交推送/发布→远端与本机升级校验。
+
+### 2026-10-01 17:22 - Codex：1.3.9本地门禁
+
+- build-modelscope-release生成最终五项资产；build/publish0警告0错误，CLI1.3.9与两项目版本一致，stable大小/hash、ZIP内DLL/EXE与构建一致，GPL源码hash正确。内层安装器、自更新成功及回滚通过。
+- Python33/33与两项修改脚本py_compile、ModelMetadata倍率/分组参数、ModelMetadataUi12及悬停23、release门禁5与backend更新6通过；预期错误日志属于异常/回滚夹具。前序98模型结构与37种GPU代表场景、17导入布局沿用，本轮不重复GPU矩阵。
+- Backend原已发布2026.09.30.1的29709文件逐项SHA256审计UNCHANGED，本轮桥脚本由CLI嵌入同步，独立完整包/channel不发布空更新。最终资产哈希保存在Artifacts/.refactor-tmp/release-1.3.9/asset-hashes.json。
+- 接下来完成最终WiX正常/失败缓存门禁，提交本轮源码与版本记录并推送origin main/标签；GitHub发布后上传相同dist到ModelScope，禁止重新打包造成哈希变化。

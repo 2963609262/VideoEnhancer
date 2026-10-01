@@ -936,6 +936,9 @@ internal static class Program
         {
             o.InterpBackend = DefaultInterpBackend(o.Backend);
         }
+        int targetOutputScale;
+        try { targetOutputScale = OutputScale.Parse(o.OutputScale); }
+        catch (ArgumentException ex) { return Fail(ex.Message); }
         o.ProcessOrder = o.ProcessOrder.Trim().ToLowerInvariant();
         if (o.ProcessOrder is not ("upscale-first" or "interp-first"))
             return Fail("-process-order 仅支持 upscale-first 或 interp-first，当前值：" + o.ProcessOrder);
@@ -1192,11 +1195,19 @@ internal static class Program
                     {
                         return Fail("-scale 必须是大于 0 的整数，当前值：" + o.ScaleOverride);
                     }
+                    var nativeScale = DetectScale(model);
+                    if (int.TryParse(nativeScale, out var nativeValue) && requestedScaleValue != nativeValue
+                        && !(ModelCapabilityCatalog.TryGet(model, ModelsDir, out var multiScaleCapability)
+                             && multiScaleCapability.InferenceScales.Contains(requestedScaleValue)))
+                        return Fail($"模型原生倍率为 {nativeValue}x；-scale 不能改变权重倍率，请使用 -output-scale 设置输出倍率");
                     requestedScale = requestedScaleValue.ToString(CultureInfo.InvariantCulture);
                 }
                 else
                 {
                     requestedScale = o.Backend == "basicvsrpp" ? BasicVsrPlusPlusScale(model) : DetectScale(model);
+                    if (targetOutputScale > 0 && ModelCapabilityCatalog.TryGet(model, ModelsDir, out var multiScaleCapability)
+                        && multiScaleCapability.InferenceScales.Contains(targetOutputScale))
+                        requestedScale = targetOutputScale.ToString(CultureInfo.InvariantCulture);
                 }
                 if (o.Backend == "tensorrt")
                 {
@@ -1280,6 +1291,17 @@ internal static class Program
         }
 
         outputFile = Path.GetFullPath(outputFile);
+        if (targetOutputScale > 0)
+        {
+            if (!useUpscale || o.Backend == "rtxvsr" || segmentedUpscale)
+                return Fail("-output-scale 用于模型超分；RTX VSR 和分段模式请使用各自的输出规格");
+            var sourceSize = GetInputResolution(input);
+            try { customEncoder = OutputScale.Encoder(customEncoder, sourceSize.W, sourceSize.H, targetOutputScale); }
+            catch (ArgumentException ex) { return Fail(ex.Message); }
+            Console.WriteLine(scale == targetOutputScale.ToString(CultureInfo.InvariantCulture)
+                ? $"[输出倍率] 直接推理 {scale}x，目标 {targetOutputScale}x"
+                : $"[输出倍率] 原生推理 {scale}x，目标 {targetOutputScale}x；最终编码前 Lanczos 缩放");
+        }
 
         // 5.5 超大输出分辨率预警（ncnn 帧队列在高分辨率下容易内存不足）
         if (scale != null && int.TryParse(scale, out var scaleNum) && scaleNum >= 2)
@@ -2238,6 +2260,19 @@ internal static class Program
 
         var model = ResolveModel(o.Model, o.Backend);
         if (model.Length == 0) return 1;
+        var nativeScale = DetectScale(model);
+        if (!int.TryParse(nativeScale, out var nativeValue) || nativeValue < 1)
+            return Fail("无法确认模型原生倍率，请重新检测模型");
+        if (o.HasScaleOverride && o.ScaleOverride != nativeScale
+            && !(int.TryParse(o.ScaleOverride, out var overrideValue)
+                 && ModelCapabilityCatalog.TryGet(model, ModelsDir, out var supportedScaleCapability)
+                 && supportedScaleCapability.InferenceScales.Contains(overrideValue)))
+            return Fail($"模型原生倍率为 {nativeScale}x；请使用 -output-scale 设置输出倍率");
+        if (o.HasScaleOverride) nativeScale = o.ScaleOverride;
+        var targetScale = OutputScale.Parse(o.OutputScale);
+        if (!o.HasScaleOverride && targetScale > 0 && ModelCapabilityCatalog.TryGet(model, ModelsDir, out var multiScaleCapability)
+            && multiScaleCapability.InferenceScales.Contains(targetScale))
+            nativeScale = targetScale.ToString(CultureInfo.InvariantCulture);
         if (o.Backend == "tensorrt")
         {
             var firstInput = FindFirstImageInput(o);
@@ -2300,6 +2335,13 @@ internal static class Program
         start.ArgumentList.Add(model);
         start.ArgumentList.Add("--ffmpeg-path");
         start.ArgumentList.Add(FfmpegExe);
+        start.ArgumentList.Add("--native-scale");
+        start.ArgumentList.Add(nativeScale!);
+        if (targetScale > 0)
+        {
+            start.ArgumentList.Add("--output-scale");
+            start.ArgumentList.Add(targetScale.ToString(CultureInfo.InvariantCulture));
+        }
 
         using var process = new Process { StartInfo = start };
         var job = CreateKillOnCloseJob();
@@ -2500,6 +2542,9 @@ internal static class Program
         IsBasicVsrPlusPlusModelDirectory(path) ? "1" : "4";
 
     /// <summary>优先查询内置能力清单；未知模型才从文件名保守解析倍率。</summary>
+    internal static ModelImportInspection? InspectModelCached(string path) =>
+        ModelInspectionCache.Get(path, new ModelImportManager(ModelsDir, PythonExe, UpscaleInspectorScript, InterpolationInspectorScript));
+
     private static string? DetectScale(string modelFolder)
     {
         if (ModelCapabilityCatalog.TryGet(modelFolder, ModelsDir, out var capability))
@@ -2514,6 +2559,10 @@ internal static class Program
         {
             return "4";
         }
+        var ncnnSignature = NcnnModelSignatures.Get(modelFolder);
+        if (ncnnSignature is not null) return ncnnSignature.Value.Scale.ToString(CultureInfo.InvariantCulture);
+        var inspection = InspectModelCached(modelFolder);
+        if (inspection is not null && inspection.Scale > 0) return inspection.Scale.ToString(CultureInfo.InvariantCulture);
         var name = Path.GetFileName(modelFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var stem = Path.GetFileNameWithoutExtension(name);
         // RealESRGAN AnimeVideo v3 的官方文件名没有倍率后缀，但模型原生输出为 4 倍。
@@ -2698,7 +2747,10 @@ internal static class Program
         if (!string.IsNullOrEmpty(modelFolder))
         {
             args.Add("--upscale_model");
-            args.Add(modelFolder);
+            // 导入目录名可能与 param/bin 文件名不同；直接传入真实模型文件，不移动用户文件。
+            args.Add(backend == "ncnn" && Directory.Exists(modelFolder)
+                ? Path.ChangeExtension(Directory.EnumerateFiles(modelFolder, "*.param").First(), ".bin")
+                : modelFolder);
             if (tileSize > 0 && backend is ("ncnn" or "cuda" or "tensorrt" or "onnx"))
             {
                 args.Add("--tilesize");
@@ -3223,6 +3275,7 @@ internal static class Program
         {
             writer.WriteStartObject();
             writer.WriteBoolean("success", item.Success);
+            writer.WriteString("architectureGroup", ModelArchitectureGroups.Get(item.Architecture));
             writer.WriteString("source", item.Source);
             writer.WriteString("id", item.Id);
             writer.WriteString("installedPath", item.InstalledPath);
@@ -4885,7 +4938,7 @@ internal static class Program
     /// 仅当输入、输出的尺寸与帧数完全符合本阶段预期时，才把该特定退出码归一为成功。
     /// </summary>
     private static bool ValidateCompletedNcnnOutput(
-        string input, string output, string model, string? interpFactor, out string detail)
+        string input, string output, string model, string? interpFactor, string customEncoder, out string detail)
     {
         detail = "";
         var source = ProbeVideoOutput(input);
@@ -4913,6 +4966,12 @@ internal static class Program
 
         var expectedWidth = (long)source.Width * scale;
         var expectedHeight = (long)source.Height * scale;
+        var outputSize = Regex.Match(customEncoder, @"scale=(\d+):(\d+):flags=lanczos");
+        if (outputSize.Success)
+        {
+            expectedWidth = long.Parse(outputSize.Groups[1].Value, CultureInfo.InvariantCulture);
+            expectedHeight = long.Parse(outputSize.Groups[2].Value, CultureInfo.InvariantCulture);
+        }
         var expectedFrames = factor == 1
             ? source.Frames
             : source.Frames * factor - (factor - 1);
@@ -5178,7 +5237,7 @@ internal static class Program
         if (backend == "ncnn"
             && exitCode == windowsAccessViolation
             && !hasFatalBackendError
-            && ValidateCompletedNcnnOutput(input, outputFile, model, interpFactor, out var validationDetail))
+            && ValidateCompletedNcnnOutput(input, outputFile, model, interpFactor, customEncoder, out var validationDetail))
         {
             Console.Error.WriteLine("[警告] NCNN 在 Vulkan 清理阶段异常退出，但后端未报告渲染错误。");
             Console.WriteLine("[校验] 输出视频完整：" + validationDetail);
@@ -5962,6 +6021,8 @@ internal static class Program
         public string Id { get; init; } = "";
         public string DisplayName { get; init; } = "";
         public string Architecture { get; init; } = "";
+        public string ArchitectureGroup { get; init; } = "";
+        public int[] InferenceScales { get; init; } = [];
         public string Purpose { get; init; } = "";
         public int Scale { get; init; }
         public string Source { get; init; } = "";
@@ -5994,26 +6055,31 @@ internal static class Program
                 continue;
             ModelCapability? builtIn = null;
             if (user is null && ModelCapabilityCatalog.TryGet(path, ModelsDir, out var capability)) builtIn = capability;
-            var architecture = user?.Architecture ?? builtIn?.Architecture ?? InferArchitecture(id, interpolation);
+            var inspected = !interpolation && builtIn is null ? InspectModelCached(path) : null;
+            var ncnnSignature = !interpolation ? NcnnModelSignatures.Get(path) : null;
+            var architecture = inspected?.Architecture ?? ncnnSignature?.Architecture ?? user?.Architecture ?? builtIn?.Architecture ?? InferArchitecture(id, interpolation);
             var purpose = user?.Purpose ?? (interpolation ? "Interpolation" : "SR");
-            var scale = user?.Scale ?? builtIn?.Scale ?? (int.TryParse(DetectScale(path), out var detected) ? detected : 0);
-            var backends = user?.Backends ?? builtIn?.Backends ?? [backend];
+            var scale = inspected?.Scale ?? user?.Scale ?? builtIn?.Scale ?? (int.TryParse(DetectScale(path), out var detected) ? detected : 0);
+            var backends = user?.Backends ?? builtIn?.Backends ?? inspected?.Backends ?? [backend];
+            if (!backends.Contains(backend, StringComparer.OrdinalIgnoreCase)) continue;
             entries.Add(new ModelListCatalogEntry
             {
                 Id = id,
                 DisplayName = ModelBaseName(path),
                 Architecture = architecture,
+                ArchitectureGroup = interpolation ? architecture : ModelArchitectureGroups.Get(architecture),
+                InferenceScales = builtIn?.InferenceScales ?? (backends.Contains("flashvsr") ? [2, 4] : []),
                 Purpose = purpose,
                 Scale = scale,
                 Source = user is not null ? "user" : builtIn is not null ? "builtin" : "discovered",
                 Backends = backends,
             });
         }
-        entries = entries.OrderBy(item => item.Architecture, StringComparer.CurrentCultureIgnoreCase)
+        entries = entries.OrderBy(item => item.ArchitectureGroup, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(item => item.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToList();
         if (!json)
         {
-            foreach (var group in entries.GroupBy(item => item.Architecture))
+            foreach (var group in entries.GroupBy(item => item.ArchitectureGroup))
             {
                 Console.WriteLine(group.Key + "：");
                 foreach (var item in group) Console.WriteLine("  " + item.Id);
@@ -6030,6 +6096,10 @@ internal static class Program
             writer.WriteString("architecture", item.Architecture);
             writer.WriteString("purpose", item.Purpose);
             writer.WriteNumber("scale", item.Scale);
+            writer.WriteString("architectureGroup", item.ArchitectureGroup);
+            writer.WriteStartArray("inferenceScales");
+            foreach (var value in item.InferenceScales) writer.WriteNumberValue(value);
+            writer.WriteEndArray();
             writer.WriteString("source", item.Source);
             writer.WriteStartArray("backends");
             foreach (var value in item.Backends) writer.WriteStringValue(value);
@@ -6072,7 +6142,6 @@ internal static class Program
         }
         return Directory.GetDirectories(ModelsDir, "*", SearchOption.AllDirectories)
             .Where(p => !IsInInterpolationDirectory(p))
-            .Where(p => !IsInRestorationDirectory(p))
             .Where(IsNcnnModelFolder)
             .Where(p => !ModelBaseName(p).Equals("EfficientNet-SceneDetect", StringComparison.OrdinalIgnoreCase))
             .OrderBy(p => p, StringComparer.CurrentCultureIgnoreCase)
@@ -6090,7 +6159,7 @@ internal static class Program
         foreach (var pattern in new[] { "*.pth", "*.pt", "*.pkl", "*.ckpt", "*.safetensors" })
         {
             foreach (var f in Directory.GetFiles(ModelsDir, pattern, SearchOption.AllDirectories)
-                         .Where(p => !IsInInterpolationDirectory(p) && !IsInRestorationDirectory(p)
+                         .Where(p => !IsInInterpolationDirectory(p)
                              && !IsInFlashVsrDirectory(p) && !IsInBasicVsrPlusPlusDirectory(p)))
             {
                 set.Add(f);
@@ -6120,8 +6189,10 @@ internal static class Program
     /// <summary>排除已实机确认不能进入当前单图直接 Engine 路径的架构。</summary>
     private static bool IsTensorRtConvertibleUpscaleSource(string path)
     {
-        var name = ModelBaseName(path);
-        return !Regex.IsMatch(name, @"AnimeSR|SwinIR|CRAFT", RegexOptions.IgnoreCase);
+        if (ModelCapabilityCatalog.TryGet(path, ModelsDir, out var capability))
+            return capability.Backends.Contains("tensorrt", StringComparer.OrdinalIgnoreCase);
+        var inspection = InspectModelCached(path);
+        return inspection?.Backends.Contains("tensorrt", StringComparer.OrdinalIgnoreCase) == true;
     }
 
     private static List<string> DiscoverOnnxModels()
@@ -6129,7 +6200,6 @@ internal static class Program
         if (!Directory.Exists(ModelsDir)) return new List<string>();
         return Directory.GetFiles(ModelsDir, "*.onnx", SearchOption.AllDirectories)
             .Where(p => !IsInInterpolationDirectory(p))
-            .Where(p => !IsInRestorationDirectory(p))
             .OrderBy(p => p, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 

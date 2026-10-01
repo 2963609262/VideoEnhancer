@@ -165,6 +165,10 @@ internal static class CliArgumentParser
                 case "--ffprobe-path":
                     o.FfprobePath = TakeValue(args, ref i, name, inlineValue);
                     break;
+                case "-output-scale":
+                case "--output-scale":
+                    o.OutputScale = TakeValue(args, ref i, name, inlineValue);
+                    break;
                 case "-scale":
                 case "--scale":
                     o.ScaleOverride = TakeValue(args, ref i, name, inlineValue);

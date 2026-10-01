@@ -16,6 +16,7 @@ Namespace videoenhancer
         Friend dynamicOpticalFlow As Boolean = False
         Friend sceneThreshold As Double = 4.0
         Friend tileSize As Integer = 0
+        Friend outputScale As Integer = 0
         Friend upscaleHalfPrecision As Boolean = True
         Friend interpHalfPrecision As Boolean = True
         Friend rtxHdr As Boolean = False

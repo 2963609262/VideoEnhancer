@@ -70,6 +70,9 @@ Namespace videoenhancer
                     sb.Append(" -process-order ").Append(Arg(order))
                 End If
             End If
+            If upscaleOn AndAlso options.outputScale > 0 AndAlso backend <> "rtxvsr" AndAlso String.IsNullOrWhiteSpace(segmentsBase64) Then
+                sb.Append(" -output-scale ").Append(options.outputScale.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            End If
             If upscaleOn Then
                 sb.Append(" -upscale-precision ").Append(If(upscaleHalfPrecision, "auto", "float32"))
             End If

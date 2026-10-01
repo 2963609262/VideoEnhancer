@@ -130,7 +130,8 @@ Namespace videoenhancer
             Private ReadOnly _menus As New HashSet(Of ModernContextMenu)()
             Private ReadOnly _tooltips As Dictionary(Of ModernContextMenu.ModernMenuItem, String)
             Private ReadOnly _timer As New Timer() With {.Interval = 100}
-            Private ReadOnly _tipForm As FloatingToolTipForm
+            Private _tipForm As FloatingToolTipForm
+            Private _tipOwner As Form
             Private ReadOnly _tipStyle As FloatingToolTipStyle
             Private _hoveredItem As ModernContextMenu.ModernMenuItem
             Private _shownItem As ModernContextMenu.ModernMenuItem
@@ -138,11 +139,9 @@ Namespace videoenhancer
             Private _closed As Boolean
 
             Public Sub New(rootMenu As ModernContextMenu,
-                           owner As Control,
                            tooltips As Dictionary(Of ModernContextMenu.ModernMenuItem, String))
                 _tooltips = If(tooltips,
                     New Dictionary(Of ModernContextMenu.ModernMenuItem, String)())
-                _tipForm = New FloatingToolTipForm(owner)
                 RegisterMenu(rootMenu)
                 _tipStyle = New FloatingToolTipStyle() With {
                     .Font = New Font("Microsoft YaHei UI", 9.0F, FontStyle.Regular),
@@ -173,7 +172,7 @@ Namespace videoenhancer
                 End Try
                 HideTip()
                 Try
-                    _tipForm.Dispose()
+                    If _tipForm IsNot Nothing Then _tipForm.Dispose()
                 Catch
                 End Try
                 Try
@@ -216,7 +215,8 @@ Namespace videoenhancer
                         HideTip()
                         Return
                     End If
-                    If Object.ReferenceEquals(_shownItem, item) Then Return
+                    If Object.ReferenceEquals(_shownItem, item) AndAlso
+                       _tipForm IsNot Nothing AndAlso Not _tipForm.IsDisposed AndAlso _tipForm.Visible Then Return
                     If (DateTime.UtcNow - _hoverSinceUtc).TotalMilliseconds < 350 Then Return
 
                     ShowTip(popup, itemBounds, item, tooltipText)
@@ -321,8 +321,14 @@ Namespace videoenhancer
                     anchor = New Point(screenBounds.Left,
                                        screenBounds.Top + Math.Max(1, screenBounds.Height \ 2))
                 End If
+                ' 提示窗随当前菜单弹窗创建，避免宿主失活或子菜单关闭后复用已释放的窗体。
+                If _tipForm Is Nothing OrElse _tipForm.IsDisposed OrElse Not Object.ReferenceEquals(_tipOwner, popup) Then
+                    If _tipForm IsNot Nothing Then _tipForm.Dispose()
+                    _tipOwner = popup
+                    _tipForm = New FloatingToolTipForm(popup)
+                End If
                 _tipForm.ShowTip(text, anchor, _tipStyle, 8, side)
-                _shownItem = item
+                _shownItem = If(_tipForm.Visible, item, Nothing)
             End Sub
 
             Private Sub ResetHover()
@@ -334,7 +340,7 @@ Namespace videoenhancer
 
             Private Sub HideTip()
                 Try
-                    If Not _tipForm.IsDisposed Then _tipForm.Hide()
+                    If _tipForm IsNot Nothing AndAlso Not _tipForm.IsDisposed Then _tipForm.Hide()
                 Catch
                 End Try
             End Sub

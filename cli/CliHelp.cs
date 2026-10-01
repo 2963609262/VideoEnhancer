@@ -42,7 +42,8 @@ internal static class CliHelp
         writer.WriteLine();
         writer.WriteLine("可选参数");
         writer.WriteLine("  -h, --help          显示本帮助并退出");
-        writer.WriteLine("  -scale <N>          强制放大倍率（如 2/3/4），默认从模型名自动识别");
+        writer.WriteLine("  -scale <N>          推理倍率，必须符合模型原生倍率；默认读取模型能力");
+        writer.WriteLine("  -output-scale <N>   目标输出倍率（1–16）；原生推理后 Lanczos 缩放，默认原生");
         writer.WriteLine("  -interp-model <路径>  补帧模型：完整路径、models\\Frame-Interpolation 下的相对路径或模型名");
         writer.WriteLine("        （如 RIFE/rife-v4.25、GIMM-VFI/gimm-vfi）；旧 models\\RIFE 目录仍可读取；");
         writer.WriteLine("        CUDA 使用 .pth/.pt/.pkl；TensorRT 使用 RIFE 权重自动构建 Engine；NCNN 使用 .param/.bin 文件夹");

@@ -156,19 +156,20 @@ class ImageUpscaler:
         height: int,
         tile_size: int = 0,
         use_rve_ncnn: bool = False,
+        native_scale: int = 0,
     ):
         self.backend, self.model_path = backend, model
         self.width, self.height = width, height
         self.tile_size = max(0, int(tile_size))
         self.use_rve_ncnn = bool(use_rve_ncnn)
         try:
-            self.scale = model_scale(model)
+            self.scale = native_scale or model_scale(model)
         except ValueError:
             if backend != "cuda":
                 raise
             self.scale = 0
         self.model = self._create()
-        if backend == "cuda":
+        if backend in ("cuda", "tensorrt"):
             self.scale = int(self.model.getScale())
 
     def _create(self):
@@ -193,11 +194,10 @@ class ImageUpscaler:
             self.frame_precision = "float32" if actual_dtype == torch.float32 else "float16"
             return model
         if self.backend == "ncnn":
+            model = next(self.model_path.glob("*.param")).with_suffix("") if self.model_path.is_dir() else self.model_path.with_suffix("")
             if not self.use_rve_ncnn:
-                model = self.model_path / self.model_path.name if self.model_path.is_dir() else self.model_path.with_suffix("")
                 return NCNNImageUpscaler(model, self.scale)
             from src.ncnn.UpscaleNCNN import UpscaleNCNN
-            model = self.model_path / self.model_path.name if self.model_path.is_dir() else self.model_path.with_suffix("")
             return UpscaleNCNN(
                 modelPath=str(model),
                 num_threads=1,
@@ -243,14 +243,14 @@ def run_checked(command: list[str], stage: str) -> None:
         raise RuntimeError(f"{stage}失败（退出码 {process.returncode}）：{detail}")
 
 
-def temporal_upscale(source: Path, backend: str, model: Path, ffmpeg: Path, work: Path) -> np.ndarray:
+def temporal_upscale(source: Path, backend: str, model: Path, ffmpeg: Path, work: Path, native_scale: int = 0) -> np.ndarray:
     if not ffmpeg.is_file():
         raise FileNotFoundError(f"未找到 FFmpeg：{ffmpeg}")
     input_video, output_video, output_png = work / "input.mkv", work / "enhanced.mkv", work / "first.png"
     frames = 21 if backend == "flashvsr" else 4
     with Image.open(source) as opened:
         source_width, source_height = opened.size
-    scale = model_scale(model)
+    scale = native_scale or model_scale(model)
     print(f"IMAGE_STAGE|{source}|构造 {frames} 帧无损输入", flush=True)
     run_checked([str(ffmpeg), "-y", "-hide_banner", "-loglevel", "error", "-loop", "1", "-framerate", "1",
                  "-i", str(source), "-vf", "pad=max(iw\\,64):max(ih\\,64):0:0", "-frames:v", str(frames), "-c:v", "ffv1", "-level", "3",
@@ -315,6 +315,8 @@ def main() -> int:
     parser.add_argument("--png", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--backend", choices=("ncnn", "cuda", "tensorrt", "onnx", "flashvsr", "basicvsrpp"), required=True)
     parser.add_argument("--model", required=True)
+    parser.add_argument("--native-scale", type=int, default=0)
+    parser.add_argument("--output-scale", type=int, choices=range(1, 17), default=0)
     parser.add_argument("--ffmpeg-path", default="")
     args = parser.parse_args()
 
@@ -342,17 +344,21 @@ def main() -> int:
                 with tempfile.TemporaryDirectory(
                     prefix="videoenhancer-image-", dir=work_root
                 ) as temporary:
-                    value = temporal_upscale(source, args.backend, model_path, ffmpeg, Path(temporary))
+                    value = temporal_upscale(source, args.backend, model_path, ffmpeg, Path(temporary), args.native_scale)
             else:
                 key = (width, height)
                 if key not in cache:
-                    cache[key] = ImageUpscaler(args.backend, model_path, width, height)
+                    cache[key] = ImageUpscaler(args.backend, model_path, width, height, native_scale=args.native_scale)
                 upscaler = cache[key]
                 value = upscaler(rgb)
                 if args.backend in ("cuda", "tensorrt") and float(rgb.std()) > 5.0:
                     output_mean = float(value.mean())
                     if float(value.std()) < 1.0 or output_mean < 0.5 or output_mean > 254.5:
                         raise RuntimeError("该模型对图片不兼容，请选择 NCNN/ONNX 模型")
+            if args.output_scale and value.shape[:2] != (height * args.output_scale, width * args.output_scale):
+                print(f"IMAGE_STAGE|{source}|原生推理后缩放至 {args.output_scale}x", flush=True)
+                value = np.asarray(Image.fromarray(value).resize(
+                    (width * args.output_scale, height * args.output_scale), Image.Resampling.LANCZOS))
             target = output_path(source, args, timestamp if args.suffix == "timestamp" else model_suffix)
             save_image(value, alpha, target)
         except Exception as exc:

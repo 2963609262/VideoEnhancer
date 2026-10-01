@@ -19,10 +19,13 @@ internal static class ModelCapabilityCatalog
             capability = new ModelCapability
             {
                 Model = user.RelativePath,
-                Scale = user.Scale,
+                Scale = user.Task == "interpolation" ? user.Scale :
+                    Program.InspectModelCached(Path.IsPathRooted(modelPath) ? modelPath : Path.Combine(modelsDirectory, user.RelativePath))?.Scale
+                    ?? NcnnModelSignatures.Get(Path.Combine(modelsDirectory, user.RelativePath))?.Scale ?? user.Scale,
                 Architecture = user.Architecture,
                 Backends = user.Backends,
                 InputMultiple = Math.Max(1, user.InputMultiple),
+                InferenceScales = user.Backends.Contains("flashvsr", StringComparer.OrdinalIgnoreCase) ? [2, 4] : [],
             };
             return true;
         }
@@ -104,6 +107,8 @@ internal static class ModelCapabilityCatalog
                     .Select(value => value.GetString() ?? string.Empty).ToArray(),
                 InputMultiple = item.TryGetProperty("inputMultiple", out var multiple)
                     ? multiple.GetInt32() : 1,
+                InferenceScales = item.TryGetProperty("inferenceScales", out var scales)
+                    ? scales.EnumerateArray().Select(value => value.GetInt32()).ToArray() : [],
             });
         }
         var byModel = new Dictionary<string, ModelCapability>(StringComparer.OrdinalIgnoreCase);
@@ -135,4 +140,5 @@ internal sealed class ModelCapability
     public string Architecture { get; set; } = string.Empty;
     public string[] Backends { get; set; } = [];
     public int InputMultiple { get; set; } = 1;
+    public int[] InferenceScales { get; set; } = [];
 }

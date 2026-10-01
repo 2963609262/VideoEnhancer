@@ -1,0 +1,2397 @@
+{
+  "auditDate": "2026-10-01",
+  "manifestSchemaVersion": 1,
+  "models": [
+    {
+      "model": "BasicVSR++/basicvsr_plusplus_c64n7_8x1_600k_reds4_20210217-db622b2f",
+      "architecture": "BasicVSR++",
+      "architectureGroup": "BasicVSR++",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "basicvsrpp"
+      ],
+      "evidence": "BasicVSR++严格加载",
+      "sha256": "db622b2fd4caae0a4c63ab5e54f1cfef7a62a0f3b8ad101aba2eae068d928549"
+    },
+    {
+      "model": "FlashVSR",
+      "architecture": "FlashVSR",
+      "architectureGroup": "FlashVSR",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "flashvsr"
+      ],
+      "evidence": "FlashVSR组件与后端实现；2x实际推理"
+    },
+    {
+      "model": "ONNX/AnimeJaNai-HD-V3.1-Balanced-SPANF3-b8f64-unshuffle-fp16-2x",
+      "architecture": "SPANF3",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "b308e93c3dda3c4f9f968295b2b7b8d1c0583a711bca53a08d51134d9d1cbd5c",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Shape": 2,
+        "Gather": 6,
+        "Mul": 12,
+        "Unsqueeze": 9,
+        "Mod": 4,
+        "Sub": 2,
+        "Concat": 5,
+        "Reshape": 4,
+        "Slice": 3,
+        "Transpose": 2,
+        "Pad": 1,
+        "Div": 2,
+        "Conv": 35,
+        "Relu": 16,
+        "Add": 8,
+        "Tanh": 8,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AnimeJaNai-HD-V3.1-Performance-SPANF3-b5f48-unshuffle-fp16-2x",
+      "architecture": "SPANF3",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "7b804d87320f37b7269d6e27796046fbd975e95e2aa1f65d5557f52a36282716",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Shape": 2,
+        "Gather": 6,
+        "Mul": 9,
+        "Unsqueeze": 9,
+        "Mod": 4,
+        "Sub": 2,
+        "Concat": 5,
+        "Reshape": 4,
+        "Slice": 3,
+        "Transpose": 2,
+        "Pad": 1,
+        "Div": 2,
+        "Conv": 23,
+        "Relu": 10,
+        "Add": 5,
+        "Tanh": 5,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AnimeJaNai-HD-V3.1Sharp1-Balanced-SPANF3-b8f64-unshuffle-fp16-2x",
+      "architecture": "SPANF3",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "dde763c8202cfebac5ec030ea6644f3ee339ea35bbda8a76e257405399552f0f",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Shape": 2,
+        "Gather": 6,
+        "Mul": 12,
+        "Unsqueeze": 9,
+        "Mod": 4,
+        "Sub": 2,
+        "Concat": 5,
+        "Reshape": 4,
+        "Slice": 3,
+        "Transpose": 2,
+        "Pad": 1,
+        "Div": 2,
+        "Conv": 35,
+        "Relu": 16,
+        "Add": 8,
+        "Tanh": 8,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AnimeJaNai-HD-V3.1Sharp1-Performance-SPANF3-b5f48-unshuffle-fp16-2x",
+      "architecture": "SPANF3",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "72246eded3aab52f8d1a71613c0a1d900734b358d1820b62eb36f1ed376e1cf4",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Shape": 2,
+        "Gather": 6,
+        "Mul": 9,
+        "Unsqueeze": 9,
+        "Mod": 4,
+        "Sub": 2,
+        "Concat": 5,
+        "Reshape": 4,
+        "Slice": 3,
+        "Transpose": 2,
+        "Pad": 1,
+        "Div": 2,
+        "Conv": 23,
+        "Relu": 10,
+        "Add": 5,
+        "Tanh": 5,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AnimeJaNai-SD-V1beta34-Compact-1x3xHxW-dyn-HW-strong-fp16-op21-dynamo-2x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "ded46591ddfaeb22b3daaf84ad7b36838335aa3efca66acfa36177ce4ab21eb5",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 18,
+        "PRelu": 17,
+        "DepthToSpace": 1,
+        "Resize": 1,
+        "Add": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-AC-G6i2a-Compact-72500-fp32-2x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "c2a22a9cd9d301c48f07576a773c3408a32ae558c5e03d59b297959045916c80",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 18,
+        "Constant": 19,
+        "Unsqueeze": 17,
+        "PRelu": 17,
+        "DepthToSpace": 1,
+        "Concat": 1,
+        "Resize": 1,
+        "Add": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-AC-G6i2b-SPAN-190K-fp32-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "c0d52ae736a41803af7389911333f6a70f4b8f4bee795c01713a3b8bd81b284d",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 22,
+        "Sigmoid": 18,
+        "Mul": 18,
+        "Constant": 6,
+        "Sub": 6,
+        "Add": 6,
+        "Concat": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-AC-G6i2b-SwinIR-117500-240x320-fp32-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "57c0ad4ec3a04b68474f4462e32c35c8512c8994b38e018732e853783bec315e",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "graph_ops": {
+        "Constant": 6896,
+        "Sub": 25,
+        "Mul": 937,
+        "Conv": 7,
+        "Shape": 749,
+        "Slice": 677,
+        "Concat": 461,
+        "Reshape": 658,
+        "Transpose": 154,
+        "LayerNormalization": 50,
+        "Expand": 1080,
+        "ConstantOfShape": 924,
+        "Equal": 912,
+        "Where": 912,
+        "Unsqueeze": 960,
+        "ScatterND": 216,
+        "Add": 378,
+        "Not": 24,
+        "Cast": 72,
+        "MatMul": 144,
+        "Gather": 72,
+        "Softmax": 24,
+        "Div": 25,
+        "Erf": 24,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-AC-G6i2b-SwinIR-117500-320x448-fp32-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "94cc098636045dadae9ee23e3c20e027a2a0175cbccf2d017774ee32326f22de",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "graph_ops": {
+        "Constant": 6896,
+        "Sub": 25,
+        "Mul": 937,
+        "Conv": 7,
+        "Shape": 749,
+        "Slice": 677,
+        "Concat": 461,
+        "Reshape": 658,
+        "Transpose": 154,
+        "LayerNormalization": 50,
+        "Expand": 1080,
+        "ConstantOfShape": 924,
+        "Equal": 912,
+        "Where": 912,
+        "Unsqueeze": 960,
+        "ScatterND": 216,
+        "Add": 378,
+        "Not": 24,
+        "Cast": 72,
+        "MatMul": 144,
+        "Gather": 72,
+        "Softmax": 24,
+        "Div": 25,
+        "Erf": 24,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-AC-G6i2b-SwinIR-117500-480x320-fp32-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "da716c90f77629f003b464b1e932e858a602c28dcbb0e1d6052346a0057fab63",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "graph_ops": {
+        "Constant": 6896,
+        "Sub": 25,
+        "Mul": 937,
+        "Conv": 7,
+        "Shape": 749,
+        "Slice": 677,
+        "Concat": 461,
+        "Reshape": 658,
+        "Transpose": 154,
+        "LayerNormalization": 50,
+        "Expand": 1080,
+        "ConstantOfShape": 924,
+        "Equal": 912,
+        "Where": 912,
+        "Unsqueeze": 960,
+        "ScatterND": 216,
+        "Add": 378,
+        "Not": 24,
+        "Cast": 72,
+        "MatMul": 144,
+        "Gather": 72,
+        "Softmax": 24,
+        "Div": 25,
+        "Erf": 24,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-AC-RealPLKSR-127500-fp32-FO-dynamic-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "54ec05623943afedbb6942ce9b3b58f845ffa46dfedebdf9b74fb37e0f5ea311",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 142,
+        "Softplus": 28,
+        "Tanh": 28,
+        "Mul": 84,
+        "Slice": 85,
+        "Shape": 113,
+        "Expand": 84,
+        "Gather": 55,
+        "Range": 55,
+        "Reshape": 113,
+        "Add": 85,
+        "Equal": 28,
+        "Where": 28,
+        "Unsqueeze": 57,
+        "Concat": 57,
+        "ScatterND": 28,
+        "Sigmoid": 28,
+        "InstanceNormalization": 28,
+        "Tile": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-DB-i2-SPAN-85K-fp32-1x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 1,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "37c4c8b9dcd98fcd23a5968e4f77b407ea13ff7c085efca8e68abc4c271318db",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          64,
+          64
+        ]
+      },
+      "graph_ops": {
+        "Constant": 56,
+        "Conv": 18,
+        "PRelu": 17,
+        "DepthToSpace": 1,
+        "Resize": 1,
+        "Add": 1,
+        "Clip": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-DC-DAT2-97500-fp32FO-2x",
+      "architecture": "DAT",
+      "architectureGroup": "DAT",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "2ee73134931eb537daa3fe9d5478fe16275e7cf7bd9445e89af5de69a8418a20",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Sub": 5,
+        "Conv": 227,
+        "Shape": 447,
+        "Gather": 1173,
+        "Mul": 512,
+        "Unsqueeze": 1145,
+        "Concat": 791,
+        "Reshape": 906,
+        "Transpose": 773,
+        "LayerNormalization": 110,
+        "MatMul": 252,
+        "Add": 550,
+        "Mod": 4,
+        "Slice": 415,
+        "Pad": 18,
+        "Div": 616,
+        "Softmax": 54,
+        "Erf": 144,
+        "GlobalAveragePool": 36,
+        "Sigmoid": 72,
+        "ReduceL2": 36,
+        "Clip": 36,
+        "Expand": 126,
+        "ConstantOfShape": 19,
+        "Range": 68,
+        "Equal": 20,
+        "Where": 22,
+        "ScatterND": 18,
+        "Not": 2,
+        "LeakyRelu": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-DC-RealPLKSR-115K-fp32-FO-dynamic-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "d47195243b6edffc6982f43cb50c80e8cff804925eed8dffcab6466004c08d49",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 142,
+        "Softplus": 28,
+        "Tanh": 28,
+        "Mul": 84,
+        "Slice": 85,
+        "Shape": 113,
+        "Expand": 84,
+        "Gather": 55,
+        "Range": 55,
+        "Reshape": 113,
+        "Add": 85,
+        "Equal": 28,
+        "Where": 28,
+        "Unsqueeze": 57,
+        "Concat": 57,
+        "ScatterND": 28,
+        "Sigmoid": 28,
+        "InstanceNormalization": 28,
+        "Tile": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-DC-SPAN-92500-fp32-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "2a6aafadccfa7d910361016843b2691f827863e08853dd81e5bd49facc6933c3",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 22,
+        "Sigmoid": 18,
+        "Mul": 18,
+        "Constant": 6,
+        "Sub": 6,
+        "Add": 6,
+        "Concat": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-G6i1-SPAN-215K-fp32-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "ec446acf6fde4a23a27625ef1102d72f41eba2c2f6a2e84a45848b986f08fedf",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 22,
+        "Sigmoid": 18,
+        "Mul": 18,
+        "Constant": 6,
+        "Sub": 6,
+        "Add": 6,
+        "Concat": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-G6i1-SwinIR-165K-240x320-fp32-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "82e657b7d1842422a1afe17b60047c3e16fe7f6dc6b3556939a21f7524fa6aa5",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "graph_ops": {
+        "Constant": 6896,
+        "Sub": 25,
+        "Mul": 937,
+        "Conv": 7,
+        "Shape": 749,
+        "Slice": 677,
+        "Concat": 461,
+        "Reshape": 658,
+        "Transpose": 154,
+        "LayerNormalization": 50,
+        "Expand": 1080,
+        "ConstantOfShape": 924,
+        "Equal": 912,
+        "Where": 912,
+        "Unsqueeze": 960,
+        "ScatterND": 216,
+        "Add": 378,
+        "Not": 24,
+        "Cast": 72,
+        "MatMul": 144,
+        "Gather": 72,
+        "Softmax": 24,
+        "Div": 25,
+        "Erf": 24,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-G6i1-SwinIR-165K-320x448-fp32-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "d2e8fa34aed77ae6ba0e4a9b6db0c314d4613e03e2add0ecc08c22560aa6a4bd",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "graph_ops": {
+        "Constant": 6896,
+        "Sub": 25,
+        "Mul": 937,
+        "Conv": 7,
+        "Shape": 749,
+        "Slice": 677,
+        "Concat": 461,
+        "Reshape": 658,
+        "Transpose": 154,
+        "LayerNormalization": 50,
+        "Expand": 1080,
+        "ConstantOfShape": 924,
+        "Equal": 912,
+        "Where": 912,
+        "Unsqueeze": 960,
+        "ScatterND": 216,
+        "Add": 378,
+        "Not": 24,
+        "Cast": 72,
+        "MatMul": 144,
+        "Gather": 72,
+        "Softmax": 24,
+        "Div": 25,
+        "Erf": 24,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-G6i1-SwinIR-165K-480x320-fp32-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "511f13b2c505edfc3f0de6f4ab1cf487015a48a9f3b35c865843875e056c5cb5",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "graph_ops": {
+        "Constant": 6896,
+        "Sub": 25,
+        "Mul": 937,
+        "Conv": 7,
+        "Shape": 749,
+        "Slice": 677,
+        "Concat": 461,
+        "Reshape": 658,
+        "Transpose": 154,
+        "LayerNormalization": 50,
+        "Expand": 1080,
+        "ConstantOfShape": 924,
+        "Equal": 912,
+        "Where": 912,
+        "Unsqueeze": 960,
+        "ScatterND": 216,
+        "Add": 378,
+        "Not": 24,
+        "Cast": 72,
+        "MatMul": 144,
+        "Gather": 72,
+        "Softmax": 24,
+        "Div": 25,
+        "Erf": 24,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-G6i1b-Compact-102500-fp32-2x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "f870985962094b2ac78c2835b32b4c55d1a565c685ec92be8808897f132a6f09",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 18,
+        "Constant": 19,
+        "Unsqueeze": 17,
+        "PRelu": 17,
+        "DepthToSpace": 1,
+        "Concat": 1,
+        "Resize": 1,
+        "Add": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-PS-G6i2-Compact-50K-fp32-2x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "26da454ed389b1cec20f039cd438089c7ee7978c8f2480d2298a1d1908e0d756",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 18,
+        "Constant": 19,
+        "Unsqueeze": 17,
+        "PRelu": 17,
+        "DepthToSpace": 1,
+        "Concat": 1,
+        "Resize": 1,
+        "Add": 1
+      }
+    },
+    {
+      "model": "ONNX/AniSD-RealPLKSR-140K-fp32-FO-dynamic-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "aa1fe3b266d75d215ddd7b86ed8069f3a431438a6e662d740b99829c3f5b09c6",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Conv": 142,
+        "Softplus": 28,
+        "Tanh": 28,
+        "Mul": 84,
+        "Slice": 85,
+        "Shape": 113,
+        "Expand": 84,
+        "Gather": 55,
+        "Range": 55,
+        "Reshape": 113,
+        "Add": 85,
+        "Equal": 28,
+        "Where": 28,
+        "Unsqueeze": 57,
+        "Concat": 57,
+        "ScatterND": 28,
+        "Sigmoid": 28,
+        "InstanceNormalization": 28,
+        "Tile": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/RealESRGAN-x4-jp-Illustration-fix1-d",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "fcef741bc827fbc8e2c725baca04e49203d16b38433daf63c22a976dd632ff13",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          256,
+          256
+        ]
+      },
+      "graph_ops": {
+        "Conv": 351,
+        "LeakyRelu": 279,
+        "Concat": 276,
+        "Mul": 92,
+        "Add": 93,
+        "Resize": 2
+      }
+    },
+    {
+      "model": "ONNX/RealESRGAN-x4-jp-Illustration-fix2",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "5266f72bd46d152768ef2027c7c655fcebaf58fac62f6275831af0bf1c3718aa",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          256,
+          256
+        ]
+      },
+      "graph_ops": {
+        "Conv": 351,
+        "LeakyRelu": 279,
+        "Concat": 276,
+        "Mul": 92,
+        "Add": 93,
+        "Resize": 2
+      }
+    },
+    {
+      "model": "ONNX/RealHatGAN-JP-Illustration-2x-fix1",
+      "architecture": "HAT",
+      "architectureGroup": "HAT",
+      "nativeScale": 2,
+      "inputMultiple": 16,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "7e06cc65537c812d469a142ee8503a7c2cb065caa53d01945f776960d76c6ed1",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Constant": 4200,
+        "Sub": 100,
+        "Mul": 412,
+        "Conv": 155,
+        "Shape": 543,
+        "Gather": 614,
+        "Unsqueeze": 1370,
+        "Concat": 635,
+        "ConstantOfShape": 46,
+        "Slice": 196,
+        "Expand": 45,
+        "Cast": 346,
+        "Range": 48,
+        "Reshape": 581,
+        "Add": 657,
+        "Equal": 38,
+        "Where": 38,
+        "ScatterND": 9,
+        "Div": 319,
+        "Transpose": 327,
+        "Not": 1,
+        "ReduceMean": 172,
+        "Pow": 86,
+        "Sqrt": 86,
+        "Erf": 78,
+        "GlobalAveragePool": 36,
+        "Relu": 36,
+        "Sigmoid": 36,
+        "MatMul": 252,
+        "Softmax": 42,
+        "Pad": 6,
+        "LeakyRelu": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/RealHatGAN-JP-Illustration-4x-fix1",
+      "architecture": "HAT",
+      "architectureGroup": "HAT",
+      "nativeScale": 4,
+      "inputMultiple": 16,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "b40680f2371a70b86d1fd10ec2dcdb3a7099b2a55736ad51d35fc1d97606c092",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          256,
+          256
+        ]
+      },
+      "graph_ops": {
+        "Sub": 100,
+        "Conv": 156,
+        "Shape": 186,
+        "Gather": 612,
+        "Unsqueeze": 528,
+        "Concat": 414,
+        "ConstantOfShape": 10,
+        "Slice": 177,
+        "Expand": 45,
+        "Range": 48,
+        "Reshape": 466,
+        "Add": 657,
+        "Equal": 10,
+        "Where": 11,
+        "ScatterND": 9,
+        "Div": 306,
+        "Transpose": 327,
+        "Not": 1,
+        "ReduceMean": 172,
+        "Pow": 86,
+        "Sqrt": 86,
+        "Mul": 369,
+        "Erf": 78,
+        "GlobalAveragePool": 36,
+        "Relu": 36,
+        "Sigmoid": 36,
+        "MatMul": 252,
+        "Softmax": 42,
+        "Pad": 6,
+        "LeakyRelu": 1,
+        "DepthToSpace": 2
+      }
+    },
+    {
+      "model": "ONNX/RealHatGAN-Universal-Illustration-2x-fix1",
+      "architecture": "HAT",
+      "architectureGroup": "HAT",
+      "nativeScale": 2,
+      "inputMultiple": 16,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "b106d7096ce9d7eecdd61e471ca114b2ceaf087dd35195ddf6c63869befc0fd2",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          128,
+          128
+        ]
+      },
+      "graph_ops": {
+        "Constant": 4200,
+        "Sub": 100,
+        "Mul": 412,
+        "Conv": 155,
+        "Shape": 543,
+        "Gather": 614,
+        "Unsqueeze": 1370,
+        "Concat": 635,
+        "ConstantOfShape": 46,
+        "Slice": 196,
+        "Expand": 45,
+        "Cast": 346,
+        "Range": 48,
+        "Reshape": 581,
+        "Add": 657,
+        "Equal": 38,
+        "Where": 38,
+        "ScatterND": 9,
+        "Div": 319,
+        "Transpose": 327,
+        "Not": 1,
+        "ReduceMean": 172,
+        "Pow": 86,
+        "Sqrt": 86,
+        "Erf": 78,
+        "GlobalAveragePool": 36,
+        "Relu": 36,
+        "Sigmoid": 36,
+        "MatMul": 252,
+        "Softmax": 42,
+        "Pad": 6,
+        "LeakyRelu": 1,
+        "DepthToSpace": 1
+      }
+    },
+    {
+      "model": "ONNX/RealHatGAN-x1-jp-Illustration-fix-only",
+      "architecture": "HAT",
+      "architectureGroup": "HAT",
+      "nativeScale": 1,
+      "inputMultiple": 16,
+      "backends": [
+        "onnx"
+      ],
+      "evidence": "ONNX图与输入输出",
+      "sha256": "ea0eb70269dac24286ce74a0d5e4c13570db8d9b4ca53b12125a41b4161f4987",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": false,
+      "shape_probe": {
+        "input": [
+          64,
+          64
+        ],
+        "output": [
+          64,
+          64
+        ]
+      },
+      "graph_ops": {
+        "Constant": 4200,
+        "Sub": 100,
+        "Mul": 412,
+        "Conv": 154,
+        "Shape": 543,
+        "Gather": 614,
+        "Unsqueeze": 1370,
+        "Concat": 635,
+        "ConstantOfShape": 46,
+        "Slice": 196,
+        "Expand": 45,
+        "Cast": 346,
+        "Range": 48,
+        "Reshape": 581,
+        "Add": 657,
+        "Equal": 38,
+        "Where": 38,
+        "ScatterND": 9,
+        "Div": 319,
+        "Transpose": 327,
+        "Not": 1,
+        "ReduceMean": 172,
+        "Pow": 86,
+        "Sqrt": 86,
+        "Erf": 78,
+        "GlobalAveragePool": 36,
+        "Relu": 36,
+        "Sigmoid": 36,
+        "MatMul": 252,
+        "Softmax": 42,
+        "Pad": 6,
+        "LeakyRelu": 1
+      }
+    },
+    {
+      "model": "Param-Bin/AnimeJaNai-V2-2x-Compact-36K",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "7c5aec3347d1614048e3f3afa853ffb4d2a84304e5f18c27cf900ae467f05934"
+      ]
+    },
+    {
+      "model": "Param-Bin/AnimeJaNai-V3-2x-HD-Sharp1-Compact-430K",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "7c5aec3347d1614048e3f3afa853ffb4d2a84304e5f18c27cf900ae467f05934"
+      ]
+    },
+    {
+      "model": "Param-Bin/AniSD-DC-SPAN-2x-92500",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "9a658fc348c823b5105ecc4ff12caab0595714fc95674afeccfaaa9fb5f47cf1"
+      ]
+    },
+    {
+      "model": "Param-Bin/CUGAN-Conservative-2x",
+      "architecture": "Real-CUGAN",
+      "architectureGroup": "Real-CUGAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "420f3424aaf1df0286ac9ba2fef7c79fc40074f409ecd677bd6751f591f3637e"
+      ]
+    },
+    {
+      "model": "Param-Bin/DenoiseH264-SuperUltraCompact-1x-float16",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 1,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "25a3b4a414bb7a78272c63861c71592be0be7e5784f1ccba94af4a3bdef64249"
+      ]
+    },
+    {
+      "model": "Param-Bin/DnCNN-ColorBlind-1x",
+      "architecture": "DnCNN",
+      "architectureGroup": "DnCNN",
+      "nativeScale": 1,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "d81c725848821ab9fc1626e7632c3d42aac47d035924cfe920e0be7105ba617a"
+      ]
+    },
+    {
+      "model": "Param-Bin/ModernSpanimation-V2-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "cd12335d68438013311f704416a19e4911d0eabdff36fb0db110d6d2f4f5750c"
+      ]
+    },
+    {
+      "model": "Param-Bin/Nomos8k-span-otf-4x-medium",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "0369a012e5acbb52309f51990654d020ac22b84a4c21b663bbc292bc0aab2ca2"
+      ]
+    },
+    {
+      "model": "Param-Bin/Nomos8k-span-otf-4x-strong",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "0369a012e5acbb52309f51990654d020ac22b84a4c21b663bbc292bc0aab2ca2"
+      ]
+    },
+    {
+      "model": "Param-Bin/OpenProteus-Compact-i2-2x-70K",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "7c5aec3347d1614048e3f3afa853ffb4d2a84304e5f18c27cf900ae467f05934"
+      ]
+    },
+    {
+      "model": "Param-Bin/RealESRGAN-AnimeVideoV3-2x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "1393f7c0e885f9d15a0668329a13f695ebd0ea45791f46d28145d7934824d224"
+      ]
+    },
+    {
+      "model": "Param-Bin/RealESRGAN-AnimeVideoV3-3x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 3,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "584a43e429188c159ef8e42191ef5a5fd1d2e3b17398e5cee6089726dec879c7"
+      ]
+    },
+    {
+      "model": "Param-Bin/RealESRGAN-AnimeVideoV3-4x",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "850a248e7c14c27e5bd8cf7265113a9441036a7db63963bb8aa5169d788a435e"
+      ]
+    },
+    {
+      "model": "Param-Bin/RealESRGAN-General-x4v3",
+      "architecture": "Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "8529d0bca9a7f864b307c279958cc2d221bf42379ccd7257f33fb7f44613e07b"
+      ]
+    },
+    {
+      "model": "Param-Bin/RealESRGAN-x4plus-Anime-4x",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "2b8fb6e0ae4d2d85704ca08c119a2f5ea40add4f2ecd512eb7f4cd44b6127ed4"
+      ]
+    },
+    {
+      "model": "Param-Bin/Waifu2x-2x",
+      "architecture": "Waifu2x",
+      "architectureGroup": "Waifu2x",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "66da0db6342450b9c9c5dd1a05d20245bec4dca7878b8b57ca7bcfc5be1807c9"
+      ]
+    },
+    {
+      "model": "Param-Bin/Waifu2x-Noise0-2x",
+      "architecture": "Waifu2x",
+      "architectureGroup": "Waifu2x",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "66da0db6342450b9c9c5dd1a05d20245bec4dca7878b8b57ca7bcfc5be1807c9"
+      ]
+    },
+    {
+      "model": "Param-Bin/Waifu2x-Noise1-2x",
+      "architecture": "Waifu2x",
+      "architectureGroup": "Waifu2x",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "66da0db6342450b9c9c5dd1a05d20245bec4dca7878b8b57ca7bcfc5be1807c9"
+      ]
+    },
+    {
+      "model": "Param-Bin/Waifu2x-Noise2-2x",
+      "architecture": "Waifu2x",
+      "architectureGroup": "Waifu2x",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "66da0db6342450b9c9c5dd1a05d20245bec4dca7878b8b57ca7bcfc5be1807c9"
+      ]
+    },
+    {
+      "model": "Param-Bin/Waifu2x-Noise3-2x",
+      "architecture": "Waifu2x",
+      "architectureGroup": "Waifu2x",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "66da0db6342450b9c9c5dd1a05d20245bec4dca7878b8b57ca7bcfc5be1807c9"
+      ]
+    },
+    {
+      "model": "Param-Bin/Waifu2x-Photo-2x",
+      "architecture": "Waifu2x",
+      "architectureGroup": "Waifu2x",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "ncnn"
+      ],
+      "evidence": "NCNN param图",
+      "param_sha256": [
+        "66da0db6342450b9c9c5dd1a05d20245bec4dca7878b8b57ca7bcfc5be1807c9"
+      ]
+    },
+    {
+      "model": "PTH/Ani4K-Compact-35000-2x",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "75072688da672b419f9496f820b1d3026b64446597cb9a3ccd5024f50ca6d42e",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AnimeJaNai-V2-2x-Compact-36K",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "3dec6c9acec7b43c0ba93e568eaa5cd47d746edb8a4cc612a170d5cb40db9b09",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AnimeJaNai-V3-2x-HD-Sharp1-Compact-430K",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "903378423c9d4169f4c6ebcd7cf1fde927bb025636351abafae8bb98aef7c8ae",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AnimeSR-V2-4x",
+      "architecture": "AnimeSR",
+      "architectureGroup": "AnimeSR",
+      "nativeScale": 4,
+      "inputMultiple": 4,
+      "backends": [
+        "cuda"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "d0f29c8966b53718828bd424bbdc306e7ff0cbf6350beadaf8b5b2500b108548",
+      "model_class": "AnimeSR",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": false
+    },
+    {
+      "model": "PTH/AniScale2-DITN-i16-75K-2x",
+      "architecture": "DITN",
+      "architectureGroup": "DITN",
+      "nativeScale": 2,
+      "inputMultiple": 8,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "783d332ee5049c5a60fedd6f20573838751cca9d3476b9de55a061a7358b145a",
+      "model_class": "DITN_Real",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniScale2-ESRGAN-i16-110K-2x",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 2,
+      "inputMultiple": 4,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "b3ce1d0ef7b148525e206846eb4fa88a3bbadcbec120e9504117d602a674588b",
+      "model_class": "RRDBNet",
+      "minimum_size": 4,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniScale2-ESRGAN-Lite-i16-165K-2x",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 2,
+      "inputMultiple": 4,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "b5a9a3bda59e47ee7f62d56dfd89d61ebf8964464b5b0153fdedfaed84caf935",
+      "model_class": "RRDBNet",
+      "minimum_size": 4,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniScale2-Omni-i16-40K-2x",
+      "architecture": "OmniSR",
+      "architectureGroup": "OmniSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "7e165a666239befc3985bb073a24bb82a5a84a83314ba724284d0918c5408675",
+      "model_class": "OmniSR",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniScale2-Refiner-10K-1x",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 1,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "abce714a7b51e3dd140c38797b5338aeb4f6c926bacc6a48bfe4271b81151e85",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniScale2-SwinIR-i16-265K-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "ef8c348dd6b6768f0ce63591440f49f53065261763c3097612408255e6e1b91a",
+      "model_class": "SwinIR",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-AC-CRAFT-92500-2x",
+      "architecture": "CRAFT",
+      "architectureGroup": "CRAFT",
+      "nativeScale": 2,
+      "inputMultiple": 16,
+      "backends": [
+        "cuda"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "cfa2bd22efa50c667fecd581e73f05293720ca89632deab47b4c82e6c8599d2f",
+      "model_class": "CRAFT",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-AC-G6i2a-Compact-72500-2x",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "48e6958a348c11903b8912e392c163f21e813609e5906a20ff34487ac2ad6f27",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-AC-G6i2b-SPAN-190K-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "8d4223495eb8c87d31c24a030370432d612708e4cac11e833a48563a71fa7f36",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-AC-G6i2b-SwinIR-117500-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "afc258463982b5bd92e30f42f5bb7ef2dbefe584db7ae0f695ee0dad6624b3ad",
+      "model_class": "SwinIR",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-AC-RealPLKSR-127500-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "57f468ecd7cfb18f9b9a2454cd79bade6d722aa7ff0186cfc5579451043640a6",
+      "model_class": "RealPLKSR",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-DB-i2-SPAN-85K-1x",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 1,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "f8cfb14337e1e596467bbd9a4e5b4a1dd33a6365ca34eb7a092447a85b6c92e2",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-DC-CRAFT-127500-2x",
+      "architecture": "CRAFT",
+      "architectureGroup": "CRAFT",
+      "nativeScale": 2,
+      "inputMultiple": 16,
+      "backends": [
+        "cuda"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "6dbf1c6113cbbdfd199c499ee12faeed2f0752abe5d27bfcc47a3bd6489ada9b",
+      "model_class": "CRAFT",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-DC-DAT2-97500-2x",
+      "architecture": "DAT",
+      "architectureGroup": "DAT",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "f08c16cff3c32dfbbdff2bfad60a552e3232de7afb1026a4186d0a0d0d954b87",
+      "model_class": "DAT",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-DC-RealPLKSR-115K-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "ee37a9ebcdfc08f27ec7b99582821d7e2009aaf184dbff0b4acf109d2cc15848",
+      "model_class": "RealPLKSR",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-DC-SPAN-92500-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "97b32541a3e11ee3382f27c82cfb9e51c1001e819101bbaf48e1ae3c91236c29",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-G6i1-SPAN-215K-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "424d51a7882e8de2cce420372e46e219527eb52017314473e92753bc8e75ac7c",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-G6i1-SPAN-2x-215K",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "424d51a7882e8de2cce420372e46e219527eb52017314473e92753bc8e75ac7c",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-G6i1-SwinIR-165K-2x",
+      "architecture": "SwinIR",
+      "architectureGroup": "SwinIR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "ec80f3e031ab504579fc7030575f1d2a7b503669821978a01e54fdd184b935d4",
+      "model_class": "SwinIR",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-G6i1b-Compact-102500-2x",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "886004a9cf1fcf757c9213c484cbba4dbf5f2a41041b9384c238984760c0f48c",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-PS-G6i2-Compact-50K-2x",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "8df9f5a63bef5fbbac0888a956b39016fa1b11e960aafe29825b7e133269f1b2",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniSD-RealPLKSR-140K-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "f41eb6878ea041fb476d68403ea5c6ba3e036940f055bb055c0fcbd71e7fa528",
+      "model_class": "RealPLKSR",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniToon-RPLKSR-197500-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "9608eef050a87547e85ea417c9857fa44cc8cf67a3d6f4c53f463ddeb20cbd11",
+      "model_class": "RealPLKSR",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniToon-RPLKSRL-280K-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "e95bfac12920e2f09133aa067de18910a0e8a43f272be95edc1b9679f342d108",
+      "model_class": "RealPLKSR",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/AniToon-RPLKSRS-242500-2x",
+      "architecture": "RealPLKSR",
+      "architectureGroup": "RealPLKSR",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "882b1b1749d7cb1f3fe3f25d60333a263517cc66d6fae79858b81cfdbd7d77a3",
+      "model_class": "RealPLKSR",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/APISR-DAT-GAN-generator-4x",
+      "architecture": "DAT",
+      "architectureGroup": "DAT",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "cc625c4ec5242a57e46f0941a3c36e3a731dcd859750c5f72a5251045b1e6d72",
+      "model_class": "DAT",
+      "minimum_size": 16,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/APISR-GRL-GAN-generator-4x",
+      "architecture": "GRL",
+      "architectureGroup": "GRL",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "56fff250139563dea59c4ca81af19cc098d94dc3abaad23640f14cec488e5da1",
+      "model_class": "GRL",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": false,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/APISR-RRDB-GAN-generator-2x",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 2,
+      "inputMultiple": 4,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "3b0d2b3a3c0461ac17d00f4f32240666fb832b738ea5a48449b1acf07fbb07e5",
+      "model_class": "RRDBNet",
+      "minimum_size": 4,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/APISR-RRDB-GAN-generator-4x",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "6bd14a66224c90d4754011f378ac828b18e221f2d031026ec99cb5facdf40c19",
+      "model_class": "RRDBNet",
+      "minimum_size": 2,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/BHI-SpanPlusDynamic-2x-Light",
+      "architecture": "sudo_SPANPlus",
+      "architectureGroup": "SPANPlus",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "e9bc7ab3efe51e96c747966dd0395a3cba7d121fe54b4f1ee74d175cc0c8d7ce",
+      "model_class": "sudo_SPANPlus",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/ModernSpanimation-V2-2x",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "a13ae9fd8a72d0d320759472e4097eb58483c2ecc6232dec35b971e97275554c",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/ModernSpanimation-V3-2x",
+      "architecture": "SPANPlus",
+      "architectureGroup": "SPANPlus",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "1076a2e6d66d0d14cafd8842d14a3721b5a7ec1b24b07096ff2b44e67751a7a6",
+      "model_class": "SPANPlus",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/Nomos8k-span-otf-4x-medium-NoUpdateParams",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "685244ccf1f611a54929ec78ec99a54fdff8324d27003c4e27bd831b457ec13a",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/Nomos8k-span-otf-4x-strong",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "b63dfd3f18da07b46c978f9fb480e6f43f9ece7550ef462c86d5151b93fa6040",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/Nomos8k-span-otf-4x-weak-NoUpdateParams",
+      "architecture": "SPAN",
+      "architectureGroup": "SPAN",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "118e066fc10f8c05944f5d2441afb07205f3d12c65084841e5625cacd4c08050",
+      "model_class": "SPAN",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/OpenProteus-Compact-i2-2x-70K",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "a943566242a830ace576b768921a63ddde2baf826b90712e869d937603008708",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/realesr-animevideov3",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "b8a8376811077954d82ca3fcf476f1ac3da3e8a68a4f4d71363008000a18b75d",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/RealESRGAN-General-x4v3",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "8dc7edb9ac80ccdc30c3a5dca6616509367f05fbc184ad95b731f05bece96292",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/RealESRGAN_x2plus",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 2,
+      "inputMultiple": 4,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb",
+      "model_class": "RRDBNet",
+      "minimum_size": 4,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/RealESRGAN_x4plus",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1",
+      "model_class": "RRDBNet",
+      "minimum_size": 2,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/RealESRGAN_x4plus_anime_6B",
+      "architecture": "ESRGAN",
+      "architectureGroup": "ESRGAN / RRDB",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "f872d837d3c90ed2e05227bed711af5671a6fd1c9f7d7e91c911a61f155e99da",
+      "model_class": "RRDBNet",
+      "minimum_size": 2,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/realesr-general-wdn-x4v3",
+      "architecture": "RealESRGAN Compact",
+      "architectureGroup": "Compact",
+      "nativeScale": 4,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "1641f8c4464b9f097c9fdda5589273713f67cf59f3d909e0bd688f0cee269dca",
+      "model_class": "SRVGGNetCompact",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    },
+    {
+      "model": "PTH/Sudo-Shuffle-Span-2x-NoUpdateParams",
+      "architecture": "sudo_SPANPlus",
+      "architectureGroup": "SPANPlus",
+      "nativeScale": 2,
+      "inputMultiple": 1,
+      "backends": [
+        "cuda",
+        "tensorrt"
+      ],
+      "evidence": "权重严格加载与描述器",
+      "sha256": "a26100e50b0f11ea1874ccbb8e1915c8fa489053e19f142db3d554f0f4365a0d",
+      "model_class": "sudo_SPANPlus",
+      "minimum_size": 0,
+      "square": false,
+      "supports_half": true,
+      "supports_bfloat16": true
+    }
+  ]
+}

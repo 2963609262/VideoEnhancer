@@ -31,6 +31,8 @@ Namespace videoenhancer
         Private ReadOnly _txtImageOutput As New ModernTextBox()
         Private ReadOnly _cmbImageSuffix As New WheelLockedComboBox()
         Private ReadOnly _cmbImageFormat As New WheelLockedComboBox()
+        Private ReadOnly _cmbImageOutputScale As New WheelLockedComboBox()
+        Private _imageOutputScaleHint As LakeTextLabel
         Private ReadOnly _lblImageInputs As New HtmlColorLabel()
         Private ReadOnly _lblImageOutput As New HtmlColorLabel()
         Private ReadOnly _lblImageProgress As New HtmlColorLabel()
@@ -49,8 +51,8 @@ Namespace videoenhancer
                 .Dock = DockStyle.None,
                 .Anchor = AnchorStyles.Top Or AnchorStyles.Left,
                 .AutoSize = False,
-                .MinimumSize = New Size(0, 260),
-                .Height = 260,
+                .MinimumSize = New Size(0, 336),
+                .Height = 336,
                 .BackColor = Color.Transparent,
                 .BackColor1 = Color.Transparent,
                 .LayoutMode = ModernPanel.LayoutModeEnum.Absolute,
@@ -148,6 +150,14 @@ Namespace videoenhancer
             imageOptionsRow.AddColumn(_btnImageStart, 7)
             AddWorkbenchRow(root, imageOptionsRow, 156, 54)
 
+            ConfigureOutputScaleCombo(_cmbImageOutputScale)
+            Dim scaleField = CreateOfficialField("输出倍率", _cmbImageOutputScale)
+            _imageOutputScaleHint = CreateOfficialCaption("原生推理倍率", UiTextMuted)
+            _imageOutputScaleHint.TextAlign = ContentAlignment.BottomLeft
+            AddWorkbenchControl(root, scaleField, 210, 70, 0.0F, 0.28F, 0, -12)
+            AddWorkbenchControl(root, _imageOutputScaleHint, 210, 70, 0.28F, 1.0F)
+            SyncOutputScaleControls()
+
             Dim progressRow As New ModernHorizontalPanel(-1.0F, 16.0F, 300.0F)
             _imageProgress.Minimum = 0
             _imageProgress.Maximum = 1000
@@ -168,7 +178,7 @@ Namespace videoenhancer
             _lblImageProgress.Text = "<font color=#888888>等待开始</font>"
             progressRow.AddColumn(_imageProgress, 0)
             progressRow.AddColumn(_lblImageProgress, 2)
-            AddWorkbenchRow(root, progressRow, 210, 42)
+            AddWorkbenchRow(root, progressRow, 280, 42)
             _pageImage.Controls.Add(root)
             BindScrollableGpuBackgroundSources(root, ModernPanel1)
             SyncImageRootBounds()
@@ -185,8 +195,8 @@ Namespace videoenhancer
                     ModernPanel1.ClientSize.Width - ModernPanel1.Padding.Left - ModernPanel1.Padding.Right)
             End If
             Dim width = Math.Max(0, availableWidth - _pageImage.ScrollBarWidth - 2)
-            If root.Left <> 0 OrElse root.Top <> 0 OrElse root.Width <> width OrElse root.Height <> 260 Then
-                root.SetBounds(0, 0, width, 260)
+            If root.Left <> 0 OrElse root.Top <> 0 OrElse root.Width <> width OrElse root.Height <> 336 Then
+                root.SetBounds(0, 0, width, 336)
             End If
         End Sub
 
@@ -322,6 +332,9 @@ Namespace videoenhancer
             args.Add(If(_config.ImagePng, "--image-png", "--image-source-format"))
             args.Add("-backend") : args.Add(_config.Backend)
             args.Add("-modelpath") : args.Add(_config.Model)
+            If _config.OutputScale > 0 Then
+                args.Add("-output-scale") : args.Add(_config.OutputScale.ToString())
+            End If
             args.Add("-upscale-precision") : args.Add(If(_config.UpscaleHalfPrecision, "auto", "float32"))
 
             Dim psi As New ProcessStartInfo With {

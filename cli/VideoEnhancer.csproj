@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>videoenhancer</AssemblyName>
     <RootNamespace>VideoEnhancer</RootNamespace>
-    <Version>1.3.8</Version>
+    <Version>1.3.9</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -83,7 +83,12 @@
     <EmbeddedResource Include="$(SevenZipCacheDirectory)\7z2603-src.tar.xz" LogicalName="VideoEnhancer.Embedded.SevenZip.7z2603-src.tar.xz" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+  </ItemGroup>
+
   <ItemGroup Label="Embedded resources">
+    <EmbeddedResource Include="ncnn-model-signatures.json" LogicalName="VideoEnhancer.Embedded.ncnn-model-signatures.json" />
     <EmbeddedResource Include="$(PluginArtifactPath)"
                       LogicalName="VideoEnhancer.Embedded.videoenhancer.3fui.dll"
                       Condition="'$(BuildingSolutionFile)' == 'true'" />

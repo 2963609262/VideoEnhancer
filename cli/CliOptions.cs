@@ -20,6 +20,7 @@ internal sealed class CliOptions
         public bool HasFfmpegSettings;
         public string FfmpegPath = "";
         public string FfprobePath = "";
+        public string OutputScale = "";
         public string ScaleOverride = "";
         public bool HasScaleOverride;
         public string PauseShm = "";
