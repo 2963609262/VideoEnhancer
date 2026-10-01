@@ -316,7 +316,7 @@ def main() -> int:
     parser.add_argument("--backend", choices=("ncnn", "cuda", "tensorrt", "onnx", "flashvsr", "basicvsrpp"), required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--native-scale", type=int, default=0)
-    parser.add_argument("--output-scale", type=int, choices=range(1, 17), default=0)
+    parser.add_argument("--output-scale", type=int, choices=range(1, 9), default=0)
     parser.add_argument("--ffmpeg-path", default="")
     args = parser.parse_args()
 

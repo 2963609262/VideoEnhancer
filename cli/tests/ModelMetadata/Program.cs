@@ -8,7 +8,8 @@ static void Equal<T>(T expected, T actual)
 
 Equal(0, OutputScale.Parse(""));
 Equal(3, OutputScale.Parse("3"));
-foreach (var value in new[] { "0", "17", "2.5", "wrong" })
+Equal(8, OutputScale.Parse("8"));
+foreach (var value in new[] { "0", "9", "16", "17", "2.5", "wrong" })
 {
     try { OutputScale.Parse(value); throw new Exception("应拒绝无效倍率"); }
     catch (ArgumentException) { }

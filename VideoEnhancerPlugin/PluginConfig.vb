@@ -35,7 +35,16 @@ Namespace videoenhancer
         Public Property SceneDetectThreshold As Double = 4.0
         ''' <summary>超分分块边长；0 表示使用 RVE 默认处理，不按显存自动试探。</summary>
         Public Property UpscaleTileSize As Integer = 0
-        Public Property OutputScale As Integer = 0
+        Private _outputScale As Integer = 0
+        ''' <summary>0 表示原生；旧配置超过8倍时按8倍载入，两页及队列保持一致。</summary>
+        Public Property OutputScale As Integer
+            Get
+                Return _outputScale
+            End Get
+            Set(value As Integer)
+                _outputScale = Math.Max(0, Math.Min(8, value))
+            End Set
+        End Property
         ''' <summary>超分优先使用半精度；关闭时对支持精度控制的后端强制 FP32。</summary>
         Public Property UpscaleHalfPrecision As Boolean = True
         ''' <summary>超分推理后端：ncnn、cuda、tensorrt、onnx 或 flashvsr。</summary>

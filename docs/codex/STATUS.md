@@ -1,11 +1,15 @@
 # Project Status
 
-Last updated: 2026-10-01 17:30
+Last updated: 2026-10-01 17:47
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-01 17:47：8x范围修订及旧配置兼容通过定向CLI/15项UI检查；最终build/publish0警告0错误、安装/自更新及ZIP/清单哈希通过，Backend审计仍UNCHANGED。冻结修订资产，开始按授权提交并替换1.3.9标签/GitHub与ModelScope资产。
+
+- 2026-10-01 17:41：用户明确授权将目标输出倍率上限改8x并替换已发布1.3.9；CLI/插件/图片桥与旧配置载入同步调整，原生能力不变。原发行资产本地保留，按同版本覆盖流程重新构建、验证、更新标签及双源资产，正在实施。
 
 - 2026-10-01 17:30：**1.3.9正式发布完成**：[GitHub v1.3.9](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.9)、ModelScope Releases及Models备用EXE已同步；源码/注释标签`0f38b64`已推送。五项资产双源及Models共11实际下载大小/SHA256通过，双源故障回退通过；本机正式升级1.3.9，配置/用户清单/aria2保持，未启动宿主。独立Backend继续2026.09.30.1。收尾文档提交推送后核对干净工作树。
 
@@ -28,7 +32,7 @@ Updated by: Codex
 - 2026-10-01 15:18：按用户要求已将模型架构/输出倍率改动部署到本机3FUI测试；正式自更新返回UPDATE_COMPLETE|1.3.8，DLL/EXE与完整构建产物哈希一致，现有插件配置哈希未变，未自动启动宿主。
 
 - 2026-10-01 15:10：模型架构家族统一与原生/输出倍率分离已完成；98项逐项审计，修正42项内置架构/输入约束/多倍率声明。详见[审计报告](../model-capability-audit.md)与[逐项证据](../model-capability-audit.json)。代码尚未提交；随后按用户要求已部署本机测试，版本号保持1.3.8，不发布远端。
-- 新增 `-output-scale 1–16` 与工作台/图片页选择，默认原生；固定权重先原生推理再Lanczos缩放，FlashVSR可直接2x/4x。TensorRT缓存按推理倍率复用。旧用户路径、ID与能力记录不自动改写；重新检测先展示差异、载入修正窗口后由用户保存。
+- 新增 `-output-scale 1–8` 与工作台/图片页选择，默认原生；固定权重先原生推理再Lanczos缩放，FlashVSR可直接2x/4x。TensorRT缓存按推理倍率复用。旧用户路径、ID与能力记录不自动改写；重新检测先展示差异、载入修正窗口后由用户保存。
 
 - 上一正式版本 **1.3.8 / 2026-10-01**：GitHub [v1.3.8](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.8)、ModelScope Releases及Models备用EXE已发布，标签指向源码提交 `2895ce8`；未覆盖旧版本。
 - 本日下载/解压/缓存/WiX改动已纳入1.3.8；本地构建与门禁、11项双源文件实际下载哈希、双源故障回退均通过。宿主退出后经正式自更新入口部署本机，备份与EXE/DLL哈希已核对；未自动启动宿主，重启后的真实窗口观察仍由用户完成。
@@ -278,3 +282,15 @@ git diff --check
   - VideoEnhancer-1.3.9-win-x64.exe: 17312224 bytes / SHA256 `e5acdf9c681224d04421811f4b601066cc5d454adff172ed1880fc7eeacd0f94`。
   - VideoEnhancerInstaller-1.3.9-win-x64.exe: 16089960 bytes / SHA256 `121a0bb8eee61254d0e3da2d00ed779e64986648f45fdcc167be5f28ae094072`。
   - stable.json: 1592 bytes / SHA256 `61049243ef96f2b549837cd913ad3e2f339ee9a3beabe9f814ce61ad021b6e8e`。
+
+### 2026-10-01 17:41 - Codex：1.3.9同版本8x修订启动
+
+- 同工具续作，复核AGENTS/INDEX/STATUS，沿用HandShake与发布流程；git pull --ff-only已最新，起始main干净。用户明确授权替换1.3.9，同步GitHub资产、稳定清单、ModelScope Releases/Models及标签，保留旧版资产证据在Artifacts/.refactor-tmp/release-1.3.9-before-8x。
+- CLI/图片桥目标范围设1–8，插件两页列表一致；OutputScale配置属性将旧9–16钳制8，队列/图片/工作台共用值。只改目标输出范围，不改模型原生scale或用户能力记录。定向8边界/9拒绝及旧配置UI测试已加入，尚待运行。
+
+### 2026-10-01 17:47 - Codex：8x修订本地验证完成
+
+- 范围：两页选项原生/1–8，CLI及图片桥同步；PluginConfig.OutputScale用属性钳制0–8，旧JSON16实际反序列化为8，队列和图片用同一值。模型原生scale、Engine缓存、用户模型能力清单不变。
+- 验证：ModelMetadata接受8并拒绝9/16/17，UI15项通过（JSON迁移、两页9个选项、8边界、既有状态同步），图片桥py_compile，build/publish0警告0错误；最终安装/回滚、自更新/独立组件保留、ZIP DLL/EXE和stable大小/hash通过。Backend29709文件审计UNCHANGED，不重跑GPU/下载/完整WiX压力矩阵；此前完整门禁沿用。
+- 文件：PluginConfig、UpscalePage、OutputScale、CliHelp、图片桥、倍率/UI探针、能力审计文档、Notes及状态/中文版本记录。PluginConfig原文件已有混合换行，机械插入首次造成新增CRLF尾白提示，按Git原始字节仅替换属性块保留未改行，diff检查最终通过；据最终原编码源码重新publish并冻结资产，未在上传后重包。
+- 原资产保存Artifacts/.refactor-tmp/release-1.3.9-before-8x；修订证据Artifacts/.refactor-tmp/release-1.3.9-8x。用户明确同版本覆盖，下一步提交推送main、用精确tag lease更新v1.3.9、clobber相同五资产并更新正文，ModelScope同路径--no-cache替换。已有旧1.3.9客户端SemVer不会发现同版本，需要手动安装；本机会同步更新。

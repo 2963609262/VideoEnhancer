@@ -1679,8 +1679,8 @@ Namespace videoenhancer
         Private Sub ConfigureOutputScaleCombo(combo As WheelLockedComboBox)
             ConfigureCombo(combo)
             combo.Items.Add("原生")
-            For outputFactor As Integer = 1 To 16 : combo.Items.Add(outputFactor.ToString() & "x") : Next
-            combo.SelectedIndex = Math.Max(0, Math.Min(16, _config.OutputScale))
+            For outputFactor As Integer = 1 To 8 : combo.Items.Add(outputFactor.ToString() & "x") : Next
+            combo.SelectedIndex = Math.Max(0, Math.Min(8, _config.OutputScale))
             AddHandler combo.SelectedIndexChanged,
                 Sub(sender, e)
                     If _syncingOutputScale Then Return
@@ -1694,7 +1694,7 @@ Namespace videoenhancer
             _syncingOutputScale = True
             Try
                 For Each combo In New WheelLockedComboBox() {_cmbOutputScale, _cmbImageOutputScale}
-                    If combo.Items.Count > 0 Then combo.SelectedIndex = Math.Max(0, Math.Min(16, _config.OutputScale))
+                    If combo.Items.Count > 0 Then combo.SelectedIndex = Math.Max(0, Math.Min(8, _config.OutputScale))
                     combo.Enabled = _config.Enabled AndAlso _config.UpscaleEnabled AndAlso _config.Backend <> "rtxvsr"
                 Next
                 Dim selected = _modelCatalog.FirstOrDefault(Function(item) String.Equals(item.Id, _config.Model, StringComparison.OrdinalIgnoreCase))

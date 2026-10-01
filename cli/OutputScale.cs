@@ -10,8 +10,8 @@ internal static class OutputScale
     {
         if (string.IsNullOrWhiteSpace(value)) return 0;
         if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var scale)
-            && scale is >= 1 and <= 16) return scale;
-        throw new ArgumentException("-output-scale 必须是 1–16 的整数");
+            && scale is >= 1 and <= 8) return scale;
+        throw new ArgumentException("-output-scale 必须是 1–8 的整数");
     }
 
     internal static string Encoder(string encoder, int width, int height, int targetScale)

@@ -52,6 +52,10 @@ partial class Program
         Set(config, "Enabled", true);
         Set(config, "Backend", "cuda");
         Set(config, "Model", "PTH/realesr-animevideov3");
+        var legacyConfig = System.Text.Json.JsonSerializer.Deserialize("{\"OutputScale\":16}", config.GetType())!;
+        Set(config, "OutputScale", (int)Get(legacyConfig, "OutputScale"));
+        Check((int)Get(config, "OutputScale") == 8, "旧配置16x归一为8x");
+        Set(config, "OutputScale", 0);
         using var panel = (Control)Activator.CreateInstance(assembly.GetType("videoenhancer.PluginPanel")!, config, true)!;
         panel.Size = new System.Drawing.Size(1200, 1000);
         var handle = panel.Handle;
@@ -73,6 +77,11 @@ partial class Program
         var videoCombo = Field(panel, "_cmbOutputScale");
         var imageCombo = Field(panel, "_cmbImageOutputScale");
         Check((int)Get(videoCombo, "SelectedIndex") == 0, "默认原生倍率");
+        Check(((IList)Get(videoCombo, "Items")).Count == 9 && ((IList)Get(imageCombo, "Items")).Count == 9,
+              "两页仅提供原生和1至8x");
+        Set(videoCombo, "SelectedIndex", 8);
+        Check((int)Get(config, "OutputScale") == 8 && (int)Get(imageCombo, "SelectedIndex") == 8,
+              "8x边界同步配置与图片页");
         Set(videoCombo, "SelectedIndex", 3);
         Check((int)Get(config, "OutputScale") == 3 && (int)Get(imageCombo, "SelectedIndex") == 3, "视频与图片倍率同步保存");
         Check(((string)Get(Field(panel, "_outputScaleHint"), "Text")).Contains("原生推理后缩放至 3x"), "缩放提示准确");
