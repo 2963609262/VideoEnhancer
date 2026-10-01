@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-10-01 17:47
+Last updated: 2026-10-01 17:54
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-01 17:54：**1.3.9已按授权替换为8x修订版**。目标范围1–8，旧9–16x配置载入为8；源码与v1.3.9标签`b1cebcb`已推送，五资产/稳定清单/分类正文及两处ModelScope同步。11项实际下载哈希、故障回退通过，本机同版本替换成功且配置/用户能力清单/aria2保持。已安装旧1.3.9需手动更新；收尾记录提交推送后核对干净工作树。
 
 - 2026-10-01 17:47：8x范围修订及旧配置兼容通过定向CLI/15项UI检查；最终build/publish0警告0错误、安装/自更新及ZIP/清单哈希通过，Backend审计仍UNCHANGED。冻结修订资产，开始按授权提交并替换1.3.9标签/GitHub与ModelScope资产。
 
@@ -85,8 +87,8 @@ Updated by: Codex
 - 工作区：`C:/Codex Program/3fui plugin`；Windows / PowerShell，.NET 10，文件读写 UTF-8。
 - 本轮构建 HostBin：`C:/Users/maxzr/AppData/Local/Temp/3fui-core-compat-host`，LakeUI 5.9。实际宿主发布根不含可用 FFmpegFreeUI.dll，构建需显式 HostBin。
 - 安装位置：`C:/Program portable/3FUI/3FUI`，插件位于其 `Plugin` 下。覆盖前检查 FFmpegFreeUI/videoenhancer 均退出，备份再复制并校验哈希。
-- 最新发行部署备份：`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-release-1.3.9-20261001-172635`，含升级前EXE/DLL与插件配置；部署证据Artifacts/.refactor-tmp/release-1.3.9/local-deployment.json。
-- 当前安装正式1.3.9：EXE SHA256 `E5ACDF9C681224D04421811F4B601066CC5D454ADFF172ED1880FC7EEACD0F94`，DLL `2D90DCA6D42AAF0454AF574F5F2EBEE714E27417781880EB5E2D1B93D2887FB1`；旧EXE/DLL/配置完整备份于上述发行目录。CLI实际位于Plugin/videoenhancer/videoenhancer.exe。
+- 最新发行部署备份：`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-1.3.9-8x-20261001-175231`，含替换前EXE/DLL与插件配置；证据Artifacts/.refactor-tmp/release-1.3.9-8x/local-deployment.json。
+- 当前安装正式1.3.9（8x修订）：EXE SHA256 `98519EDFD9F25D25CFE151F38BC6AAD62763905025C0D9E5BDB3AD08CAED84DB`，DLL `1040B389AF9877EF3C6AF3E152B215F436B809B4E6A5DC5363147969685E2998`；升级前文件完整备份。CLI实际位于Plugin/videoenhancer/videoenhancer.exe。
 - 构建获取固定版 Aria2 Next 与 7-Zip，校验哈希并打包许可/源码；上游曾返回 502，重试成功。构建脚本用 pwsh，不增加用户运行依赖。
 - 历史 GPU 矩阵存在真实 RTX 3060 测试证据；换机器或验证 GPU 专项时重查硬件、驱动与运行库。认证状态也需现查，Token 不进仓库。
 
@@ -115,7 +117,7 @@ git diff --check
 ## Git Sync
 
 - Repository: 当前根目录；branch main 跟踪 origin/main。
-- 最新发行源码提交：`0f38b64 release: 1.3.9`，main及注释标签v1.3.9已推送origin；收尾文档另作提交推送，最后核对本地HEAD/远端main一致。
+- 最新发行修订提交：`b1cebcb fix: cap output scale at 8x for 1.3.9`，main及注释标签v1.3.9已同步origin；用户明确同版本替换授权，tag以精确lease更新，main未强推。首次发行0f38b64仍保留历史，收尾文档另作提交。
 - origin：`https://github.com/maxzrb/VideoEnhancer.git`；upstream：`https://github.com/user-Wing/VideoEnhancer.git`。
 - 所有前序源码、测试和归档已提交；发行产物、上传缓存与验证夹具留在忽略目录，不纳入Git。收尾提交后工作树应干净，切换设备前确认远端同步。
 
@@ -294,3 +296,14 @@ git diff --check
 - 验证：ModelMetadata接受8并拒绝9/16/17，UI15项通过（JSON迁移、两页9个选项、8边界、既有状态同步），图片桥py_compile，build/publish0警告0错误；最终安装/回滚、自更新/独立组件保留、ZIP DLL/EXE和stable大小/hash通过。Backend29709文件审计UNCHANGED，不重跑GPU/下载/完整WiX压力矩阵；此前完整门禁沿用。
 - 文件：PluginConfig、UpscalePage、OutputScale、CliHelp、图片桥、倍率/UI探针、能力审计文档、Notes及状态/中文版本记录。PluginConfig原文件已有混合换行，机械插入首次造成新增CRLF尾白提示，按Git原始字节仅替换属性块保留未改行，diff检查最终通过；据最终原编码源码重新publish并冻结资产，未在上传后重包。
 - 原资产保存Artifacts/.refactor-tmp/release-1.3.9-before-8x；修订证据Artifacts/.refactor-tmp/release-1.3.9-8x。用户明确同版本覆盖，下一步提交推送main、用精确tag lease更新v1.3.9、clobber相同五资产并更新正文，ModelScope同路径--no-cache替换。已有旧1.3.9客户端SemVer不会发现同版本，需要手动安装；本机会同步更新。
+
+### 2026-10-01 17:54 - Codex：1.3.9同版本8x修订覆盖收尾
+
+- Authorization/Git：用户明确“改完之后替换1.3.9release”，本轮不增版本；源码b1cebcb正常推送main，v1.3.9注释tag用force-with-lease只更新该标签。旧tag对象60b132e记录在previous-tag-object.txt，新对象275161c指向b1cebcb；没有强推main。原资产/正文保留在release-1.3.9-before-8x。
+- Remote：GitHub同一Release五资产clobber，正文与target_commitish更新；先四包再stable。ModelScope用隔离目录仅含1.3.9及清单/README/Notes，--no-cache替换，7项提交、0失败/0删除；Models备用EXE同路径同步。旧其他版本、模型权重和独立Backend资产未更换。
+- Verification：11文件（GitHub5、ModelScope5、Models备用1）实际HTTP200、大小/SHA256均匹配冻结8x修订产物；两份stable JSON一致、分类正文一致，后端2026.09.30.1两条历史补丁保持。实际编译插件的GitHub检查失败→ModelScope清单及ModelScope包失败→GitHub新hash下载通过。
+- Product：CLI和图片桥目标1–8，工作台/图片选择原生+1–8共9项，PluginConfig载入旧JSON16→8且两页/队列使用同值。15项界面检查、CLI8接受/9以上拒绝、图片桥py_compile通过；build/publish0警告0错误、最终安装/回滚与自更新/独立组件保留、ZIP/清单hash通过。Backend29709文件逐项审计UNCHANGED。此前模型结构、代表GPU与完整WiX门禁沿用，不重复完整GPU/下载/安装压力。
+- Local：检查宿主/CLI退出，备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-1.3.9-8x-20261001-175231`后用最终修订EXE正式--apply-update返回UPDATE_COMPLETE|1.3.9；安装EXE/DLLhash匹配，-h输出范围1–8。配置、models/User/model-catalog.json与aria2-next.exe哈希保持，不自动改能力记录、不启动宿主。旧高倍率只在新程序载入配置时归一，未在部署脚本改写配置。
+- Assets/evidence：新EXE17312244字节/hash98519edf…，安装器16091564/hash253b5c4b…，ZIP18611086/hash2efb7398…，stable1665/hash9bbe3253…，GPL源码hash不变；完整hash见版本记录及Artifacts/.refactor-tmp/release-1.3.9-8x。构建末尾仅为保持PluginConfig原有混合换行重publish，最终产物重新冻结并验证后才上传，上传后未重新打包。
+- Limitation：同版本SemVer不会触发已装旧1.3.9的自动更新，其他设备需手动安装修订版；本机已替换。用户选择此同版本覆盖策略，未扩展修改更新器语义。
+- Closeout：STATUS/中文进度/版本记录更新；main与tag已推送，最后提交推送收尾记录并核对干净工作树。此前独立TODO不变。
