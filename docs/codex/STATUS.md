@@ -1,14 +1,15 @@
 # Project Status
 
-Last updated: 2026-10-01 13:06
+Last updated: 2026-10-01 13:15
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
 
-- 用户最新指令：按发布流程正式发布 **1.3.8**，已授权版本更新、提交、推送与双源发布。当前发行构建和本地门禁已通过，正在发布；线上 1.3.7 不覆盖。
-- 1.3.8 包括本日下载/解压/缓存/WiX全部改动，用户此前已反馈可用。后端29,709文件逐项审计 UNCHANGED，继续使用2026.09.30.1，不生成空更新。
+- 正式发布 **1.3.8 / 2026-10-01**：GitHub [v1.3.8](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.8)、ModelScope Releases及Models备用EXE已发布，标签指向源码提交 `2895ce8`；未覆盖旧版本。
+- 本日下载/解压/缓存/WiX改动已纳入1.3.8；本地构建与门禁、11项双源文件实际下载哈希、双源故障回退均通过。宿主退出后经正式自更新入口部署本机，备份与EXE/DLL哈希已核对；未自动启动宿主，重启后的真实窗口观察仍由用户完成。
+- Python Backend沿用 **2026.09.30.1**：29,709文件审计UNCHANGED，远端channel仍保留2条历史补丁，不发布空更新。RTX runtime、模型、配置与独立组件未更换。
 - 教程缓存位于 `Plugin/videoenhancer/cache/TutorialImages`，迁移已知旧图片缓存，保留冲突/无关文件。下载完整异常进 `logs/downloads.log`，文件部署失败进 `logs/installer.log`；错误提示样式与五秒显示时长保持。
 - 7z 使用便携 7-Zip 26.03 x64 多线程解压，SharpCompress 先做归档路径/链接预检，原生 CRC 保留；单运行 EXE 内含工具、许可证和对应源码。界面仅显示解压百分比，不显示文件名；取消轮询只在任务有标记时启用。
 - 下载全部先单独完成后端安装，再按列表顺序最多三个模型任务并行、持续补位。取消或普通失败不阻断队列；离线/认证问题停止补位并等当前任务结束。手动重试加入队尾，重复点击去重，有空位立即开始，按文件最新状态统计；不自动重试。
@@ -17,7 +18,7 @@ Updated by: Codex
 
 ## Active TODO
 
-- [ ] 完成1.3.8源码提交/标签、GitHub发布、ModelScope镜像及远端回读核验，完成后提交收尾记录。
+- [ ] 本机重启3FUI后继续观察1.3.8真实窗口与处理；已完成正式自更新及哈希核验，本次未自动启动宿主。
 - [ ] 维护清理：本机旧版三份载荷缓存约 59 MB；项目三份完整解压验证输出约 18 GB。后者曾两次被自动审批以 blocked by policy 拒绝，未绕过。确认归属与路径后再单独处理，勿清系统共享缓存。
 - [ ] 历史发布验证补充：1.3.7 的 GitHub 大资产此前 CDN 下载超时，仅 API digest/大小核对；ModelScope 实际下载哈希通过。网络恢复后可补 GitHub 大资产实际下载校验。
 - [ ] 长期可选工作：发行自动化与上游选择性同步清单；模型镜像逐文件来源/授权审计。项目自身 MIT 已落实，不沿用旧的“项目许可证未定”说法。
@@ -29,7 +30,8 @@ Updated by: Codex
 
 - 2026-09-30：正式发布 1.3.7，教程图片滚动缓存优化；GitHub/ModelScope 发布记录已提交并推送。
 - 2026-10-01：便携教程缓存、原生解压、取消和日志、WiX 安装残留收敛、解压百分比显示、持续补位与手动重试入队完成；本机已更新，用户反馈无明显问题。
-- 2026-10-01：当前操作记录压缩、完整原文归档、导航更新；未改程序或版本。
+- 2026-10-01：当前操作记录压缩、完整原文归档、导航更新；归档入Git后的字节/SHA256再次核对一致。
+- 2026-10-01：正式发布1.3.8并完成双源回读、故障回退和本机正式自更新；源码、标签及收尾记录推送origin。
 
 ## Decisions
 
@@ -43,7 +45,7 @@ Updated by: Codex
 
 ## Risks And Blockers
 
-- 当前版本源已递增1.3.8，发行构建/包清单一致；发布进行中，双源回读完成前不宣告结束。
+- 1.3.8双源发布、实际下载和故障回退已验证；原始IO/end失败根因仍未确证，后续复发读取插件日志。
 - 用户最初的 99% 五分钟后 IO/end 类失败未复现；原实现同包最终成功，不能把根因写成已确证。再次发生时读取插件日志。
 - 原生工具/源码内嵌增加运行 EXE 约 2 MB；优化结果是解压耗时与运行开销降低，不是文件体积下降。
 - 历史“无 NVIDIA/缺宿主程序集/只隐藏控制面板”等过时阻塞已移出当前状态；当前设备曾完成真实 GPU 验证，本轮也已有可用构建引用。换设备后仍须重查。
@@ -56,8 +58,8 @@ Updated by: Codex
 - 工作区：`C:/Codex Program/3fui plugin`；Windows / PowerShell，.NET 10，文件读写 UTF-8。
 - 本轮构建 HostBin：`C:/Users/maxzr/AppData/Local/Temp/3fui-core-compat-host`，LakeUI 5.9。实际宿主发布根不含可用 FFmpegFreeUI.dll，构建需显式 HostBin。
 - 安装位置：`C:/Program portable/3FUI/3FUI`，插件位于其 `Plugin` 下。覆盖前检查 FFmpegFreeUI/videoenhancer 均退出，备份再复制并校验哈希。
-- 最新备份：`Artifacts/.refactor-tmp/backup-3fui-before-retry-enqueue-20261001-1241`，含原 DLL/EXE 及 installed-hashes.json。
-- 最新部署 SHA256：DLL `6029B8BC853063DE0FB3571501A72D1A6D1952CACE5A574C84D92B86B2DA48DC`；EXE `FA2FC144722E56B9ED7F8F7B32B8B7B435B9B68677BBE5A77FA11FB81E0FB4E8`。
+- 最新发行部署备份：`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-release-1.3.8-20261001-131000`，含更新前DLL/EXE及installed-hashes.json。
+- 最新1.3.8部署SHA256：DLL `5A876926E10ABDCBEE9E786C27603B73717B2E68C4730986DAB8E6A3D9C39C26`；EXE `71D3F724FDAE745A84D1B97AFC5933F432EBE04561B7D04CF6845191BCAD7E64`。
 - 构建获取固定版 Aria2 Next 与 7-Zip，校验哈希并打包许可/源码；上游曾返回 502，重试成功。构建脚本用 pwsh，不增加用户运行依赖。
 - 历史 GPU 矩阵存在真实 RTX 3060 测试证据；换机器或验证 GPU 专项时重查硬件、驱动与运行库。认证状态也需现查，Token 不进仓库。
 
@@ -86,10 +88,9 @@ git diff --check
 ## Git Sync
 
 - Repository: 当前根目录；branch main 跟踪 origin/main。
-- HEAD：`ef7bee8 docs: close out 1.3.7 release status`；本次 git pull 返回 Already up to date。
+- 发行源码提交：`2895ce8 release: 1.3.8`，main及注释标签v1.3.8已推送origin；本次收尾文档另作提交推送，结束时核对main与origin/main一致。
 - origin：`https://github.com/maxzrb/VideoEnhancer.git`；upstream：`https://github.com/user-Wing/VideoEnhancer.git`。
-- 工作树非干净：本轮下载/缓存/解压/WiX源码、取消与原生工具、新测试和管理记录尚未提交；本次归档也是未提交改动。未执行提交、推送或发布。
-- 用户确认后建议考虑提交；切换工具或设备前尤其要保存。不要覆盖现有修改或按旧归档执行破坏性 Git 操作。
+- 所有前序源码、测试和归档已提交；发行产物、上传缓存与验证夹具留在忽略目录，不纳入Git。收尾提交后工作树应干净，切换设备前确认远端同步。
 
 ## Session Log
 
@@ -128,3 +129,19 @@ git diff --check
 - 版本源、分类Release Notes和版本记录更新；build-modelscope-release生成最终EXE/安装器/ZIP/源码/stable，build/publish均0警告0错误。Backend审计29,709文件UNCHANGED、版本保持2026.09.30.1。
 - 验证：Python33/33，队列11/11，编译插件UI5场景，发布门禁5/5，后端更新器6/6，历史补丁5/5；内层安装器、自更新隔离、最终WiX外层成功/失败/回滚与精确缓存/登记清理通过。历史测试首次误传多文件apphost缺DLL，改用最终单EXE后通过，非产品失败。ZIP原生工具/源码与EXE哈希、stable大小/hash一致。
 - Git：main原HEAD ef7bee8，前序源码和记录尚未提交；下一步提交推送、标记v1.3.8并发布五项资产，同步ModelScope后回读。不重新打包或覆盖1.3.7。
+
+### 2026-10-01 13:15 - Codex：1.3.8发布收尾
+
+- Release：https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.8；源码2895ce8已推送main，注释标签v1.3.8同指向，正式稳定版、五项资产、逐行分类正文与本地一致。
+- Mirrors：modelscope upload AerithDream/VideoEnhancer-Releases release/dist/modelscope --repo_type dataset（6文件提交、0失败、0删除）；Models同路径备用EXE使用--no-cache上传，未动模型/后端资产。
+- 回读：GitHub五文件、ModelScope五文件及Models备用EXE共11项HTTP200/大小/实际下载SHA256全部一致；两份stable清单完全一致，README优先级正确。模型列表96项无重复，Plugin/videoenhancer.exe仅1项、大小正确。Backend通道latestVersion2026.09.30.1、两条补丁保持。
+- 环境排障：首次Python requests GitHub证书校验因本机CA集合不足失败，改用已安装truststore读取Windows可信证书后全部通过，未关闭TLS校验；重复gh下载已停止。
+- 故障回退：最终编译插件实测GitHub不存在仓库→ModelScope清单1.3.8；ModelScope无效数据集→GitHub包，最终SHA256正确。首个夹具误用无效GitHub配置格式同时影响包URL，改为真实404仓库后验证通过；产品未改。
+- 本机：确认FFmpegFreeUI/videoenhancer退出，备份后用最终EXE --apply-update --wait-pid 0执行正式升级，UPDATE_COMPLETE|1.3.8；EXE/DLL哈希与发行产物一致。未自动启动3FUI，未重复GPU处理测试；当前设备历史RTX3060/TensorRT验证见归档。
+- 证据：Artifacts/.refactor-tmp/release-1.3.8中的asset-hashes、remote-verification、remote-backend-channel、remote-models、local-deployment与故障回退夹具；本机备份C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-3fui-before-release-1.3.8-20261001-131000。归档入Git字节/hash一致，冻结目录属性保留原换行/历史空白。
+- aria2-next-2.5.6-source.tar.gz: 2493064 bytes / SHA256 `0a1e324cc8ddae583e3d3b18411594ee24f24d210ee7216cf11872e3454ccb72`。
+- VideoEnhancer-1.3.8-manual-install.zip: 18601773 bytes / SHA256 `f38631bbe20d6b29afc7480003d3ddb60567630feebd1f7c7c1deed30bdc3128`。
+- VideoEnhancer-1.3.8-win-x64.exe: 17303147 bytes / SHA256 `71d3f724fdae745a84d1b97afc5933f432ebe04561b7d04cf6845191bcad7e64`。
+- VideoEnhancerInstaller-1.3.8-win-x64.exe: 16079246 bytes / SHA256 `bcbb86c4f5492ca8a55f94a288313e320677c569e814ff7756b49c279152342d`。
+- stable.json: 1175 bytes / SHA256 `b2cfb285ff406f3fb6c9d6f367c864f68936222f4a0c71ae9c82ce24ec786d13`。
+- Records/Git：STATUS、中文工作进度和版本记录更新；发行发布任务已完成，旧缓存/测试输出清理及历史专项/长期审计仍为独立待办。最后提交推送收尾文档并核对干净工作树。
