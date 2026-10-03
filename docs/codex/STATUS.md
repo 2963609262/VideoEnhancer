@@ -1,18 +1,11 @@
 # Project Status
 
-Last updated: 2026-10-03 19:51
+Last updated: 2026-10-01 17:56
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
-
-- 2026-10-03 19:51：按“提交后继续”先提交此前 13 个文件为 `be652ba`，随后落实工作台渲染事务。用户明确不保留旧宿主兼容：SmoothScrollPanel 直接调用 LakeUI 5.110 公开 BeginRenderUpdate，动画每拍、ScrollTo、基础滚轮和滚动条按下/拖动统一包围；构建和运行时最低版本及文档改为 5.110（5.x），无反射/旧 API 降级路径。
-- 真实 PluginPanel A/B：从 be652ba 独立构建基线，固定背景每拍12px，两组各136张PNG。所选背景列119个移动采样中，基线119/119检出±12px错位，修复0/119；普通真实输入的外部RGB无损录像45秒/1845实际帧仍检出1帧+24px（第1564零基帧），不能宣称根治或把比例当日常故障率。
-- 安装宿主 EXE 的隔离副本已成功加载新 DLL，computer-use 完成滚轮正反及滚动条往返，截图与30秒/1640帧无损录屏有效；仅复制外观设置，正式安装未替换。产品 build 0警告/0错误，既有 --scroll/--appearance/--dpi 回归通过。证据/报告位于 Artifacts/scroll-investigation；版本仍1.3.9，无推送或发布。本轮修复和记录一并作第二笔本地提交，提交后复核工作树干净、main领先origin/main两个提交；切换设备前应考虑推送同步。
-
-- 2026-10-03 18:40：按用户“重试并使用 computer use”恢复控制，本轮完成有效视觉对照。安装宿主内 LakeUI 5.110.0 DLL 与独立 NuGet 探针哈希一致；六组各 136 张图共 816 张，原生/显式背景源/禁复制/现有组合均 119/119 移动采样错位（±12px），公开 BeginRenderUpdate 事务为 1/119，禁复制+事务为 5/119，静止采样背景匹配。另用 computer-use 直接滚轮、外部无损录像抓到 +48px 背景错位和新露出区域黑带，证明纯 LakeUI 默认滚动存在独立可复现问题。最有依据的原因是 HWND 移动与透明背景 GPU 批次提交不同步，不能宣称事务已彻底修复。
-- 实际工作台新增全窗录像 1798x1048/25秒/54.88fps，保存中间帧、即时截图和四倍慢放；非零滚动位置的部分条带还需核对背景层级。报告/源码/分析/原始证据位于忽略目录 Artifacts/scroll-investigation。未改产品或部署，诊断窗口关闭、录制进程正常结束；main 同步 origin/main、HEAD a8262ab，既有 8 个代码修改/3 个未跟踪文件及本轮两份记录修改保留，工作树非干净。
 
 - 2026-10-01 17:54：**1.3.9已按授权替换为8x修订版**。目标范围1–8，旧9–16x配置载入为8；源码与v1.3.9标签`b1cebcb`已推送，五资产/稳定清单/分类正文及两处ModelScope同步。11项实际下载哈希、故障回退通过，本机同版本替换成功且配置/用户能力清单/aria2保持。已安装旧1.3.9可等后续版本正常更新；修订及收尾记录已推送，工作树干净。
 
@@ -54,11 +47,6 @@ Updated by: Codex
 
 ## Active TODO
 
-- [x] 2026-10-03 18:40 完成 LakeUI 精确版本核验、六组独立视觉 A/B 与外部原生滚轮复核，实际工作台复现画面已采集；详见 Artifacts/scroll-investigation/REPORT.zh-CN.md。默认滚动问题可独立复现，事务明显改善但仍有少量瞬态帧。
-- [x] 2026-10-03 19:51 将公共 BeginRenderUpdate 落实到 SmoothScrollPanel 每拍滚动和滚动条交互；真实 PluginPanel A/B、安装宿主隔离副本操作及 DPI/滚动/样式回归完成，旧宿主 API 降级不保留。
-- [ ] 继续调查少量事务残留：真实插件外录第1564零基帧仍+24px；精确源码 GPU 批次共用一次 DirectComposition Commit，HWND SetBounds 几何变化在其之前，剩余窗口合成边界尚未通过新对照确证。核对静止位置条带是否为控件透明底色层叠，不能将其直接等同移动残影。
-- [ ] 新滚动 DLL 尚未替换正式安装；若进入部署步骤，先备份并核对配置/产物哈希，保留上述残帧验收边界。隔离副本的测试配置与正式用户配置不同。
-
 - [ ] 本机重启3FUI测试能力修正弹窗/导入按钮宽度和模型菜单重复打开/切换分组后的悬停介绍、模型选择恢复原生倍率及导入重新检测；本轮已部署且哈希核验通过，未自动启动宿主。
 - [ ] 维护清理：本机旧版三份载荷缓存约 59 MB；项目三份完整解压验证输出约 18 GB。后者曾两次被自动审批以 blocked by policy 拒绝，未绕过。确认归属与路径后再单独处理，勿清系统共享缓存。
 - [ ] 历史发布验证补充：1.3.7 的 GitHub 大资产此前 CDN 下载超时，仅 API digest/大小核对；ModelScope 实际下载哈希通过。网络恢复后可补 GitHub 大资产实际下载校验。
@@ -75,10 +63,6 @@ Updated by: Codex
 - 2026-10-01：正式发布1.3.8及1.3.9，均完成双源回读、故障回退和本机正式自更新；1.3.9包含模型能力/倍率/介绍与导入界面专项。
 
 ## Decisions
-
-- 2026-10-03 19:51：用户明确“不需要保留旧宿主兼容”，直接依赖 LakeUI 5.110 公共渲染事务，最低版本同步到构建、运行时提示、README及发布流程；不保留反射探测或旧接口回落。版本号仍1.3.9，本轮未授权新发行。
-
-- 2026-10-03 18:01：用户要求以后桌面工具报告 Esc 中止时先请求继续控制；收到新的继续授权后再恢复，不能无视工具的停止信号。
 
 - 2026-10-01 17:56：用户确认1.3.9刚发布，同版本替换影响小；旧1.3.9用户可等待下一版本正常更新，无需当前手动替换，不增加同版本自动更新机制。
 
@@ -100,13 +84,7 @@ Updated by: Codex
 
 ## Environment Notes
 
-- 2026-10-03 19:51 隔离实宿主位于 Artifacts/scroll-investigation/host-fixed，EXE 与安装版 SHA256 均 A36B86380762EC34935218F371421707D4E73F8E1C8183D90F8604D1FC6FA138。修复 DLL B242A30CDC56B67D5874C32D23A4EEACFD4329A18BCCDD7CB59E34862E0C3F18 与副本插件一致；be652ba 独立构建基线 1678AB8D0E3DAEB23D3819FFD293954EE2AEBD3BE181BF87AE4732143664C7C6。本机 HostBin/.NET/Python 路径沿用已核实配置。
-
-- 2026-10-03 18:40 已从安装宿主单文件包只读提取 LakeUI.dll/FFmpegFreeUI.deps.json 到忽略证据目录：版本 5.110.0.0，SHA256 52F1CA48C6357E712C667866AE55BB45389DF65D64427930778E68BD6557F35C，与缓存 NuGet 包相同。安装插件含 SmoothScrollPanel/GpuScrollContentPanel，但与工作区构建 DLL 哈希不同，不能混用部署结论。
-
 以下仅为本机已验证路径，不能当作跨设备配置。
-
-- 2026-10-03 当前设备：Windows / PowerShell，项目 `E:/DesktopPlus/Works/Code/VideoEnhancer`；.NET SDK 10.0.401、Python 3.14/Pillow 12.3 可用。宿主 `C:/Apps/FFmpegFreeUI API Extended/FFmpegFreeUI.exe`，插件 `Plugin/videoenhancer.3fui.dll`；ffmpeg `C:/Apps/ffmpeg/ffmpeg.exe`。Ext 构建 HostBin 为邻接仓库 `FFmpegFreeUI-API-Extended-Edition/FFmpegFreeUI/bin/Release/net10.0-windows10.0.26100.0`，LakeUI 5.110.0；邻接 LakeUI 源码仅 5.5，不能作为当前版本依据。此前 C:/Codex Program 与 maxzr 用户路径属于旧环境。
 
 - 工作区：`C:/Codex Program/3fui plugin`；Windows / PowerShell，.NET 10，文件读写 UTF-8。
 - 本轮构建 HostBin：`C:/Users/maxzr/AppData/Local/Temp/3fui-core-compat-host`，LakeUI 5.9。实际宿主发布根不含可用 FFmpegFreeUI.dll，构建需显式 HostBin。
@@ -117,10 +95,6 @@ Updated by: Codex
 - 历史 GPU 矩阵存在真实 RTX 3060 测试证据；换机器或验证 GPU 专项时重查硬件、驱动与运行库。认证状态也需现查，Token 不进仓库。
 
 ## Verification And Commands
-
-- 2026-10-03 19:51 产品 dotnet build VideoEnhancerPlugin/VideoEnhancerPlugin.vbproj -c Release --no-restore -p:HostBin=<本机已核实Ext目录> -v:q：0警告/0错误；ModelMetadataUi --scroll、--appearance、--dpi 均通过，覆盖96/120/144/192 DPI、动画/滚轮转发/往返/释放及透明样式。基线/真实产品临时程序独立构建亦0警告/0错误。product-frame-analysis.json 与 product-manual-video-analysis.json 保留定量；后者 passthrough 解码，未补帧。宿主30秒1640帧（54.67fps）只做视觉复核，不作零残影断言；git diff --check通过。
-
-- 2026-10-03 18:40 滚动调查：临时 probe dotnet build -c Release --no-restore -v:q 为 0 警告/0 错误；六组各 136 帧 PNG 与 samples.json，analyze_frames.py 完成背景逐行/位移比对。FFmpeg 外录原生滚轮 25秒/1023帧，排除悬停光效覆盖区后，第807零基帧 +48px/85行匹配残差0。工作台原录1372帧，慢放只用于观看；原 PNG/无损录像用于定量。git diff --check 通过。未重跑产品构建或旧发布门禁。
 
 截至本轮已完成的证据（不是每次文档整理都重跑）：
 
@@ -143,10 +117,6 @@ git diff --check
 文档整理仅验证归档字节/SHA256、UTF-8、链接和记录结构，不重跑程序测试。程序验收与发行详见 `release/发布流程.md`。
 
 ## Git Sync
-
-- 2026-10-03 19:51：启动 git pull --ff-only 已最新；按用户要求首笔提交 be652ba（18:45）保存全部此前13文件。随后渲染事务代码、最低版本文档和两份记录作为第二笔本地提交保存，main领先origin/main2个提交，提交后复核工作树干净；未push、打标签或发布。修复提交可按标题 Synchronize upscale scrolling with LakeUI render transactions 检索。
-
-- 2026-10-03 18:40 本次实查：main 同步 origin/main，HEAD `a8262ab`；本轮启动 git pull --ff-only 已最新，8 个原有代码修改/3 个原有未跟踪文件及两份记录修改全部保留。临时测试和证据被 Artifacts 忽略，工作树非干净；未提交、推送、部署或发布。
 
 - Repository: 当前根目录；branch main 跟踪 origin/main。
 - 最新发行修订提交：`b1cebcb fix: cap output scale at 8x for 1.3.9`，main及注释标签v1.3.9已同步origin；用户明确同版本替换授权，tag以精确lease更新，main未强推。首次发行0f38b64仍保留历史，收尾文档另作提交。
@@ -344,55 +314,3 @@ git diff --check
 
 - 用户说明1.3.9刚发布，直接替换影响小；旧1.3.9等下一版即可。更新当前快照、持久决策及版本迁移说明，撤回前述要求立即手动更新的建议；保留历史日志说明当时记录。
 - 仅文档修改，不改程序/资产/标签，不重跑构建或发布；git pull已最新，起始main干净。UTF-8和原换行保留，diff检查后提交推送文档，结束核对工作树。
-
-### 2026-10-03 17:51 - Codex：滚动残影取证，用户停止桌面操作
-
-- 启动与 Git：读取 AGENTS.md、INDEX.md、STATUS.md；跨设备/路径续作，从旧 C:/Codex Program 环境转到 Steve 用户的 E:/DesktopPlus/Works/Code/VideoEnhancer。git pull --ff-only 首次被沙箱禁止写 .git/FETCH_HEAD，经正常审批后已最新；git status 显示 main 同步 origin/main、HEAD a8262ab，已有 8 个修改和 3 个未跟踪文件。所有前序变更保留，本轮未改产品源码、未提交或发布。
-- 桌面观察：按 computer-use 技能初始化 @oai/sky，选择并打开已安装 FFmpegFreeUI API Extended Edition，进入视频超分并上下滚动，连续 WGC 截图观察；首段 gdigrab 桌面局部录屏请求 60fps、实际约 42.3fps，20 秒、1218x718，抽取 29 个中间帧。可见移动过程中部分透明背景呈横向条带错位，随后恢复；没有凭静止截图确认原因。证据 installed-baseline-60fps.mp4、baseline-frames、baseline-contact.png。
-- 取证限制：WGC 截图坐标/尺寸具有 DPI 缩放，首段只覆盖窗口局部；按 title 的全窗 gdigrab 为黑图，不能作视觉证据；另一次桌面全窗录制期间窗口被遮挡/切回 Codex，因此该片不用于归因。自动独立测试也未获得有效焦点捕获，不能宣称视觉验收通过。
-- 安装/源码差异：安装插件 DLL SHA256 2D0F186686199F68EBD753434BDF9FBF4903C1F7C40F088EA01789DC9645A135，工作区构建 DLL 723B32AF662647F10F1B9A7336E5A5DFC52B52E0502FA30DFD3F1A96691161D3，二者不同。邻接本地 LakeUI 源码/Debug DLL 5.5 过旧；当前 Ext HostBin 引用 5.110.0，NuGet nuspec 指向官方提交 18163b6edc0cf339883eae5df833e2f5ff7a70a5，已下载 ModernPanel、D3D_V5Presentation、D3D_ControlSurfaceRegistry、D3D_RenderUpdate 等精确源码。普通网络因沙箱失败，经正常审批只读下载成功；旧 HwndSwapChainPresenter 路径在该提交为 404，5.110 使用 Composition 管线，未套用 5.5 推论。
-- 源码证据与待验证：ModernPanel 应用滚动偏移通过 SetBounds 移动子 HWND；坐标依赖变化调用 RequestRenderBatched，批次由计时器/共享动画帧提交。时序可能造成移动和背景采样短暂不同步，这是待验证假说，不能据此确认 LakeUI 缺陷。现有未提交 GpuScrollContentPanel 禁旧像素拷贝和 SmoothScrollPanel 子树刷新是否足够，也未完成视觉 A/B。
-- 临时复现：忽略目录 probe/ScrollProbe.csproj、Program.cs 使用 LakeUI 5.110.0，合成固定背景/透明嵌套面板与控件，准备 native、explicit、nocopy、refresh 变体。build 0 错误，因沙箱 NuGet 审计网络不可达产生 NU1900 警告；首轮 CAPTURE_INTERRUPTED，无有效结果，后改点击开始。尚未执行全部对照或产品测试。
-- 停止与收尾：Computer Use 报用户物理 Esc 停止，严格停止后续窗口操作；CIM 进程命令行查询被沙箱拒绝，唯一窗口标题筛选未返回对象；最终通过本轮 exec 会话 57686 发送中断，确认诊断进程退出（exit code 1）。更新 STATUS 当前快照/TODO/本地环境/Git 和本 Session Log，追加中文进度；版本仍 1.3.9，未更新版本记录、未部署。工作树非干净，建议继续或切换工具/设备前考虑提交前序改动与本轮记录。
-
-### 2026-10-03 17:58 - Codex：恢复独立滚动测试，再次中止
-
-- 授权/启动：用户明确“继续测试”，恢复本任务桌面操作授权；同工具同环境续作，复读 AGENTS/INDEX/STATUS，git pull --ff-only 已最新，git status 显示前序 8 个代码修改/3 个未跟踪文件及两份记录修改全部保留。
-- 实际窗口：按已读 computer-use 技能重新列出并唯一选择 LakeUI Scroll Evidence - native，激活和 WGC 截图成功。画面为黑底，说明临时复现的 BackgroundImage 并未进入 GPU 背景；查精确 5.110 源码确认 ModernPanel 重写 BackgroundImage 的 setter 为空，不能据此测试背景错位。未点击开始、未产生有效对照数据，关闭该轮自有探针。
-- 临时变更：只改忽略目录 probe/Program.cs，源图改用 ModernPanel.Image，ImageMode.Fill；最初误选不存在的 Stretch 枚举导致编译失败，依据源码改 Fill。重新离线还原已缓存包并关闭该临时项目的在线 NuGet 审计（前次 NU1900 来自受限网络），最终 build 0 警告/0 错误。未更改产品依赖或全局设置。
-- 精确源码/API：正常审批后只读下载官方 commit 18163b6edc0cf339883eae5df833e2f5ff7a70a5 的完整 ZIP 至 Artifacts/scroll-investigation/lakeui-5.110-source.zip。查得 D3D_PaintBridge.vb 内公开 BeginRenderUpdate(root) 返回 D3D_RenderUpdate.Begin(root)，可用于下一轮事务对照，无须反射内部接口。源码和 API 的存在不能替代视觉验证。
-- 停止/清理：重新启动修正后的 native 探针后，sky.list_windows 再次报告用户物理 Escape 停止；立即停止后续 Computer Use 调用，未继续捕获或输入。通过自有 exec 会话 61508 发送中断，确认进程退出（exit code 1）。
-- 验证/边界：只完成临时探针编译和官方源码检查，仍未完成 native/现有修补/绘制事务的视觉 A/B，未宣称修复。产品源码、安装插件、版本、发行资产保持本轮开始状态；未新增正式测试、未提交/推送/部署。
-- 收尾：更新 STATUS 当前快照/TODO及本 Session Log，追加中文进度。main 同步 origin/main、HEAD a8262ab，工作树非干净；建议继续调查或切换环境前考虑 Git 提交保存已有改动。
-
-### 2026-10-03 18:01 - Codex：Esc 恢复控制偏好与再次尝试
-
-- 用户明确继续测试，并要求未来 Esc 信号先请求继续控制。本轮承接刚完成的启动/Git核查，未更改测试计划或产品代码。
-- 已调用 node_repl.js_reset 清理过期窗口绑定，重新按技能初始化 @oai/sky，启动已成功编译的 native 诊断程序；该程序等待点击开始。随后 sky.list_windows 仍立即报告用户物理 Escape 中止，没有继续调用 Computer Use 或使用旧坐标；不能据此推断本次确实发生了新的物理按键，工具可能仍保留停止状态，尚未验证。
-- 按用户偏好调用 request_user_input_async，请求是否允许再次恢复控制，选项“允许继续控制/暂停桌面测试”；当前等待答复。通过自有 exec 会话 68627 发送中断，确认探针退出（exit code 1）。
-- 仍未取得新滚动帧、未完成 LakeUI 原生/现有修补/绘制事务的视觉对照，未修改或部署产品。更新 STATUS/中文进度，Git main 与 origin/main 同步、HEAD a8262ab，已有未提交改动保留，工作树非干净；建议继续或切换环境前考虑提交保存。
-
-### 2026-10-03 18:40 - Codex：computer-use 重试成功，完成滚动视觉对照
-
-- 授权/启动：承接用户继续控制答复及“重试并使用 computer use”；同工具同环境续作，复核 AGENTS/INDEX/STATUS，git pull --ff-only 经正常审批后已最新，Git 风险已报告。此次 sky.list_apps 成功，随后选定独立探针及 Ext 宿主窗口，逐次输入并刷新观察；本轮无 Esc 中止，不重复索要已有控制授权。
-- 临时代码：仅改忽略目录 probe/Program.cs，支持读取 probe-mode.txt 选择对照；transaction 模式用公共 D3D_PaintBridge.BeginRenderUpdate(viewport) 包住 ScrollTo，不跨消息循环持有。dotnet build -c Release --no-restore -v:q 为 0 警告/0 错误。未改产品源码、正式测试、依赖、安装配置或版本。
-- 视觉 A/B：computer-use 打开/截图/点击开始六个测试窗口；native、explicit、nocopy、explicit-nocopy-refresh、transaction、nocopy-transaction 各保存 136 个实际桌面 PNG 与偏移/时间样本。原生及前三补偿对照各119/119移动采样错位±12px，事务1/119、禁复制+事务5/119，所有组静止采样中位错位0。此比例针对移动后即刻采样压力条件，不等同日常发生率；禁复制只在内容根面板生效。
-- 排除采样时序疑问：新增 native-manual 窗口保持内部计时器关闭，由 computer-use 输入正反滚轮；FFmpeg 请求60fps/RGB无损/25秒，实际1023帧。原始第807零基帧背景+48px与本次移动一致，底部新露出区域短暂黑带。分析最初较大ROI被滚动条附近悬停光效染色，已改为上方未覆盖85行；修正数据仅1帧错位，48px匹配残差0，不采用光效导致的208帧计数。
-- 安装版本：安装根目录没有单独 LakeUI.dll。依据 .NET 官方 Manifest/FileEntry 格式并通过本机 SDK Bundler.IsBundle 找到包头，只读提取 LakeUI DLL 和依赖清单至 Artifacts/scroll-investigation/installed-host；版本5.110.0.0、包版本5.110.0、SHA256 52F1CA48C6357E712C667866AE55BB45389DF65D64427930778E68BD6557F35C，与 NuGet 探针相同。PE元数据确认安装插件含 SmoothScrollPanel/GpuScrollContentPanel；插件与工作区产物哈希仍不同，不将策略模拟写成已部署验收。
-- 工作台：computer-use 启动 Ext、进入超分工作台，正反及单格滚动并保存即时/静止截图。FFmpeg全窗1798x1048/25秒，共1372帧，平均54.88fps；18.8秒起有效滚动中间帧可见横向背景断层。截取18.5秒起1.5秒生成四倍慢放5.98秒，核对原始中间帧不是黑图或遮挡画面。另一次被其他窗口遮挡的静止观察未保存为证据，重新激活宿主并恢复顶部。
-- 结论/边界：LakeUI默认滚动背景不同步已独立复现；精确源码中 SetBounds 先移动、坐标依赖 RequestRenderBatched 后提交，事务明显改善，最支持移动与GPU背景提交时序问题。工作台非零位置部分条带可能还涉及背景层级，少量事务残留帧未解决，未宣称全部根因或修复完成。进一步产品修复/真实宿主验收作为后续可选任务。
-- 证据/命令：REPORT.zh-CN.md、frame-analysis.json/analyze_frames.py、manual-video-analysis.json/analyze_manual_video.py、六组PNG、workbench-retry-60fps.mp4、workbench-scroll-slow4x.mp4、native-manual-lossless.mkv/native-manual-mismatch.png，均在忽略证据目录。执行编译、SDK包头及PE只读检查、FFmpeg录制/抽帧/slowdown/ffprobe、背景像素分析；最终git diff --check通过。不重复无关产品、下载、GPU推理或发布压力测试。
-- 收尾：自有探针通过computer-use关闭，后续列表确认消失；录制exec会话87813/54140均exit0，工作台恢复顶部保留打开。更新STATUS当前快照/TODO/验证/环境/Git及本日志，追加中文进度；仍1.3.9、不改版本记录。main同步origin/main、HEAD a8262ab，工作树非干净；建议继续或切换工具/设备前考虑提交保存。
-
-### 2026-10-03 19:51 - Codex：提交后落实渲染事务，取消旧宿主兼容并继续实测
-
-- 续作/同步：按用户“提交后继续”，同工具同环境续作；复读 AGENTS/INDEX/STATUS，git pull --ff-only 已最新，报告既有改动风险。18:45提交此前全部13文件为 be652ba（Improve transparent UI and preserve scroll investigation），提交后工作树干净，main领先origin/main1。
-- 用户方向：用户随后“不需要保留旧宿主兼容”；移除初拟反射 API 探测与旧接口回落，直接用5.110公共接口。编译产物引用当前LakeUI5.110，构建最低版本/运行时提示/README/发布流程同步。旧用户配置迁移与其他业务兼容不属于本次宿主要求，未扩大改动。
-- 产品代码：LakeScrollPanel.vb 新增 ApplyScrollPosition，每拍动画和显式 ScrollTo 在 BeginRenderUpdate(Me) 内完成；基础滚轮、滚动条按下与捕获左键拖动同样包围，普通悬停原路径。保留现有内容根禁复制、动画合并和子树刷新。PluginPanel.vb/UpscalePage.vb 更新版本检查并纠正此前从旧源码推得“自动背景不注册依赖”的注释；vbproj提高依赖基线。无新业务功能。
-- 真产品 A/B：git archive be652ba 导出 VideoEnhancerPlugin 到忽略目录独立构建，ProductProbe 通过预览模式分别加载基线和修复真实PluginPanel，固定源图，控件层级和滚动实现来自产品。两组各136PNG，其中119移动采样。x1145对x1197、550行，最佳位移相较0位移多50匹配行才记为错位（排除正常文字/下拉框）；基线119/119±12px，修复0/119。压力采样率不等于日常发生率。
-- 外录复核：真实PluginPanel只由computer-use滚轮正反和滚动条往返驱动；程序只记录偏移0–506，不驱动或截图。外部FFmpeg45秒、1200x740 RGB无损1845实际帧；passthrough解码，最初默认解码补帧的2700计数已废弃。以x5固定源列、410行/±80px检出第1564零基帧+24px，0px匹配0、24px匹配343/410；1845帧源列有效，原异常PNG核对。事务显著改善但仍未根治。
-- 真宿主复核：安装EXE与必要DLL/背景图复制到host-fixed（EXE哈希相同），加载新插件（DLL哈希一致）。只提取外观设置，新测试配置关闭插件自动更新；不复制Agent/Key/Token，也不替换正式安装。computer-use打开超分工作台完成滚轮正反/拖至底部/回顶部，未累积布局漂移。保存截图、30秒1798x1048无损录像1640实际帧、4倍慢放；自然背景未做零残影量化结论。慢放通过open_in_codex排队展示。
-- 源码边界：精确提交的HwndCompositionPresenter共享设备一次Commit发布GPU批次，而子HWND移动在之前；残帧可能仍与几何/合成发布边界有关，未证实更细根因。正式安装新DLL、事务残帧与静止条带层叠核对进入TODO。
-- 控制/敏感信息：首次ProductProbe启动报告Computer Use app approval timed out，发起继续控制询问，用户回答允许后恢复；用户输入通知要求重新get_window_state，均刷新后继续，无Esc绕过。读取完整宿主Settings时误将密钥字段带入工具输出，已向用户说明；后续采用明确非敏感字段白名单，隔离副本敏感字段门禁通过，不将密钥值写入报告或仓库。
-- 验证：产品build0警告/0错误，现有ModelMetadataUi --scroll/--appearance/--dpi均通过；不新增镜像实现的正式测试、不重复无关下载/推理/发布门禁。录制会话98822/6322 exit0；收尾进程名核查未返回探针、录制或FFmpegFreeUI进程。git diff --check通过。
-- 收尾/Git：更新STATUS当前快照/TODO/决定/本机环境/验证/Git及本日志，追加中文进度；版本仍1.3.9，不更新版本迭代记录。六处代码/依赖文档和两份记录一起作为第二笔本地提交（Synchronize upscale scrolling with LakeUI render transactions），提交后复核干净、main领先origin/main2；未推送或发布，切换环境前建议考虑推送同步。

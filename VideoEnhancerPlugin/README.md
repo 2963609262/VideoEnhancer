@@ -169,27 +169,29 @@
 推荐在仓库根目录通过解决方案构建：
 
 ```powershell
-dotnet build .\VideoEnhancer.slnx -c Release `
-  "-p:HostBin=C:\path\to\3FUI\bin"
+dotnet build .\VideoEnhancer.slnx -c Release
 ```
 
 也可以只构建插件：
 
 ```powershell
-dotnet build .\VideoEnhancerPlugin\VideoEnhancerPlugin.vbproj -c Release `
-  "-p:HostBin=C:\path\to\3FUI\bin"
+dotnet build .\VideoEnhancerPlugin\VideoEnhancerPlugin.vbproj -c Release
 ```
 
 项目会生成
-`VideoEnhancerPlugin\bin\Release\net10.0-windows\videoenhancer.dll`，
+`VideoEnhancerPlugin\bin\Release\net10.0-windows10.0.17763.0\videoenhancer.dll`，
+同时暂存为 `VideoEnhancerPlugin\obj\plugin-artifact\videoenhancer.3fui.dll`。
 CLI 发布时会将其作为 `videoenhancer.3fui.dll` 放入
 `Artifacts\VideoEnhancer.zip`。附加
-`"-p:PluginInstallDir=C:\path\to\3FUI\Plugin"` 可直接复制到测试宿主，
+`"-p:PluginInstallDir=Artifacts\test-host\Plugin"` 或设置 `VIDEOENHANCER_PLUGIN_DIR` 可直接复制到测试宿主，
 不需要从 ZIP 中手动提取。
 
-`HostBin` 目录必须包含 `FFmpegFreeUI.dll` 和 `LakeUI.dll`。它也可以通过
-`VIDEOENHANCER_HOST_BIN` 环境变量提供；仓库与 FFmpegFreeUI 并列时会自动查找
-相邻 Release/Debug 输出。LakeUI `5.1` 是最低基线，只接受后续 5.x 版本。
+构建只需要 .NET 10 SDK 和 NuGet 依赖，不需要宿主 DLL 或相邻源码仓库。
+`HostRuntime.vb` 在运行时访问进程内已加载的宿主，任务和进度写入直接作用于原对象。
+安装路径相对仓库根目录解析，未指定时不复制到任何宿主目录。
+LakeUI 编译引用通过 NuGet 固定为 `5.110.0`，
+目标平台为 Windows 10 1809 或更新版本。运行时由宿主提供 LakeUI `5.110` 或更新的 5.x，
+插件包不附带 LakeUI。
 
 ### 页面代码结构
 
@@ -237,8 +239,7 @@ CLI 发布时会将其作为 `videoenhancer.3fui.dll` 放入
   「插件总开关」文案加宽为「关闭此开关时，超分主页面功能不生效」，实时预览页左侧留 30px 边距；
   「预览输出」右键菜单项不再依赖插件总开关（实时预览始终可用），队列窗体重建后自动重挂；
   预览抽帧节流：最小抽帧间隔 + 64KB/0.25 秒阈值 + busy 期间合并待补一帧 + mjpeg 输出；
-  deploy.ps1 追加复制插件 DLL 到 `C:\PortableSoft\FFmpegFreeUI ReadyToRun x64\plugin`
-  （最新发布版 3FUI 插件目录）与开发版 `Video Enhancer GUI\Plugin`。
+  当时 deploy.ps1 追加了发布版和开发版宿主的插件复制；当前安装目录由参数或环境变量指定。
 
 - 1.1（实时预览抽帧修复 + 预览输出 + 设计器绝对定位）：实时预览抽帧改用 `-ss` 进度定位
   回退链（修复输出文件写入期间 `-sseof` 必然失败导致的持续黑屏）；CLI 中转任务

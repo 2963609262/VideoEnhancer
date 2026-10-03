@@ -11,7 +11,6 @@ Imports System.Text.RegularExpressions
 Imports System.Reflection
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
-Imports FFmpegFreeUI
 Imports LakeUI
 
 Namespace videoenhancer
@@ -131,7 +130,7 @@ Namespace videoenhancer
             StopEnvironmentCheck(2000)
             Try
                 QueueHook.Uninstall()
-                设置_v6.实例对象.替代进程文件名 = ""
+                HostSettings.AlternativeProcessPath = ""
             Catch
             End Try
             _config.Enabled = False
@@ -293,12 +292,12 @@ Namespace videoenhancer
                     ShowStatus("未能挂载""加入编码队列""按钮，请确认 3FUI 版本兼容", True)
                     Return
                 End If
-                设置_v6.实例对象.替代进程文件名 = _config.ExePath
+                HostSettings.AlternativeProcessPath = _config.ExePath
                 ShowStatus("已启用：编码队列将通过 videoenhancer.exe 中转执行", False)
             Else
                 Try
                     QueueHook.Uninstall()
-                    设置_v6.实例对象.替代进程文件名 = ""
+                    HostSettings.AlternativeProcessPath = ""
                 Catch
                 End Try
                 ShowStatus("已停用：编码队列恢复为直接执行 ffmpeg", False)
