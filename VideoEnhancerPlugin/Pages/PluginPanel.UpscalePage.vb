@@ -18,7 +18,7 @@ Namespace videoenhancer
 
     Public Partial Class PluginPanel
 
-        Private Const UpscaleContentHeight As Integer = 920
+        Private Const UpscaleContentHeight As Integer = 744
         Private _environmentCheckCompleted As Boolean = False
         Private ReadOnly _environmentCheckSync As New Object()
         Private _environmentCheckCancellation As System.Threading.CancellationTokenSource
@@ -1056,7 +1056,7 @@ Namespace videoenhancer
         End Function
 
         Private Shared Function CreateOfficialField(caption As String, editor As Control,
-                                                      Optional rightMargin As Integer = 12) As Control
+                                                      Optional rightMargin As Integer = UiColumnGap) As Control
             Dim layout As New DpiLayoutPanel With {
                 .Margin = New Padding(0, 0, rightMargin, 0),
                 .Padding = Padding.Empty,
@@ -1070,15 +1070,14 @@ Namespace videoenhancer
             label.TextAlign = ContentAlignment.BottomLeft
             editor.Dock = DockStyle.None
             editor.AutoSize = False
-            editor.MinimumSize = New Size(0, 32)
+            editor.MinimumSize = New Size(0, UiControlHeight)
             editor.Margin = Padding.Empty
             layout.Controls.Add(label)
             layout.Controls.Add(editor)
             Dim arrange =
                 Sub()
-                    label.SetBounds(layout.ScaleX(2), 0, Math.Max(0, layout.ClientSize.Width - layout.ScaleX(4)), layout.ScaleY(28))
-                    editor.SetBounds(0, layout.ScaleY(31), layout.ClientSize.Width,
-                        Math.Max(layout.ScaleY(32), layout.ClientSize.Height - layout.ScaleY(34)))
+                    label.SetBounds(layout.ScaleX(2), 0, Math.Max(0, layout.ClientSize.Width - layout.ScaleX(4)), layout.ScaleY(UiFieldCaptionHeight))
+                    editor.SetBounds(0, layout.ScaleY(UiFieldEditorTop), layout.ClientSize.Width, layout.ScaleY(UiControlHeight))
                 End Sub
             AddHandler layout.Layout, Sub(sender, e) arrange()
             arrange()
@@ -1096,7 +1095,7 @@ Namespace videoenhancer
         Private Shared Sub ConfigurePrimaryButton(button As ModernButton)
             button.Font = New Font("Microsoft YaHei UI", 10.0F, FontStyle.Regular)
             button.ForeColor = UiText
-            button.BorderRadius = 10
+            button.BorderRadius = UiCornerRadius
             button.BorderSize = 0
             button.BorderColor = Color.Transparent
             button.HoverBorderColor = Color.Transparent
@@ -1129,7 +1128,7 @@ Namespace videoenhancer
         Private Shared Sub ConfigureSecondaryButton(button As ModernButton)
             button.Font = New Font("Microsoft YaHei UI", 10.0F, FontStyle.Regular)
             button.ForeColor = UiText
-            button.BorderRadius = 10
+            button.BorderRadius = UiCornerRadius
             button.BorderSize = 0
             button.BorderColor = Color.Transparent
             button.HoverBorderColor = Color.Transparent
@@ -1165,10 +1164,9 @@ Namespace videoenhancer
         End Sub
 
         Private Shared Sub ConfigureCombo(combo As ModernComboBox)
-            ' AutoSize=False + 最小高度：下拉框高度完全由所在单元格决定且不小于箭头区域，
-            ' 与宿主一致（宿主下拉框固定 30px 高、Dock=Fill、Overlay 下拉）。
+            ' 统一紧凑高度，保留字体与箭头的可读空间；下拉列表仍使用宿主 Overlay 模式。
             combo.AutoSize = False
-            combo.MinimumSize = New Size(0, 32)
+            combo.MinimumSize = New Size(0, UiControlHeight)
             combo.Dock = DockStyle.Fill
             combo.DropDownMode = ModernComboBox.DropDownDisplayMode.Overlay
             combo.Font = New Font("Microsoft YaHei UI", 10.0F)
@@ -1188,7 +1186,7 @@ Namespace videoenhancer
             combo.HoverBorderColor = Color.Transparent
             combo.ArrowColor = UiTextMuted
             combo.HoverArrowColor = UiText
-            combo.BorderRadius = 10
+            combo.BorderRadius = UiCornerRadius
             combo.BorderSize = 0
             ' 与 3FUI 的选项型下拉框一致：只能选择既有项目，不能自由修改文本。
             combo.Editable = False
@@ -1212,8 +1210,8 @@ Namespace videoenhancer
             ' 先给控件一个足够容纳初始值的临时宽度，再设置文本相关属性，Dock=Fill 后仍使用最终布局宽度。
             control.AutoSize = False
             control.Font = New Font("Microsoft YaHei UI", 10.0F)
-            control.Size = New Size(320, 34)
-            control.MinimumSize = New Size(0, 32)
+            control.Size = New Size(320, UiControlHeight)
+            control.MinimumSize = New Size(0, UiControlHeight)
             control.Minimum = CDec(minimum)
             control.Maximum = CDec(maximum)
             control.Value = CDec(Math.Max(minimum, Math.Min(maximum, value)))
@@ -1239,7 +1237,7 @@ Namespace videoenhancer
             control.ForeColor = UiText
             control.BorderColor = Color.Transparent
             control.BorderSize = 0
-            control.BorderRadius = 10
+            control.BorderRadius = UiCornerRadius
         End Sub
 
         Private Shared Sub ConfigureModelSelector(combo As ModernComboBox)
@@ -1387,22 +1385,22 @@ Namespace videoenhancer
             _switchMaster.Checked = _config.Enabled
             AddHandler _switchMaster.CheckedChanged, AddressOf OnMasterSwitchChanged
             AddWorkbenchRow(root, BuildOfficialModeHeader(
-                "插件总开关", "", _switchMaster, _lblMaster), 0, 40)
+                "插件总开关", "", _switchMaster, _lblMaster), 0, 32)
 
-            Dim exeRow As New ModernHorizontalPanel(150.0F, 12.0F, -1.0F)
+            Dim exeRow As New ModernHorizontalPanel(108.0F, CSng(UiColumnGap), -1.0F)
             Dim exeCaption = CreateOfficialCaption("固定处理程序")
             exeCaption.TextAlign = ContentAlignment.MiddleLeft
-            exeCaption.Padding = New Padding(12, 0, 0, 0)
+            exeCaption.Padding = New Padding(8, 0, 0, 0)
             _lblExe.AutoSize = False
             _lblExe.TextAlign = HtmlColorLabel.TextAlignEnum.MiddleLeft
             _lblExe.ForeColor = UiText
             exeRow.AddColumn(exeCaption, 0)
             exeRow.AddColumn(CreateOfficialValueBox(_lblExe), 2)
-            AddWorkbenchRow(root, exeRow, 40, 48)
-            AddWorkbenchRow(root, CreateOfficialSeparator(), 88, 25)
+            AddWorkbenchRow(root, exeRow, 32, UiRowHeight)
+            AddWorkbenchRow(root, CreateOfficialSeparator(), 68, 16)
 
             AddWorkbenchRow(root, CreateOfficialSectionHeading(
-                "视频处理", "超分与补帧可同时开启；默认按画质优先先超分、再补帧"), 113, 36)
+                "视频处理", "超分与补帧可同时开启；默认按画质优先先超分、再补帧"), 92, 32)
 
             ConfigureDpiSwitch(_switchUpscale)
             ConfigureDpiSwitch(_switchUpscaleHalf)
@@ -1447,7 +1445,8 @@ Namespace videoenhancer
             ConfigureOutputScaleCombo(_cmbOutputScale)
             _outputScaleField = CreateOfficialField("输出倍率", _cmbOutputScale)
             _outputScaleHint = CreateOfficialCaption("原生推理倍率", UiTextMuted)
-            _outputScaleHint.TextAlign = ContentAlignment.BottomLeft
+            _outputScaleHint.TextAlign = ContentAlignment.MiddleLeft
+            _outputScaleHint.Padding = New Padding(0, UiFieldEditorTop, 0, 5)
 
             _cmbRtxTarget.WaterText = "选择目标分辨率…"
             ConfigureCombo(_cmbRtxTarget)
@@ -1538,35 +1537,35 @@ Namespace videoenhancer
             Dim interpThresholdField = CreateOfficialField("转场阈值", _cmbSceneThreshold)
             Dim interpFlowField = CreateOfficialField("动态光流尺度", _cmbDynamicOpticalFlow)
 
-            AddWorkbenchRow(root, upscaleHeader, 168, 38)
+            AddWorkbenchRow(root, upscaleHeader, 128, 32)
             ' 放大模型名称较长（例如 AnimeJaNai...-430K），给模型列保留更多文本区，
             ' 避免箭头区域遮住名称末尾；后端列仍足以完整显示 TensorRT (NVIDIA)。
-            AddWorkbenchControl(root, upscaleBackendField, 206, 76, 0.0F, 0.38F, 0, -12)
-            AddWorkbenchControl(root, _upscaleModelField, 206, 76, 0.38F, 1.0F)
-            AddWorkbenchControl(root, _rtxTargetField, 206, 76, 0.38F, 1.0F)
-            AddWorkbenchControl(root, _upscaleTileField, 282, 70, 0.0F, 0.28F, 0, -12)
-            AddWorkbenchControl(root, _outputScaleField, 282, 70, 0.28F, 0.50F, 0, -12)
-            AddWorkbenchControl(root, _outputScaleHint, 282, 70, 0.50F, 1.0F)
-            AddWorkbenchControl(root, _rtxQualityField, 282, 70, 0.0F, 0.46F, 0, -12)
+            AddWorkbenchControl(root, upscaleBackendField, 160, UiFieldHeight, 0.0F, 0.38F, 0, -UiColumnGap)
+            AddWorkbenchControl(root, _upscaleModelField, 160, UiFieldHeight, 0.38F, 1.0F)
+            AddWorkbenchControl(root, _rtxTargetField, 160, UiFieldHeight, 0.38F, 1.0F)
+            AddWorkbenchControl(root, _upscaleTileField, 220, UiFieldHeight, 0.0F, 0.28F, 0, -UiColumnGap)
+            AddWorkbenchControl(root, _outputScaleField, 220, UiFieldHeight, 0.28F, 0.50F, 0, -UiColumnGap)
+            AddWorkbenchControl(root, _outputScaleHint, 220, UiFieldHeight, 0.50F, 1.0F)
+            AddWorkbenchControl(root, _rtxQualityField, 220, UiFieldHeight, 0.0F, 0.46F, 0, -UiColumnGap)
             _upscaleTileHint.Visible = False
-            AddWorkbenchRow(root, hdrHeader, 630, 38)
-            AddWorkbenchControl(root, hdrModeField, 668, 76, 0.0F, 0.46F, 0, -12)
+            AddWorkbenchRow(root, hdrHeader, 500, 32)
+            AddWorkbenchControl(root, hdrModeField, 532, UiFieldHeight, 0.0F, 0.46F, 0, -UiColumnGap)
             ' HDR 原生参数采用两列两行数字输入框；允许键盘输入范围内任意整数。
-            AddWorkbenchControl(root, _rtxHdrContrastField, 744, 70, 0.0F, 0.5F, 0, -4)
-            AddWorkbenchControl(root, _rtxHdrSaturationField, 744, 70, 0.5F, 1.0F, 4, 0)
-            AddWorkbenchControl(root, _rtxHdrMiddleGrayField, 814, 70, 0.0F, 0.5F, 0, -4)
-            AddWorkbenchControl(root, _rtxHdrMaxLuminanceField, 814, 70, 0.5F, 1.0F, 4, 0)
-            AddWorkbenchRow(root, interpHeader, 371, 38)
+            AddWorkbenchControl(root, _rtxHdrContrastField, 592, UiFieldHeight, 0.0F, 0.5F, 0, -4)
+            AddWorkbenchControl(root, _rtxHdrSaturationField, 592, UiFieldHeight, 0.5F, 1.0F, 4, 0)
+            AddWorkbenchControl(root, _rtxHdrMiddleGrayField, 652, UiFieldHeight, 0.0F, 0.5F, 0, -4)
+            AddWorkbenchControl(root, _rtxHdrMaxLuminanceField, 652, UiFieldHeight, 0.5F, 1.0F, 4, 0)
+            AddWorkbenchRow(root, interpHeader, 288, 32)
             ' 补帧后端的固定选项（尤其是 TensorRT (NVIDIA)）需要在箭头区域前保留
             ' 足够文本宽度；将窄列从 29% 调整到 34%，模型列仍保留主要空间。
-            AddWorkbenchControl(root, interpBackendField, 409, 76, 0.0F, 0.34F, 0, -12)
-            AddWorkbenchControl(root, interpModelField, 409, 76, 0.34F, 0.80F, 0, -12)
-            AddWorkbenchControl(root, interpFactorField, 409, 76, 0.80F, 1.0F)
-            AddWorkbenchControl(root, interpThresholdField, 485, 70, 0.0F, 0.34F, 0, -12)
-            AddWorkbenchControl(root, interpFlowField, 485, 70, 0.34F, 0.80F, 0, -12)
+            AddWorkbenchControl(root, interpBackendField, 320, UiFieldHeight, 0.0F, 0.34F, 0, -UiColumnGap)
+            AddWorkbenchControl(root, interpModelField, 320, UiFieldHeight, 0.34F, 0.80F, 0, -UiColumnGap)
+            AddWorkbenchControl(root, interpFactorField, 320, UiFieldHeight, 0.80F, 1.0F)
+            AddWorkbenchControl(root, interpThresholdField, 380, UiFieldHeight, 0.0F, 0.34F, 0, -UiColumnGap)
+            AddWorkbenchControl(root, interpFlowField, 380, UiFieldHeight, 0.34F, 0.80F, 0, -UiColumnGap)
 
-            Dim orderRow As New ModernHorizontalPanel(150.0F, -54.0F, -46.0F) With {
-                .Margin = New Padding(0, 8, 0, 0)
+            Dim orderRow As New ModernHorizontalPanel(112.0F, -54.0F, -46.0F) With {
+                .Margin = Padding.Empty
             }
             Dim orderCaption = CreateOfficialCaption("组合处理顺序")
             orderCaption.AutoSize = False
@@ -1581,7 +1580,7 @@ Namespace videoenhancer
             Dim processOrderIndex = If(String.Equals(_config.ProcessOrder, "interp-first", StringComparison.OrdinalIgnoreCase), 1, 0)
             _cmbProcessOrder.SelectedIndex = -1
             _cmbProcessOrder.SelectedIndex = processOrderIndex
-            _cmbProcessOrder.Margin = New Padding(0, 6, 12, 6)
+            _cmbProcessOrder.Margin = New Padding(0, 4, UiColumnGap, 4)
             AddHandler _cmbProcessOrder.SelectedIndexChanged, AddressOf OnProcessOrderSelected
             _lblProcessOrder.AutoSize = False
             _lblProcessOrder.Dock = DockStyle.Fill
@@ -1590,8 +1589,8 @@ Namespace videoenhancer
             orderRow.AddColumn(orderCaption, 0)
             orderRow.AddColumn(_cmbProcessOrder, 1)
             orderRow.AddColumn(_lblProcessOrder, 2)
-            AddWorkbenchRow(root, orderRow, 555, 56)
-            AddWorkbenchRow(root, CreateOfficialSeparator(), 884, 25)
+            AddWorkbenchRow(root, orderRow, 448, UiRowHeight)
+            AddWorkbenchRow(root, CreateOfficialSeparator(), 716, 16)
 
 
             _pageUpscale.Controls.Add(root)

@@ -104,6 +104,15 @@ Namespace videoenhancer
         Private Shared ReadOnly UiTextSecondary As Color = Color.FromArgb(176, 220, 220, 220)
         Private Shared ReadOnly UiTextMuted As Color = Color.FromArgb(120, 255, 255, 255)
 
+        ' 统一的 96 DPI 紧凑尺寸；字体保持不变，由布局容器负责换算实际 DPI。
+        Private Const UiControlHeight As Integer = 28
+        Private Const UiFieldHeight As Integer = 56
+        Private Const UiFieldCaptionHeight As Integer = 20
+        Private Const UiFieldEditorTop As Integer = 23
+        Private Const UiRowHeight As Integer = 36
+        Private Const UiColumnGap As Integer = 8
+        Private Const UiCornerRadius As Integer = 6
+
         Private ReadOnly _config As PluginConfig
         Private _uiReady As Boolean = False
         ' ── 选项卡分栏：超分主界面 / 实时预览 / 高级功能 / 模型转换器 ──
@@ -531,14 +540,14 @@ Namespace videoenhancer
             ' 不透明画布是背景映射尚未完成时的兜底，避免恢复窗口时短暂穿透到桌面/壁纸。
             BackColor = UiCanvas
             Dock = DockStyle.Fill
-            MinimumSize = New Size(900, 680)
+            MinimumSize = New Size(800, 520)
             Font = New Font("Microsoft YaHei UI", 10.0F)
 
             ' 保持宿主插件契约，由 3FUI 将主窗体设置为 BackgroundSource。
             ModernPanel1.Name = "ModernPanel1"
             ModernPanel1.Dock = DockStyle.Fill
             ModernPanel1.Margin = Padding.Empty
-            ModernPanel1.Padding = New Padding(24, 20, 24, 18)
+            ModernPanel1.Padding = New Padding(20, 16, 20, 12)
             ModernPanel1.BackColor = Color.Transparent
             ModernPanel1.BackColor1 = Color.Transparent
             ModernPanel1.BorderSize = 0
@@ -553,7 +562,7 @@ Namespace videoenhancer
             }
             root.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
             ' 状态栏给按钮保留稳定的下边距，避免矮窗口中按钮白底贴住宿主底边。
-            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
+            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
             _tabs.SuspendLayout()
             Try
@@ -569,11 +578,11 @@ Namespace videoenhancer
                 .RowCount = 1,
                 .BackColor = Color.Transparent,
                 .Margin = Padding.Empty,
-                .Padding = New Padding(0, 4, 0, 8)
+                .Padding = New Padding(0, 4, 0, 4)
             }
             sectionStatus.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-            sectionStatus.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 170.0F))
-            sectionStatus.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210.0F))
+            sectionStatus.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 132.0F))
+            sectionStatus.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 152.0F))
             sectionStatus.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
             _lblStatus.AutoSize = False
             _lblStatus.Dock = DockStyle.Fill
@@ -585,13 +594,13 @@ Namespace videoenhancer
             _btnCheckUpdates.Text = "检查更新 v" & PluginUpdater.CurrentVersion
             _btnCheckUpdates.Dock = DockStyle.Fill
             _btnCheckUpdates.AutoSize = False
-            _btnCheckUpdates.Margin = New Padding(12, 4, 0, 4)
+            _btnCheckUpdates.Margin = New Padding(UiColumnGap, 4, 0, 4)
             ConfigureSecondaryButton(_btnCheckUpdates)
             AddHandler _btnCheckUpdates.Click, AddressOf OnCheckUpdates
             sectionStatus.AddAt(_btnCheckUpdates, 2, 0)
             _btnCleanArchives.Text = "清理临时文件"
             _btnCleanArchives.Dock = DockStyle.Fill
-            _btnCleanArchives.Margin = New Padding(12, 4, 0, 4)
+            _btnCleanArchives.Margin = New Padding(UiColumnGap, 4, 0, 4)
             ConfigureSecondaryButton(_btnCleanArchives)
             _btnCleanArchives.ForeColor = Color.White
             _btnCleanArchives.BackColor1 = Color.FromArgb(150, 190, 48, 48)
@@ -623,11 +632,11 @@ Namespace videoenhancer
             _tabs.BackColor = Color.Transparent
             _tabs.TabStripBackColor = Color.Transparent
             _tabs.TabStripOverlayColor = Color.Transparent
-            _tabs.TabStripHeight = 44
-            _tabs.TabStripPadding = New Padding(0, 2, 0, 3)
+            _tabs.TabStripHeight = UiRowHeight
+            _tabs.TabStripPadding = New Padding(0, 1, 0, 2)
             _tabs.TabItemTextPadding = 7
             _tabs.TabItemSpacing = 4
-            _tabs.TabItemBorderRadius = 8
+            _tabs.TabItemBorderRadius = UiCornerRadius
             _tabs.TabItemForeColor = UiTextMuted
             _tabs.TabItemSelectedForeColor = UiText
             _tabs.TabItemSelectedBackColor = UiSurface
@@ -696,13 +705,13 @@ Namespace videoenhancer
         Private Shared Function CreateOfficialValueBox(valueControl As Control) As ModernPanel
             Dim box As New ModernPanel With {
                 .Dock = DockStyle.Fill,
-                .Margin = New Padding(0, 5, 0, 5),
-                .Padding = New Padding(10, 0, 10, 0),
+                .Margin = New Padding(0, 4, 0, 4),
+                .Padding = New Padding(8, 0, 8, 0),
                 .BackColor = Color.Transparent,
                 .BackColor1 = UiSurface,
                 .BorderColor = Color.Transparent,
                 .BorderSize = 0,
-                .BorderRadius = 10
+                .BorderRadius = UiCornerRadius
             }
             valueControl.Dock = DockStyle.Fill
             valueControl.Margin = Padding.Empty
@@ -717,8 +726,8 @@ Namespace videoenhancer
 
         Private Shared Sub ConfigureOfficialTextBox(textBox As ModernTextBox, waterText As String)
             textBox.Dock = DockStyle.Fill
-            textBox.Margin = New Padding(0, 6, 0, 6)
-            textBox.Padding = New Padding(12, 0, 12, 0)
+            textBox.Margin = New Padding(0, 4, 0, 4)
+            textBox.Padding = New Padding(8, 0, 8, 0)
             textBox.Font = New Font("Microsoft YaHei UI", 10.0F)
             textBox.BackColor1 = UiSurfaceRaised
             textBox.ForeColor = UiText
@@ -729,7 +738,7 @@ Namespace videoenhancer
             textBox.BorderColor = Color.Transparent
             textBox.BorderColorFocus = Color.FromArgb(80, 220, 220, 220)
             textBox.BorderSize = 0
-            textBox.BorderRadius = 10
+            textBox.BorderRadius = UiCornerRadius
             textBox.MultiLine = False
         End Sub
 
@@ -769,17 +778,17 @@ Namespace videoenhancer
             Dim halfLabel As LakeTextLabel = Nothing
             If halfSwitch Is Nothing Then
                 row = New ModernHorizontalPanel(
-                    CSng(titleWidth), 10.0F, 42.0F, -1.0F, CSng(stateWidth))
+                    CSng(titleWidth), CSng(UiColumnGap), 40.0F, -1.0F, CSng(stateWidth))
             Else
                 halfLabel = CreateTextLabel("半精度推理", 11.0F, FontStyle.Regular, UiTextSecondary)
                 halfLabel.AutoSize = False
                 halfLabel.Dock = DockStyle.Fill
                 halfLabel.TextAlign = ContentAlignment.MiddleCenter
                 halfLabel.Margin = Padding.Empty
-                Dim halfLabelWidth = Math.Max(108,
-                    MeasureTextWidth96(halfLabel.Text, halfLabel.Font) + 14)
+                Dim halfLabelWidth = Math.Max(96,
+                    MeasureTextWidth96(halfLabel.Text, halfLabel.Font) + 10)
                 row = New ModernHorizontalPanel(
-                    CSng(titleWidth), 10.0F, 42.0F, 18.0F, CSng(halfLabelWidth), 8.0F, 42.0F, -1.0F,
+                    CSng(titleWidth), CSng(UiColumnGap), 40.0F, 12.0F, CSng(halfLabelWidth), 6.0F, 40.0F, -1.0F,
                     CSng(stateWidth))
             End If
             switchControl.Anchor = AnchorStyles.None

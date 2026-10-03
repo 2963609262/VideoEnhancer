@@ -83,7 +83,7 @@ Namespace videoenhancer
         Private Sub BuildOfficialModelDownloadPage()
             _pageDownloader.Dock = DockStyle.Fill
             _pageDownloader.BackColor = Color.Transparent
-            _pageDownloader.Padding = New Padding(0, 8, 0, 0)
+            _pageDownloader.Padding = New Padding(0, 4, 0, 0)
 
             Dim root As New ModernGridPanel With {
                 .Dock = DockStyle.Fill,
@@ -93,7 +93,7 @@ Namespace videoenhancer
                 .Margin = Padding.Empty,
                 .Padding = Padding.Empty
             }
-            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 58.0F))
+            root.RowStyles.Add(New RowStyle(SizeType.Absolute, CSng(UiRowHeight)))
             root.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
             Dim header As New ModernGridPanel With {
                 .Dock = DockStyle.Fill,
@@ -104,21 +104,21 @@ Namespace videoenhancer
                 .Padding = Padding.Empty
             }
             header.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-            header.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 174.0F))
-            header.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 190.0F))
+            header.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 128.0F))
+            header.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 136.0F))
             header.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
             header.AddAt(CreateOfficialSectionHeading(
                 "模型资源库", "从 ModelScope 获取模型与后端组件"), 0, 0)
             _btnDownloadPluginUpdate.Text = "下载全部"
             _btnDownloadPluginUpdate.Dock = DockStyle.Fill
             _btnDownloadPluginUpdate.AutoSize = False
-            _btnDownloadPluginUpdate.Margin = New Padding(12, 7, 0, 7)
+            _btnDownloadPluginUpdate.Margin = New Padding(UiColumnGap, 4, 0, 4)
             ConfigureSecondaryButton(_btnDownloadPluginUpdate)
             AddHandler _btnDownloadPluginUpdate.Click, AddressOf OnDownloadAllClick
             header.AddAt(_btnDownloadPluginUpdate, 2, 0)
             _btnRefreshDownloads.Text = "刷新资源"
             _btnRefreshDownloads.Dock = DockStyle.Fill
-            _btnRefreshDownloads.Margin = New Padding(12, 7, 0, 7)
+            _btnRefreshDownloads.Margin = New Padding(UiColumnGap, 4, 0, 4)
             ConfigureSecondaryButton(_btnRefreshDownloads)
             AddHandler _btnRefreshDownloads.Click, Sub(sender, e) LoadDownloadModels(True)
             header.AddAt(_btnRefreshDownloads, 1, 0)
@@ -143,7 +143,7 @@ Namespace videoenhancer
             _downloadList.BorderSize = 0
             _downloadList.BorderRadius = 0
             _downloadList.HeaderVisible = True
-            _downloadList.HeaderHeight = 38
+            _downloadList.HeaderHeight = 30
             _downloadList.HeaderBackColor = Color.FromArgb(36, 36, 36)
             _downloadList.HeaderForeColor = UiTextSecondary
             _downloadList.HeaderBorderColor = Color.FromArgb(52, 52, 52)
@@ -155,7 +155,7 @@ Namespace videoenhancer
             _downloadList.ItemHoverBackColor = Color.FromArgb(48, 255, 255, 255)
             _downloadList.ItemSelectedBackColor = Color.FromArgb(54, 71, 156, 255)
             _downloadList.ItemCornerRadius = 4
-            _downloadList.ItemPadding = New Padding(12, 8, 10, 8)
+            _downloadList.ItemPadding = New Padding(10, 5, 8, 5)
             _downloadList.ItemSpacing = 2
             _downloadList.ContentPadding = New Padding(0, 4, 0, 4)
             _downloadList.GroupHeight = 38

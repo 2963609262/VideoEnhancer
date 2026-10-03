@@ -28,11 +28,15 @@ partial class Program
         var videoConfig = Activator.CreateInstance(plugin.GetType("videoenhancer.SegmentedVideoConfig")!)!;
         Set(videoConfig, "Path", "dpi-layout-test.mp4");
         Set(videoConfig, "BoundaryMode", "frames");
-        Set(videoConfig, "FrameCount", 100L);
+        Set(videoConfig, "FrameCount", 200L);
         var segment = Activator.CreateInstance(plugin.GetType("videoenhancer.SegmentedUpscaleRange")!)!;
         Set(segment, "Start", 1L);
         Set(segment, "End", 100L);
         ((IList)Get(videoConfig, "Segments")).Add(segment);
+        var secondSegment = Activator.CreateInstance(plugin.GetType("videoenhancer.SegmentedUpscaleRange")!)!;
+        Set(secondSegment, "Start", 101L);
+        Set(secondSegment, "End", 200L);
+        ((IList)Get(videoConfig, "Segments")).Add(secondSegment);
         ((IList)Get(config, "SegmentedVideos")).Add(videoConfig);
         using var panel = (UserControl)Activator.CreateInstance(plugin.GetType("videoenhancer.PluginPanel")!, config, true)!;
         panel.GetType().GetField("_segmentSync", Flags)!.SetValue(panel, true);
@@ -60,14 +64,14 @@ partial class Program
             Call(panel, "SyncImageRootBounds");
             Call(panel, "SyncSegmentedRootBounds");
             ArrangeTree(panel);
-            Check(Math.Abs(LayoutScale(root).Width - targetScale) < 0.01f && root.Height == Pixels(920, targetScale),
+            Check(Math.Abs(LayoutScale(root).Width - targetScale) < 0.01f && root.Height == Pixels(744, targetScale),
                 $"{dpi} DPI 工作台内容高度一致");
             var editor = (Control)Field(panel, "_cmbBackend");
-            Check(editor.Top == Pixels(31, targetScale) && editor.Height >= Pixels(32, targetScale),
+            Check(editor.Top == Pixels(23, targetScale) && editor.Height == Pixels(28, targetScale),
                 $"{dpi} DPI 字段标题和编辑器对齐");
             var imageRoot = (Control)Field(panel, "_imageRoot");
             var segmentRoot = (Control)Field(panel, "_segmentRoot");
-            Check(imageRoot.Height == Pixels(336, targetScale) && segmentRoot.Height == Pixels(884, targetScale),
+            Check(imageRoot.Height == Pixels(272, targetScale) && segmentRoot.Height == Pixels(656, targetScale),
                 $"{dpi} DPI 图片和分段页内容高度一致");
             var tabs = Field(panel, "_tabs");
             var tabCount = ((IEnumerable)Get(tabs, "Items")).Cast<object>().Count();
@@ -82,7 +86,7 @@ partial class Program
                     .All(pageRoot => Math.Abs(LayoutScale(pageRoot).Width - targetScale) < 0.01f),
                 $"{dpi} DPI 切换全部页签不会重复缩放");
             var convertButton = (Control)Field(panel, "_btnPickPth");
-            Check(convertButton.Width == Pixels(180, targetScale) && convertButton.Height == Pixels(48, targetScale),
+            Check(convertButton.Width == Pixels(140, targetScale) && convertButton.Height == Pixels(28, targetScale),
                 $"{dpi} DPI 网格固定行列按相同基准缩放: {convertButton.Bounds}, margin={convertButton.Margin}, parent={convertButton.Parent!.Bounds}, rowScale={LayoutScale(convertButton.Parent!)}, rootScale={LayoutScale(convertButton.Parent!.Parent!)}");
             var layouts = Descendants(panel).Where(c => c.GetType().FullName == "videoenhancer.ModernHorizontalPanel").ToArray();
             Check(layouts.Length > 0 && layouts.All(layout => Math.Abs(LayoutScale(layout).Width - targetScale) < 0.01f),
@@ -92,13 +96,60 @@ partial class Program
                 $"{dpi} DPI 编辑器完整处于字段内部");
             var page = (Control)Field(panel, "_pageUpscale");
             Check(root.Width <= page.ClientSize.Width, $"{dpi} DPI 内容不会越过页面右边缘");
+            var compactNames = new[] { "_cmbBackend", "_cmbModel", "_cmbOutputScale", "_cmbInterpBackend",
+                "_cmbInterp", "_cmbFactor", "_cmbProcessOrder", "_numRtxHdrContrast", "_numRtxHdrMaxLuminance",
+                "_cmbSegmentVideo", "_cmbSegmentMode", "_btnSegmentRefresh", "_btnSegmentAdd",
+                "_btnCheckUpdates", "_btnImageFiles", "_btnImageOutput", "_btnImageStart", "_cmbImageOutputScale",
+                "_btnRefreshDownloads", "_btnDownloadPluginUpdate", "_btnPickImportFile", "_btnPickImportFolder",
+                "_btnImportModel", "_btnPickPth", "_btnConvert", "_btnShellAdd", "_btnShellApply", "_cmbTask", "_cmbRate" };
+            var heightMismatches = compactNames.Where(name => ((Control)Field(panel, name)).Height != Pixels(28, targetScale)).ToArray();
+            Check(heightMismatches.Length == 0,
+                $"{dpi} DPI 页面常规控件统一紧凑高度: " + string.Join(", ", heightMismatches.Select(name => $"{name}={((Control)Field(panel, name)).Height}")));
+            Check(compactNames.All(name => {
+                    var control = (Control)Field(panel, name);
+                    return control.Height >= Math.Ceiling(control.Font.GetHeight(dpi)) + Pixels(4, targetScale);
+                }), $"{dpi} DPI 紧凑控件仍为原字号保留字高和留白");
+            var exeValue = ((Control)Field(panel, "_lblExe")).Parent!;
+            Check(exeValue.Height == Pixels(28, targetScale), $"{dpi} DPI 固定程序路径栏不会被过大行高拉伸");
+            var videoEditor = (Control)Field(panel, "_cmbSegmentVideo");
+            var refresh = (Control)Field(panel, "_btnSegmentRefresh");
+            Check(videoEditor.Parent!.Top + videoEditor.Top == refresh.Parent!.Top + refresh.Top &&
+                  refresh.Parent.Left + refresh.Left - videoEditor.Parent.Left - videoEditor.Right == Pixels(8, targetScale),
+                $"{dpi} DPI 视频框与刷新按钮对齐且只有单一列间距");
+            var primarySwitchRow = ((Control)Field(panel, "_switchSegmented")).Parent!;
+            var mixedSwitchRow = ((Control)Field(panel, "_switchMixedSegmentBackends")).Parent!;
+            Check(primarySwitchRow.Height == Pixels(32, targetScale) &&
+                  mixedSwitchRow.Top - primarySwitchRow.Bottom == Pixels(4, targetScale),
+                $"{dpi} DPI 分段开关行紧凑且无大块空白");
             Call(panel, "RenderSegmentRows");
             var rows = (Control)Field(panel, "_segmentRowsPanel");
             ArrangeTree(rows);
             var row = rows.Controls[0];
             Check(Math.Abs(LayoutScale(row).Width - targetScale) < 0.01f &&
-                  row.Top == Pixels(8, targetScale) && row.Height == Pixels(54, targetScale),
+                  row.Top == Pixels(8, targetScale) && row.Height == Pixels(36, targetScale),
                 $"{dpi} DPI 动态分段行使用当前缩放比例");
+            Check(rows.Controls[1].Top == Pixels(48, targetScale) && row.Controls.Cast<Control>()
+                    .All(control => control.Height == Pixels(28, targetScale)),
+                $"{dpi} DPI 分段数据行高度和行距一致");
+
+            foreach (var clientSize in new[] { new Size(800, 520), new Size(960, 640), new Size(1280, 1000) })
+            {
+                host.ClientSize = new Size(Pixels(clientSize.Width, targetScale), Pixels(clientSize.Height, targetScale));
+                for (var index = 0; index < tabCount; index++)
+                {
+                    Set(tabs, "SelectedIndex", index);
+                    ArrangeTree(panel);
+                }
+                var clipped = compactNames.Where(name => {
+                    var control = (Control)Field(panel, name);
+                    return !control.Parent!.ClientRectangle.Contains(control.Bounds);
+                }).ToArray();
+                Check(clipped.Length == 0,
+                    $"{dpi} DPI {clientSize.Width}×{clientSize.Height} 窗口常规控件不越过容器: " +
+                    string.Join(", ", clipped.Select(name => $"{name}={((Control)Field(panel, name)).Bounds}/{((Control)Field(panel, name)).Parent!.ClientRectangle}")));
+            }
+            Set(tabs, "SelectedIndex", 0);
+            ArrangeTree(panel);
         }
 
         foreach (var (name, fixedWidths) in new[] {

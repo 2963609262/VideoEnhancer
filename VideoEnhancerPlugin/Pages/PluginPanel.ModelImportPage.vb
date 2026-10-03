@@ -48,11 +48,11 @@ Namespace videoenhancer
                 .Padding = Padding.Empty,
                 .AllowDrop = True
             }
-            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 54.0F))
-            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 68.0F))
-            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 70.0F))
+            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
+            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
+            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 56.0F))
             root.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 72.0F))
+            root.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
             AddHandler root.DragEnter, AddressOf OnModelImportDragEnter
             AddHandler root.DragDrop, AddressOf OnModelImportDragDrop
             root.AddAt(CreateOfficialSectionHeading(
@@ -65,21 +65,21 @@ Namespace videoenhancer
                 .BorderSize = 0,
                 .BackgroundSource = ModernPanel1,
                 .Margin = Padding.Empty,
-                .Padding = New Padding(0, 9, 0, 9)
+                .Padding = New Padding(0, 4, 0, 4)
             }
             _btnPickImportFile.Text = "选择模型或压缩包"
             _btnPickImportFile.Dock = DockStyle.Left
-            _btnPickImportFile.Width = 210
+            _btnPickImportFile.Width = 148
             ConfigureOfficialImportButton(_btnPickImportFile)
             AddHandler _btnPickImportFile.Click, AddressOf OnPickImportFile
             _btnPickImportFolder.Text = "选择模型文件夹"
             _btnPickImportFolder.Dock = DockStyle.Left
-            _btnPickImportFolder.Width = 210
+            _btnPickImportFolder.Width = 148
             ConfigureOfficialImportButton(_btnPickImportFolder)
             AddHandler _btnPickImportFolder.Click, AddressOf OnPickImportFolder
             ' 按当前字体测量文字，给高 DPI 和宿主字体预留按钮两侧空间。
             Dim fitSourceButton As Action(Of ModernButton) =
-                Sub(button) button.Width = root.ScaleX(Math.Max(210, MeasureTextWidth96(button.Text, button.Font) + 48))
+                Sub(button) button.Width = root.ScaleX(Math.Max(148, MeasureTextWidth96(button.Text, button.Font) + 24))
             AddHandler _btnPickImportFile.FontChanged, Sub(sender, args) fitSourceButton(_btnPickImportFile)
             AddHandler _btnPickImportFolder.FontChanged, Sub(sender, args) fitSourceButton(_btnPickImportFolder)
             AddHandler _btnPickImportFile.DpiChangedAfterParent, Sub(sender, args) fitSourceButton(_btnPickImportFile)
@@ -90,13 +90,14 @@ Namespace videoenhancer
             _lblImportSource.AutoSize = False
             _lblImportSource.TextAlign = HtmlColorLabel.TextAlignEnum.MiddleLeft
             Dim sourceValueBox = CreateOfficialValueBox(_lblImportSource)
+            sourceValueBox.Margin = Padding.Empty
             sourceValueBox.Dock = DockStyle.Fill
             Dim sourceGap1 As New ModernPanel With {
-                .Dock = DockStyle.Left, .Width = 10, .BackColor = Color.Transparent,
+                .Dock = DockStyle.Left, .Width = UiColumnGap, .BackColor = Color.Transparent,
                 .BackColor1 = Color.Transparent, .BorderSize = 0, .BackgroundSource = ModernPanel1
             }
             Dim sourceGap2 As New ModernPanel With {
-                .Dock = DockStyle.Left, .Width = 12, .BackColor = Color.Transparent,
+                .Dock = DockStyle.Left, .Width = UiColumnGap, .BackColor = Color.Transparent,
                 .BackColor1 = Color.Transparent, .BorderSize = 0, .BackgroundSource = ModernPanel1
             }
             ' 按 3FUI Designer 的 Dock 顺序：Fill 先加，其他控件从右向左加入。
@@ -110,10 +111,10 @@ Namespace videoenhancer
             Dim formats As New HtmlColorLabel With {
                 .Dock = DockStyle.Fill,
                 .Margin = New Padding(0, 8, 0, 4),
-                .Padding = New Padding(14, 0, 14, 0),
+                .Padding = New Padding(10, 0, 10, 0),
                 .BackColor1 = UiSurface,
                 .BorderSize = 0,
-                .BorderRadius = 10,
+                .BorderRadius = UiCornerRadius,
                 .AutoSize = False,
                 .LineSpacing = 5,
                 .TextAlign = HtmlColorLabel.TextAlignEnum.MiddleLeft,
@@ -133,10 +134,10 @@ Namespace videoenhancer
                 .BorderSize = 0,
                 .BackgroundSource = ModernPanel1,
                 .Margin = Padding.Empty,
-                .Padding = New Padding(0, 9, 0, 9)
+                .Padding = New Padding(0, 8, 0, 8)
             }
             _btnImportModel.Dock = DockStyle.Right
-            _btnImportModel.Width = 210
+            _btnImportModel.Width = 148
             _btnImportModel.Text = "预检并导入模型"
             ConfigureOfficialImportButton(_btnImportModel, UiSuccess)
             AddHandler _btnImportModel.Click, AddressOf OnImportModelClick
@@ -162,7 +163,7 @@ Namespace videoenhancer
             button.HoverBackColor2 = Color.Transparent
             button.PressedBackColor1 = Color.FromArgb(80, 220, 220, 220)
             button.PressedBackColor2 = Color.Transparent
-            button.BorderRadius = 10
+            button.BorderRadius = UiCornerRadius
             button.BorderSize = 0
             button.Margin = New Padding(2)
             button.Padding = Padding.Empty
@@ -186,7 +187,7 @@ Namespace videoenhancer
             _importModelList.BorderSize = 1
             _importModelList.BorderRadius = 8
             _importModelList.HeaderVisible = True
-            _importModelList.HeaderHeight = 38
+            _importModelList.HeaderHeight = 30
             _importModelList.HeaderBackColor = Color.FromArgb(36, 36, 36)
             _importModelList.HeaderForeColor = UiTextSecondary
             _importModelList.HeaderBorderColor = Color.FromArgb(52, 52, 52)
@@ -198,7 +199,7 @@ Namespace videoenhancer
             _importModelList.ItemHoverBackColor = Color.FromArgb(48, 255, 255, 255)
             _importModelList.ItemSelectedBackColor = Color.FromArgb(54, 71, 156, 255)
             _importModelList.ItemCornerRadius = 4
-            _importModelList.ItemPadding = New Padding(12, 8, 10, 8)
+            _importModelList.ItemPadding = New Padding(10, 5, 8, 5)
             _importModelList.ItemSpacing = 2
             _importModelList.ContentPadding = New Padding(0, 4, 0, 4)
             _importModelList.ScrollBarWidth = 10

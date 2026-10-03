@@ -35,7 +35,7 @@ Namespace videoenhancer
                 .LayoutMode = ModernPanel.LayoutModeEnum.Absolute, .BorderSize = 0
             }
             AddWorkbenchRow(root, CreateOfficialSectionHeading(
-                "资源管理器右键超分", "当前用户生效：图片右键 → 超分辨率 → 模型；输出固定为无损 PNG"), 12, 42)
+                "资源管理器右键超分", "当前用户生效：图片右键 → 超分辨率 → 模型；输出固定为无损 PNG"), 8, 32)
 
             _cmbShellBackend.WaterText = "选择图片后端…"
             ConfigureCombo(_cmbShellBackend)
@@ -48,33 +48,33 @@ Namespace videoenhancer
             ConfigureCombo(_cmbShellModel)
             Dim backendField = CreateOfficialField("推理后端", _cmbShellBackend)
             Dim modelField = CreateOfficialField("模型", _cmbShellModel)
-            AddWorkbenchControl(root, backendField, 66, 76, 0.0F, 0.36F, 0, -12)
-            AddWorkbenchControl(root, modelField, 66, 76, 0.36F, 1.0F)
+            AddWorkbenchControl(root, backendField, 44, UiFieldHeight, 0.0F, 0.36F, 0, -UiColumnGap)
+            AddWorkbenchControl(root, modelField, 44, UiFieldHeight, 0.36F, 1.0F)
 
-            Dim actionRow As New ModernHorizontalPanel(170.0F, 12.0F, 170.0F, -1.0F)
+            Dim actionRow As New ModernHorizontalPanel(132.0F, CSng(UiColumnGap), 132.0F, -1.0F)
             ConfigureSecondaryButton(_btnShellAdd) : _btnShellAdd.Text = "添加当前模型"
             ConfigureSecondaryButton(_btnShellClear) : _btnShellClear.Text = "清空模型列表"
-            _btnShellAdd.Dock = DockStyle.Fill : _btnShellAdd.Margin = New Padding(0, 6, 0, 6)
-            _btnShellClear.Dock = DockStyle.Fill : _btnShellClear.Margin = New Padding(0, 6, 0, 6)
+            _btnShellAdd.Dock = DockStyle.Fill : _btnShellAdd.Margin = New Padding(0, 4, 0, 4)
+            _btnShellClear.Dock = DockStyle.Fill : _btnShellClear.Margin = New Padding(0, 4, 0, 4)
             AddHandler _btnShellAdd.Click, AddressOf OnShellAdd
             AddHandler _btnShellClear.Click, AddressOf OnShellClear
             actionRow.AddColumn(_btnShellAdd, 0)
             actionRow.AddColumn(_btnShellClear, 2)
-            AddWorkbenchRow(root, actionRow, 150, 52)
+            AddWorkbenchRow(root, actionRow, 108, UiRowHeight)
 
             ConfigureShellModelList()
-            AddWorkbenchRow(root, _shellModelList, 214, 150)
+            AddWorkbenchRow(root, _shellModelList, 152, 150)
 
-            Dim applyRow As New ModernHorizontalPanel(170.0F, 12.0F, 190.0F, -1.0F)
+            Dim applyRow As New ModernHorizontalPanel(112.0F, CSng(UiColumnGap), 132.0F, -1.0F)
             ConfigurePrimaryButton(_btnShellApply) : _btnShellApply.Text = "应用设置"
             ConfigureSecondaryButton(_btnShellRemove) : _btnShellRemove.Text = "移除右键菜单"
-            _btnShellApply.Dock = DockStyle.Fill : _btnShellApply.Margin = New Padding(0, 6, 0, 6)
-            _btnShellRemove.Dock = DockStyle.Fill : _btnShellRemove.Margin = New Padding(0, 6, 0, 6)
+            _btnShellApply.Dock = DockStyle.Fill : _btnShellApply.Margin = New Padding(0, 4, 0, 4)
+            _btnShellRemove.Dock = DockStyle.Fill : _btnShellRemove.Margin = New Padding(0, 4, 0, 4)
             AddHandler _btnShellApply.Click, AddressOf OnShellApply
             AddHandler _btnShellRemove.Click, AddressOf OnShellRemove
             applyRow.AddColumn(_btnShellApply, 0)
             applyRow.AddColumn(_btnShellRemove, 2)
-            AddWorkbenchRow(root, applyRow, 376, 54)
+            AddWorkbenchRow(root, applyRow, 310, UiRowHeight)
             _pageShell.Controls.Add(root)
             RefreshShellSummary()
         End Sub
@@ -135,7 +135,7 @@ Namespace videoenhancer
             _shellModelList.BorderSize = 0
             _shellModelList.BorderRadius = 0
             _shellModelList.HeaderVisible = True
-            _shellModelList.HeaderHeight = 34
+            _shellModelList.HeaderHeight = 30
             _shellModelList.HeaderBackColor = Color.FromArgb(36, 36, 36)
             _shellModelList.HeaderForeColor = UiTextSecondary
             _shellModelList.HeaderBorderColor = Color.FromArgb(52, 52, 52)
@@ -145,7 +145,7 @@ Namespace videoenhancer
             _shellModelList.ItemForeColor = UiTextSecondary
             _shellModelList.ItemHoverBackColor = Color.FromArgb(48, 255, 255, 255)
             _shellModelList.ItemSelectedBackColor = Color.FromArgb(54, 71, 156, 255)
-            _shellModelList.ItemPadding = New Padding(12, 6, 10, 6)
+            _shellModelList.ItemPadding = New Padding(10, 5, 8, 5)
             _shellModelList.Columns.AddRange(New UltraDetailListView.ListColumn() {
                 New UltraDetailListView.ListColumn("模型", 560),
                 New UltraDetailListView.ListColumn("后端", 130),

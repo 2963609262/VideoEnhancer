@@ -82,10 +82,13 @@ Namespace videoenhancer
         End Function
 
         ' 分段表头与数据行共用同一组宽度，避免高 DPI 下标题换行或输入值被裁切。
-        Private Const SegmentBoundaryColumnWidth As Single = 156.0F
-        Private Const SegmentTargetSizeColumnWidth As Single = 116.0F
-        Private Const SegmentActionColumnWidth As Single = 86.0F
-        Private Const SegmentColumnGap As Single = 12.0F
+        Private Const SegmentContentHeight As Integer = 656
+        Private Const SegmentBoundaryColumnWidth As Single = 128.0F
+        Private Const SegmentTargetSizeColumnWidth As Single = 96.0F
+        Private Const SegmentActionColumnWidth As Single = 72.0F
+        Private Const SegmentColumnGap As Single = UiColumnGap
+        Private Const SegmentRowHeight As Integer = UiRowHeight
+        Private Const SegmentRowPitch As Integer = 40
 
         Private Shared Function CreateSegmentGridPanel() As ModernHorizontalPanel
             Return New ModernHorizontalPanel(
@@ -104,8 +107,8 @@ Namespace videoenhancer
                 .Dock = DockStyle.None,
                 .Anchor = AnchorStyles.Top Or AnchorStyles.Left,
                 .AutoSize = False,
-                .MinimumSize = New Size(0, 884),
-                .Height = 884,
+                .MinimumSize = New Size(0, SegmentContentHeight),
+                .Height = SegmentContentHeight,
                 .BackColor = Color.Transparent,
                 .BackColor1 = Color.Transparent,
                 .LayoutMode = ModernPanel.LayoutModeEnum.Absolute,
@@ -116,12 +119,12 @@ Namespace videoenhancer
             AddHandler _pageSegmented.SizeChanged, Sub(sender, e) SyncSegmentedRootBounds()
             AddWorkbenchRow(root, CreateOfficialSectionHeading(
                 "分段超分设置",
-                "默认按秒分段并自动吸附附近关键帧；固定倍率模型优先决定全片输出尺寸，FFmpeg / Anime4K 自动跟随；仅自定义处理时可设置目标宽高"), 12, 46)
+                "按秒分段并吸附关键帧；固定倍率模型优先决定尺寸，FFmpeg / Anime4K 自动跟随；自定义处理可设置宽高。"), 8, 40)
 
             _cmbSegmentVideo.WaterText = "切换到本页后读取 3FUI 添加文件列表…"
             ConfigureCombo(_cmbSegmentVideo)
             AddHandler _cmbSegmentVideo.SelectedIndexChanged, AddressOf OnSegmentVideoSelected
-            Dim videoField = CreateOfficialField("视频", _cmbSegmentVideo)
+            Dim videoField = CreateOfficialField("视频", _cmbSegmentVideo, 0)
             ConfigureSecondaryButton(_btnSegmentRefresh)
             _btnSegmentRefresh.Text = "刷新视频列表"
             _btnSegmentRefresh.Dock = DockStyle.None
@@ -138,22 +141,22 @@ Namespace videoenhancer
             refreshField.Controls.Add(_btnSegmentRefresh)
             Dim arrangeRefresh =
                 Sub()
-                    ' 与左侧字段编辑器共用 31px 标题占位，确保按钮上下边缘和文件框对齐。
-                    _btnSegmentRefresh.SetBounds(0, refreshField.ScaleY(31), refreshField.ClientSize.Width,
-                        Math.Max(refreshField.ScaleY(32), refreshField.ClientSize.Height - refreshField.ScaleY(34)))
+                    ' 共用字段标题占位和控件高度，避免刷新按钮与视频框之间叠加额外边距。
+                    _btnSegmentRefresh.SetBounds(0, refreshField.ScaleY(UiFieldEditorTop), refreshField.ClientSize.Width,
+                        refreshField.ScaleY(UiControlHeight))
                 End Sub
             AddHandler refreshField.Layout, Sub(sender, e) arrangeRefresh()
             arrangeRefresh()
-            Dim videoRow As New ModernHorizontalPanel(-1.0F, 12.0F, 180.0F)
+            Dim videoRow As New ModernHorizontalPanel(-1.0F, CSng(UiColumnGap), 132.0F)
             videoRow.AddColumn(videoField, 0)
             videoRow.AddColumn(refreshField, 2)
-            AddWorkbenchRow(root, videoRow, 70, 76)
+            AddWorkbenchRow(root, videoRow, 52, UiFieldHeight)
 
             ConfigureCombo(_cmbSegmentMode)
             _cmbSegmentMode.Items.Add("按秒（默认，断点自动吸附关键帧）")
             _cmbSegmentMode.Items.Add("精确帧（兼容旧模式）")
             AddHandler _cmbSegmentMode.SelectedIndexChanged, AddressOf OnSegmentModeChanged
-            AddWorkbenchControl(root, CreateOfficialField("分段计数模式", _cmbSegmentMode), 150, 72, 0.0F, 1.0F)
+            AddWorkbenchControl(root, CreateOfficialField("分段计数模式", _cmbSegmentMode), 112, UiFieldHeight, 0.0F, 1.0F)
 
             ConfigureDpiSwitch(_switchSegmented)
             AddHandler _switchSegmented.CheckedChanged, AddressOf OnSegmentedSwitchChanged
@@ -162,10 +165,10 @@ Namespace videoenhancer
             Dim switchCaption = CreateOfficialCaption("分段总开关")
             switchCaption.Dock = DockStyle.Fill
             switchCaption.TextAlign = ContentAlignment.MiddleLeft
-            Dim switchCaptionWidth = Math.Max(132,
-                MeasureTextWidth96(switchCaption.Text, switchCaption.Font) + 12)
+            Dim switchCaptionWidth = Math.Max(80,
+                MeasureTextWidth96(switchCaption.Text, switchCaption.Font) + UiColumnGap)
             Dim switchRow As New ModernHorizontalPanel(
-                CSng(switchCaptionWidth), 10.0F, 42.0F, 14.0F, -1.0F, 12.0F, 150.0F)
+                CSng(switchCaptionWidth), CSng(UiColumnGap), 40.0F, CSng(UiColumnGap), -1.0F, CSng(UiColumnGap), 132.0F)
             _switchSegmented.Dock = DockStyle.None
             _switchSegmented.Anchor = AnchorStyles.None
             _switchSegmented.Margin = Padding.Empty
@@ -175,14 +178,14 @@ Namespace videoenhancer
             _btnSegmentAdd.Text = "＋ 添加断点"
             _btnSegmentAdd.Dock = DockStyle.None
             _btnSegmentAdd.Anchor = AnchorStyles.None
-            _btnSegmentAdd.Size = New Size(138, 38)
+            _btnSegmentAdd.Size = New Size(120, UiControlHeight)
             _btnSegmentAdd.Margin = Padding.Empty
             AddHandler _btnSegmentAdd.Click, AddressOf OnAddSegment
             switchRow.AddColumn(switchCaption, 0)
             switchRow.AddColumn(_switchSegmented, 2)
             switchRow.AddColumn(_lblSegmentedSwitch, 4)
             switchRow.AddColumn(_btnSegmentAdd, 6)
-            AddWorkbenchRow(root, switchRow, 226, 54)
+            AddWorkbenchRow(root, switchRow, 176, 32)
 
             ConfigureDpiSwitch(_switchMixedSegmentBackends)
             AddHandler _switchMixedSegmentBackends.CheckedChanged, AddressOf OnMixedSegmentBackendsChanged
@@ -191,10 +194,10 @@ Namespace videoenhancer
             Dim mixedBackendCaption = CreateOfficialCaption("测试功能：跨模型后端混用")
             mixedBackendCaption.Dock = DockStyle.Fill
             mixedBackendCaption.TextAlign = ContentAlignment.MiddleLeft
-            Dim mixedBackendCaptionWidth = Math.Max(230,
-                MeasureTextWidth96(mixedBackendCaption.Text, mixedBackendCaption.Font) + 12)
+            Dim mixedBackendCaptionWidth = Math.Max(156,
+                MeasureTextWidth96(mixedBackendCaption.Text, mixedBackendCaption.Font) + UiColumnGap)
             Dim mixedBackendRow As New ModernHorizontalPanel(
-                CSng(mixedBackendCaptionWidth), 10.0F, 42.0F, 14.0F, -1.0F)
+                CSng(mixedBackendCaptionWidth), CSng(UiColumnGap), 40.0F, CSng(UiColumnGap), -1.0F)
             _switchMixedSegmentBackends.Dock = DockStyle.None
             _switchMixedSegmentBackends.Anchor = AnchorStyles.None
             _switchMixedSegmentBackends.Margin = Padding.Empty
@@ -203,7 +206,7 @@ Namespace videoenhancer
             mixedBackendRow.AddColumn(mixedBackendCaption, 0)
             mixedBackendRow.AddColumn(_switchMixedSegmentBackends, 2)
             mixedBackendRow.AddColumn(_lblMixedSegmentBackends, 4)
-            AddWorkbenchRow(root, mixedBackendRow, 290, 54)
+            AddWorkbenchRow(root, mixedBackendRow, 212, 32)
 
             Dim header = CreateSegmentGridPanel()
             For Each caption In New String() {"入点（秒/帧）", "出点（秒/帧）", "处理方式", "目标宽", "目标高", "操作"}
@@ -212,7 +215,7 @@ Namespace videoenhancer
                 label.TextAlign = ContentAlignment.MiddleLeft
                 header.AddColumn(label, header.Controls.Count * 2)
             Next
-            AddWorkbenchRow(root, header, 354, 34)
+            AddWorkbenchRow(root, header, 252, 28)
 
             _segmentRowsPanel.BackColor = Color.Transparent
             _segmentRowsPanel.BackColor1 = Color.Transparent
@@ -221,13 +224,13 @@ Namespace videoenhancer
             _segmentRowsPanel.BorderRadius = 6
             _segmentRowsPanel.LayoutMode = ModernPanel.LayoutModeEnum.Absolute
             _segmentRowsPanel.AutoScroll = True
-            AddWorkbenchRow(root, _segmentRowsPanel, 388, 396)
+            AddWorkbenchRow(root, _segmentRowsPanel, 280, 300)
             AddHandler _segmentRowsPanel.ClientSizeChanged, AddressOf OnSegmentRowsPanelResized
 
             _lblSegmentStatus.AutoSize = False
             _lblSegmentStatus.TextAlign = HtmlColorLabel.TextAlignEnum.MiddleLeft
             _lblSegmentStatus.Text = "<font color=#888888>切换到本页后会读取视频时长、尺寸和关键帧。</font>"
-            AddWorkbenchRow(root, CreateOfficialValueBox(_lblSegmentStatus), 802, 70)
+            AddWorkbenchRow(root, CreateOfficialValueBox(_lblSegmentStatus), 588, 56)
             _pageSegmented.Controls.Add(root)
             EnsureBuiltinSegmentChoices()
             SyncSegmentedRootBounds()
@@ -238,7 +241,7 @@ Namespace videoenhancer
             If root Is Nothing OrElse root.IsDisposed OrElse
                _pageSegmented Is Nothing OrElse _pageSegmented.IsDisposed Then Return
             Dim width = Math.Max(0, _pageSegmented.ClientSize.Width - root.ScaleX(_pageSegmented.ScrollBarWidth + 2))
-            Dim contentHeight = root.ScaleY(884)
+            Dim contentHeight = root.ScaleY(SegmentContentHeight)
             Dim rootLeft = If(_pageSegmented.HorizontalScrollOffset > 0, root.Left, 0)
             Dim rootTop = If(_pageSegmented.VerticalScrollOffset > 0, root.Top, 0)
             If root.Left <> rootLeft OrElse root.Top <> rootTop OrElse root.Width <> width OrElse root.Height <> contentHeight Then
@@ -669,7 +672,7 @@ Namespace videoenhancer
                     ConfigureSecondaryButton(deleteButton)
                     deleteButton.Text = "删除"
                     deleteButton.Dock = DockStyle.Fill
-                    deleteButton.Margin = New Padding(0, 6, 0, 6)
+                    deleteButton.Margin = New Padding(0, 4, 0, 4)
                     deleteButton.Enabled = config.Segments.Count > 1
                     deleteButton.Tag = index
                     AddHandler deleteButton.Click, AddressOf OnDeleteSegment
@@ -678,10 +681,10 @@ Namespace videoenhancer
                     rowPanel.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
                     For Each textBox In New ModernTextBox() {row.StartBox, row.EndBox, row.WidthBox, row.HeightBox}
                         textBox.Dock = DockStyle.Fill
-                        textBox.Margin = New Padding(0, 6, 0, 6)
+                        textBox.Margin = New Padding(0, 4, 0, 4)
                     Next
                     row.ModelBox.Dock = DockStyle.Fill
-                    row.ModelBox.Margin = New Padding(0, 6, 0, 6)
+                    row.ModelBox.Margin = New Padding(0, 4, 0, 4)
                     rowPanel.AddColumn(row.StartBox, 0)
                     rowPanel.AddColumn(row.EndBox, 2)
                     rowPanel.AddColumn(row.ModelBox, 4)
@@ -691,12 +694,12 @@ Namespace videoenhancer
                     ' 懒加载创建的行不经过初始自动缩放，加入页面前按当前比例缩放一次。
                     rowPanel.Scale(_segmentRowsPanel.LayoutScale)
                     rowPanel.SetBounds(
-                        _segmentRowsPanel.ScaleX(8), _segmentRowsPanel.ScaleY(8 + index * 58),
+                        _segmentRowsPanel.ScaleX(8), _segmentRowsPanel.ScaleY(8 + index * SegmentRowPitch),
                         Math.Max(_segmentRowsPanel.ScaleX(720), _segmentRowsPanel.ClientSize.Width - _segmentRowsPanel.ScaleX(24)),
-                        _segmentRowsPanel.ScaleY(54))
+                        _segmentRowsPanel.ScaleY(SegmentRowHeight))
                     _segmentRowsPanel.Controls.Add(rowPanel)
                 Next
-                _segmentRowsPanel.AutoScrollMinSize = New Size(0, _segmentRowsPanel.ScaleY(16 + config.Segments.Count * 58))
+                _segmentRowsPanel.AutoScrollMinSize = New Size(0, _segmentRowsPanel.ScaleY(16 + config.Segments.Count * SegmentRowPitch))
             Finally
                 _segmentSync = False
             End Try
