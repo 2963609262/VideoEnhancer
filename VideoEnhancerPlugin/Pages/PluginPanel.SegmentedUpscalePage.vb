@@ -219,7 +219,7 @@ Namespace videoenhancer
 
             _segmentRowsPanel.BackColor = Color.Transparent
             _segmentRowsPanel.BackColor1 = Color.Transparent
-            _segmentRowsPanel.BorderColor = Color.FromArgb(52, 52, 52)
+            _segmentRowsPanel.BorderColor = UiSurface
             _segmentRowsPanel.BorderSize = 1
             _segmentRowsPanel.BorderRadius = 6
             _segmentRowsPanel.LayoutMode = ModernPanel.LayoutModeEnum.Absolute

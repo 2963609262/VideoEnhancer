@@ -136,36 +136,16 @@ Namespace videoenhancer
             _downloadList.Margin = Padding.Empty
             _downloadList.AutoScroll = False
             _downloadList.Font = New Font("Microsoft YaHei UI", 9.2F)
-            _downloadList.BackColor = Color.Transparent
-            _downloadList.BackgroundColor = Color.Transparent
-            _downloadList.BackgroundSource = ModernPanel1
-            _downloadList.BorderColor = Color.Transparent
-            _downloadList.BorderSize = 0
-            _downloadList.BorderRadius = 0
+            ConfigureTransparentListAppearance(_downloadList)
             _downloadList.HeaderVisible = True
             _downloadList.HeaderHeight = 30
-            _downloadList.HeaderBackColor = Color.FromArgb(36, 36, 36)
-            _downloadList.HeaderForeColor = UiTextSecondary
-            _downloadList.HeaderBorderColor = Color.FromArgb(52, 52, 52)
-            _downloadList.HeaderBorderWidth = 1
             _downloadList.AllowColumnResize = True
             _downloadList.MultiSelect = False
             _downloadList.AllowDragReorder = False
-            _downloadList.ItemForeColor = UiTextSecondary
-            _downloadList.ItemHoverBackColor = Color.FromArgb(48, 255, 255, 255)
-            _downloadList.ItemSelectedBackColor = Color.FromArgb(54, 71, 156, 255)
-            _downloadList.ItemCornerRadius = 4
             _downloadList.ItemPadding = New Padding(10, 5, 8, 5)
             _downloadList.ItemSpacing = 2
             _downloadList.ContentPadding = New Padding(0, 4, 0, 4)
             _downloadList.GroupHeight = 38
-            _downloadList.GroupBackColor = Color.FromArgb(31, 31, 31)
-            _downloadList.GroupForeColor = UiText
-            _downloadList.GroupBorderColor = Color.FromArgb(48, 48, 48)
-            _downloadList.ScrollBarWidth = 10
-            _downloadList.ScrollBarTrackColor = Color.FromArgb(18, 18, 18)
-            _downloadList.ScrollBarThumbColor = Color.FromArgb(72, 72, 72)
-            _downloadList.ScrollBarThumbHoverColor = Color.FromArgb(104, 104, 104)
             _downloadList.Columns.AddRange(New UltraDetailListView.ListColumn() {
                 New UltraDetailListView.ListColumn("资源名称", 520),
                 New UltraDetailListView.ListColumn("大小", 110),

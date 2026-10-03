@@ -128,23 +128,11 @@ Namespace videoenhancer
             _shellModelList.Margin = Padding.Empty
             _shellModelList.AutoScroll = False
             _shellModelList.Font = New Font("Microsoft YaHei UI", 9.2F)
-            _shellModelList.BackColor = Color.Transparent
-            _shellModelList.BackgroundColor = Color.Transparent
-            _shellModelList.BackgroundSource = ModernPanel1
-            _shellModelList.BorderColor = Color.Transparent
-            _shellModelList.BorderSize = 0
-            _shellModelList.BorderRadius = 0
+            ConfigureTransparentListAppearance(_shellModelList)
             _shellModelList.HeaderVisible = True
             _shellModelList.HeaderHeight = 30
-            _shellModelList.HeaderBackColor = Color.FromArgb(36, 36, 36)
-            _shellModelList.HeaderForeColor = UiTextSecondary
-            _shellModelList.HeaderBorderColor = Color.FromArgb(52, 52, 52)
-            _shellModelList.HeaderBorderWidth = 1
             _shellModelList.MultiSelect = False
             _shellModelList.AllowDragReorder = False
-            _shellModelList.ItemForeColor = UiTextSecondary
-            _shellModelList.ItemHoverBackColor = Color.FromArgb(48, 255, 255, 255)
-            _shellModelList.ItemSelectedBackColor = Color.FromArgb(54, 71, 156, 255)
             _shellModelList.ItemPadding = New Padding(10, 5, 8, 5)
             _shellModelList.Columns.AddRange(New UltraDetailListView.ListColumn() {
                 New UltraDetailListView.ListColumn("模型", 560),

@@ -19,7 +19,7 @@ partial class Program
     [STAThread]
     static void Main(string[] args)
     {
-        if (args.Length > 2 && args[2] == "--dpi")
+        if (args.Length > 2 && (args[2] == "--dpi" || args[2] == "--scroll" || args[2] == "--appearance"))
             Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         if (args.Length > 2 && args[2] == "--tooltips" && Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
         {
@@ -45,6 +45,16 @@ partial class Program
             return File.Exists(path) ? context.LoadFromAssemblyPath(path) : null;
         };
         var assembly = Assembly.LoadFrom(pluginPath);
+        if (args.Length > 2 && args[2] == "--appearance")
+        {
+            RunAppearanceChecks(assembly);
+            return;
+        }
+        if (args.Length > 2 && args[2] == "--scroll")
+        {
+            RunScrollChecks(assembly);
+            return;
+        }
         if (args.Length > 2 && args[2] == "--dpi")
         {
             RunDpiLayoutChecks(assembly);

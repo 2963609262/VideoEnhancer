@@ -1338,9 +1338,9 @@ Namespace videoenhancer
             _pageUpscale.LayoutMode = ModernPanel.LayoutModeEnum.Absolute
             _pageUpscale.ScrollBarMode = ModernPanel.ScrollMode.Vertical
             _pageUpscale.ScrollBarWidth = 10
-            _pageUpscale.ScrollBarTrackColor = Color.FromArgb(18, 18, 18)
-            _pageUpscale.ScrollBarThumbColor = Color.FromArgb(72, 72, 72)
-            _pageUpscale.ScrollBarThumbHoverColor = Color.FromArgb(104, 104, 104)
+            _pageUpscale.ScrollBarTrackColor = UiSurface
+            _pageUpscale.ScrollBarThumbColor = UiScrollThumb
+            _pageUpscale.ScrollBarThumbHoverColor = UiScrollThumbHover
             _pageUpscale.VerticalScrollStep = 48
             _pageUpscale.AllowDrop = True
             AddHandler _pageUpscale.DragEnter, AddressOf OnImageDragEnter
@@ -1353,7 +1353,7 @@ Namespace videoenhancer
             ' 在页面构建完成后统一显式映射到 ModernPanel1，交给 LakeUI 注册坐标依赖。
             ' 宽度由 SyncUpscaleRootBounds 明确提交；不使用 Anchor.Right，
             ' 避免 WinForms 默认布局恢复创建时的窄尺寸。
-            Dim root As New DpiLayoutPanel With {
+            Dim root As New GpuScrollContentPanel With {
                 .Dock = DockStyle.None,
                 .Anchor = AnchorStyles.Top Or AnchorStyles.Left,
                 .AutoSize = False,

@@ -180,32 +180,15 @@ Namespace videoenhancer
             _importModelList.Margin = New Padding(0, 10, 0, 6)
             _importModelList.AutoScroll = False
             _importModelList.Font = New Font("Microsoft YaHei UI", 9.0F)
-            _importModelList.BackColor = Color.Transparent
-            _importModelList.BackgroundColor = Color.Transparent
-            _importModelList.BackgroundSource = ModernPanel1
-            _importModelList.BorderColor = UiStrokeSoft
-            _importModelList.BorderSize = 1
-            _importModelList.BorderRadius = 8
+            ConfigureTransparentListAppearance(_importModelList)
             _importModelList.HeaderVisible = True
             _importModelList.HeaderHeight = 30
-            _importModelList.HeaderBackColor = Color.FromArgb(36, 36, 36)
-            _importModelList.HeaderForeColor = UiTextSecondary
-            _importModelList.HeaderBorderColor = Color.FromArgb(52, 52, 52)
-            _importModelList.HeaderBorderWidth = 1
             _importModelList.AllowColumnResize = True
             _importModelList.MultiSelect = False
             _importModelList.AllowDragReorder = False
-            _importModelList.ItemForeColor = UiTextSecondary
-            _importModelList.ItemHoverBackColor = Color.FromArgb(48, 255, 255, 255)
-            _importModelList.ItemSelectedBackColor = Color.FromArgb(54, 71, 156, 255)
-            _importModelList.ItemCornerRadius = 4
             _importModelList.ItemPadding = New Padding(10, 5, 8, 5)
             _importModelList.ItemSpacing = 2
             _importModelList.ContentPadding = New Padding(0, 4, 0, 4)
-            _importModelList.ScrollBarWidth = 10
-            _importModelList.ScrollBarTrackColor = Color.FromArgb(18, 18, 18)
-            _importModelList.ScrollBarThumbColor = Color.FromArgb(72, 72, 72)
-            _importModelList.ScrollBarThumbHoverColor = Color.FromArgb(104, 104, 104)
             _importModelList.Columns.AddRange(New UltraDetailListView.ListColumn() {
                 New UltraDetailListView.ListColumn("用户模型（双击修正 / Delete 删除）", 300),
                 New UltraDetailListView.ListColumn("架构", 150),

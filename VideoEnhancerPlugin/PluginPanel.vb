@@ -30,6 +30,9 @@ Namespace videoenhancer
 
             Protected Overrides Sub WndProc(ByRef m As Message)
                 If m.Msg = WmMouseWheel OrElse m.Msg = WmMouseHWheel Then
+                    If m.Msg = WmMouseWheel Then
+                        SmoothScrollPanel.ForwardWheelToScrollHost(Me, SmoothScrollPanel.WheelDelta(m.WParam))
+                    End If
                     Return
                 End If
                 MyBase.WndProc(m)
@@ -41,7 +44,8 @@ Namespace videoenhancer
             Inherits ModernNumericUpDown
 
             Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
-                ' 不调用基类，避免鼠标滚轮修改 HDR 参数。
+                ' 不修改 HDR 参数；将滚轮交回工作台视口，避免经过数字框时滚动中断。
+                SmoothScrollPanel.ForwardWheelToScrollHost(Me, e.Delta)
             End Sub
 
             Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
@@ -94,6 +98,10 @@ Namespace videoenhancer
         Private Shared ReadOnly UiSurface As Color = Color.FromArgb(40, 220, 220, 220)
         Private Shared ReadOnly UiSurfaceRaised As Color = Color.FromArgb(40, 220, 220, 220)
         Private Shared ReadOnly UiSurfaceHover As Color = Color.FromArgb(60, 220, 220, 220)
+        Private Shared ReadOnly UiSurfaceDark As Color = Color.FromArgb(40, 0, 0, 0)
+        Private Shared ReadOnly UiSeparator As Color = Color.FromArgb(80, 220, 220, 220)
+        Private Shared ReadOnly UiScrollThumb As Color = Color.FromArgb(80, 220, 220, 220)
+        Private Shared ReadOnly UiScrollThumbHover As Color = Color.FromArgb(120, 220, 220, 220)
         Private Shared ReadOnly UiStrokeSoft As Color = Color.Transparent
         Private Shared ReadOnly UiAccent As Color = Color.FromArgb(71, 156, 255)
         Private Shared ReadOnly UiAccentHover As Color = Color.FromArgb(110, 71, 156, 255)
@@ -119,7 +127,7 @@ Namespace videoenhancer
         Private ReadOnly _tabs As New ModernTabControl()
         ' 3FUI 通过字段名和控件名 ModernPanel1 绑定 LakeUI 背景穿透缓存。
         Private ReadOnly ModernPanel1 As New ModernPanel()
-        Private ReadOnly _pageUpscale As New ModernPanel()
+        Private ReadOnly _pageUpscale As New SmoothScrollPanel()
         Private ReadOnly _pagePreview As New ModernPanel()
         Private ReadOnly _pageDownloader As New ModernPanel()
         Private ReadOnly _pageConverter As New ModernPanel()
@@ -897,6 +905,32 @@ Namespace videoenhancer
             AddHandler list.ClientSizeChanged, Sub(sender, e) arrange()
             AddHandler list.DpiChangedAfterParent, Sub(sender, e) arrange()
             arrange()
+        End Sub
+
+        ''' <summary>对齐 3FUI 准备文件页的半透明列表；保留各页面的列、行高和交互配置。</summary>
+        Private Sub ConfigureTransparentListAppearance(list As UltraDetailListView)
+            list.BackColor = Color.Transparent
+            list.BackgroundColor = UiSurface
+            list.BackgroundSource = ModernPanel1
+            list.BorderColor = Color.Transparent
+            list.BorderSize = 0
+            list.BorderRadius = 10
+            list.HeaderBackColor = Color.Transparent
+            list.HeaderForeColor = UiTextSecondary
+            list.HeaderBorderColor = UiSurface
+            list.HeaderBorderWidth = 2
+            list.ItemForeColor = UiTextSecondary
+            list.ItemHoverBackColor = UiSurfaceHover
+            list.ItemSelectedBackColor = UiSurface
+            list.ItemCornerRadius = 10
+            ' 准备文件页不使用分组；下载页的分组也不能沿用 LakeUI 的不透明默认值。
+            list.GroupBackColor = UiSurfaceDark
+            list.GroupForeColor = UiText
+            list.GroupBorderColor = UiSurface
+            list.ScrollBarWidth = 10
+            list.ScrollBarTrackColor = UiSurface
+            list.ScrollBarThumbColor = UiScrollThumb
+            list.ScrollBarThumbHoverColor = UiScrollThumbHover
         End Sub
 
         ''' <summary>
