@@ -174,15 +174,7 @@ Namespace videoenhancer
             })
             AddHandler _downloadList.ItemClick, AddressOf OnDownloadListItemClick
             AddHandler _downloadList.MouseDown, AddressOf OnDownloadListMouseDown
-            AddHandler _downloadList.ClientSizeChanged,
-                Sub(sender, e)
-                    If _downloadList.Columns.Count = 0 Then Return
-                    Dim resourceWidth = Math.Max(260, _downloadList.ClientSize.Width - 10 - 110 - 130 - 138)
-                    If _downloadList.Columns(0).Width <> resourceWidth Then
-                        _downloadList.Columns(0).Width = resourceWidth
-                        _downloadList.RefreshItems()
-                    End If
-                End Sub
+            ConfigureDpiListColumns(_downloadList, 260)
         End Sub
 
         Private Function DownloadExecutablePath() As String

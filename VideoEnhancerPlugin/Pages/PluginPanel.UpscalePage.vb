@@ -96,7 +96,7 @@ Namespace videoenhancer
         Private _interpModelMenu As ModernContextMenu
         Private _modelMenuToolTipController As ModelMenuToolTipController
 
-        Private _upscaleRoot As ModernPanel
+        Private _upscaleRoot As DpiLayoutPanel
         Private _upscaleRootSyncPending As Boolean
         Public Function TryEnable(exePath As String, Optional silent As Boolean = False) As Boolean
             Try
@@ -1057,7 +1057,7 @@ Namespace videoenhancer
 
         Private Shared Function CreateOfficialField(caption As String, editor As Control,
                                                       Optional rightMargin As Integer = 12) As Control
-            Dim layout As New ModernPanel With {
+            Dim layout As New DpiLayoutPanel With {
                 .Margin = New Padding(0, 0, rightMargin, 0),
                 .Padding = Padding.Empty,
                 .BackColor = Color.Transparent,
@@ -1076,9 +1076,9 @@ Namespace videoenhancer
             layout.Controls.Add(editor)
             Dim arrange =
                 Sub()
-                    label.SetBounds(2, 0, Math.Max(0, layout.ClientSize.Width - 4), 28)
-                    editor.SetBounds(0, 31, layout.ClientSize.Width,
-                        Math.Max(32, layout.ClientSize.Height - 34))
+                    label.SetBounds(layout.ScaleX(2), 0, Math.Max(0, layout.ClientSize.Width - layout.ScaleX(4)), layout.ScaleY(28))
+                    editor.SetBounds(0, layout.ScaleY(31), layout.ClientSize.Width,
+                        Math.Max(layout.ScaleY(32), layout.ClientSize.Height - layout.ScaleY(34)))
                 End Sub
             AddHandler layout.Layout, Sub(sender, e) arrange()
             arrange()
@@ -1292,7 +1292,8 @@ Namespace videoenhancer
             ' 使用页面实际视口；取各层旧宽度的最大值会让缩小时的内容越过背景表面。
             ' 宿主 Dock 的中间尺寸在布局完成后的延迟同步中收敛。
             Dim availableWidth = _pageUpscale.ClientSize.Width
-            Dim width = Math.Max(0, availableWidth - _pageUpscale.ScrollBarWidth - 2)
+            Dim width = Math.Max(0, availableWidth - root.ScaleX(_pageUpscale.ScrollBarWidth + 2))
+            Dim contentHeight = root.ScaleY(UpscaleContentHeight)
             ' ModernPanel 会在滚动时把子控件移动到负的 Top/Left。这里只能同步尺寸，
             ' 不能无条件把位置重置为 0，否则 LakeUI 会把当前位置重新记录为设计坐标，
             ' 下一次回到顶部时就会在内容上方留下一大片空白。
@@ -1300,8 +1301,8 @@ Namespace videoenhancer
             Dim rootTop As Integer = root.Top
             If _pageUpscale.VerticalScrollOffset <= 0 AndAlso rootTop <> 0 Then rootTop = 0
             If _pageUpscale.HorizontalScrollOffset <= 0 AndAlso rootLeft <> 0 Then rootLeft = 0
-            If root.Left <> rootLeft OrElse root.Top <> rootTop OrElse root.Width <> width OrElse root.Height <> UpscaleContentHeight Then
-                root.SetBounds(rootLeft, rootTop, width, UpscaleContentHeight)
+            If root.Left <> rootLeft OrElse root.Top <> rootTop OrElse root.Width <> width OrElse root.Height <> contentHeight Then
+                root.SetBounds(rootLeft, rootTop, width, contentHeight)
             End If
         End Sub
 
@@ -1354,7 +1355,7 @@ Namespace videoenhancer
             ' 在页面构建完成后统一显式映射到 ModernPanel1，交给 LakeUI 注册坐标依赖。
             ' 宽度由 SyncUpscaleRootBounds 明确提交；不使用 Anchor.Right，
             ' 避免 WinForms 默认布局恢复创建时的窄尺寸。
-            Dim root As New ModernPanel With {
+            Dim root As New DpiLayoutPanel With {
                 .Dock = DockStyle.None,
                 .Anchor = AnchorStyles.Top Or AnchorStyles.Left,
                 .AutoSize = False,

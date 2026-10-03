@@ -49,8 +49,9 @@ class RtxHdrAndQueueCompatibilityTests(unittest.TestCase):
         self.assertIn("_rtxHdrContrastField, 744", panel)
         self.assertIn("_rtxHdrMaxLuminanceField, 814", panel)
         self.assertIn("Dim rootTop As Integer = root.Top", panel)
-        self.assertIn("root.SetBounds(rootLeft, rootTop, width, UpscaleContentHeight)", panel)
-        self.assertNotIn("root.SetBounds(0, 0, width, UpscaleContentHeight)", panel)
+        self.assertIn("Dim contentHeight = root.ScaleY(UpscaleContentHeight)", panel)
+        self.assertIn("root.SetBounds(rootLeft, rootTop, width, contentHeight)", panel)
+        self.assertNotIn("root.SetBounds(0, 0, width, contentHeight)", panel)
 
     def test_cli_validates_all_hdr_ranges_and_serializes_json_fields(self):
         program = (CLI / "Program.cs").read_text(encoding="utf-8-sig") + (

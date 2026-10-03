@@ -22,8 +22,6 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Paths">
-    <VideoEnhancerRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))\</VideoEnhancerRepositoryRoot>
-    <LayoutResourcePath>$(VideoEnhancerRepositoryRoot)videoenhancer-layout.json</LayoutResourcePath>
     <PluginArtifactFileName>videoenhancer.3fui.dll</PluginArtifactFileName>
     <PluginArtifactDirectory>$(MSBuildProjectDirectory)\obj\plugin-artifact\</PluginArtifactDirectory>
     <PluginArtifactPath>$(PluginArtifactDirectory)$(PluginArtifactFileName)</PluginArtifactPath>
@@ -50,11 +48,6 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup Label="Resources">
-    <EmbeddedResource Include="$(LayoutResourcePath)"
-                      LogicalName="videoenhancer-layout.json" />
-  </ItemGroup>
-
   <Target Name="ValidateHostAssemblies"
           BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="'$(HostBin)' == ''"
@@ -63,8 +56,6 @@
            Text="HostBin 中缺少 FFmpegFreeUI.dll：$(HostBin)" />
     <Error Condition="!Exists('$(HostBin)\LakeUI.dll')"
            Text="HostBin 中缺少 LakeUI.dll：$(HostBin)" />
-    <Error Condition="!Exists('$(LayoutResourcePath)')"
-           Text="缺少布局资源：$(LayoutResourcePath)" />
 
     <GetAssemblyIdentity AssemblyFiles="$(HostBin)\LakeUI.dll"
                          Condition="Exists('$(HostBin)\LakeUI.dll')">

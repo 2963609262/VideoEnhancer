@@ -365,19 +365,48 @@ Namespace videoenhancer
         Public Sub New(config As PluginConfig, Optional previewOnly As Boolean = False)
             _config = If(config, New PluginConfig())
             Current = Me
-            If Not LakeUiV51Available() Then
-                InitializeCompatibilityErrorUi()
-                Return
-            End If
-            InitializeUi()
-            AddHandler _config.Saved, AddressOf OnConfigurationSaved
-            If previewOnly Then
-                _uiReady = True
-                RefreshUi()
-            Else
-                AddHandler Load, AddressOf OnPanelLoad
-            End If
+            SuspendLayout()
+            AutoScaleMode = AutoScaleMode.None
+            Try
+                If Not LakeUiV51Available() Then
+                    InitializeCompatibilityErrorUi()
+                    Return
+                End If
+                InitializeUi()
+                AddHandler _config.Saved, AddressOf OnConfigurationSaved
+                If previewOnly Then
+                    _uiReady = True
+                    RefreshUi()
+                Else
+                    AddHandler Load, AddressOf OnPanelLoad
+                End If
+            Finally
+                ' 页面和全部子控件完成 96 DPI 布局后再统一缩放，避免构建途中发生字体缩放。
+                AutoScaleMode = AutoScaleMode.Dpi
+                AutoScaleDimensions = New SizeF(96.0F, 96.0F)
+                ResumeLayout(True)
+            End Try
         End Sub
+
+        Protected Overrides Sub ScaleControl(factor As SizeF, specified As BoundsSpecified)
+            MyBase.ScaleControl(factor, specified)
+            ' LakeUI 只把已访问的页加入控件树，未访问页也必须参与本次缩放。
+            If _tabs Is Nothing OrElse _tabs.Items.Count = 0 Then Return
+            Dim pageFactor = New SizeF(
+                If((specified And BoundsSpecified.Width) <> 0, factor.Width, 1.0F),
+                If((specified And BoundsSpecified.Height) <> 0, factor.Height, 1.0F))
+            If pageFactor = New SizeF(1.0F, 1.0F) Then Return
+            For Each page In PluginPages()
+                If page IsNot Nothing AndAlso Not page.IsDisposed AndAlso Not Contains(page) Then
+                    page.Scale(pageFactor)
+                End If
+            Next
+        End Sub
+
+        Private Function PluginPages() As ModernPanel()
+            Return New ModernPanel() {_pageUpscale, _pageImage, _pagePreview, _pageDownloader,
+                _pageConverter, _pageImporter, _pageSegmented, _pageShell, _pageTutorial}
+        End Function
 
         Public ReadOnly Property IsEnabled As Boolean
             Get
@@ -624,10 +653,7 @@ Namespace videoenhancer
             BuildOfficialShellPage()
             BuildMarkdownPage(_pageTutorial, BeginnerTutorialMarkdown())
 
-            For Each page As ModernPanel In New ModernPanel() {
-                _pageUpscale, _pageImage, _pagePreview, _pageDownloader,
-                _pageConverter, _pageImporter, _pageSegmented, _pageShell, _pageTutorial
-            }
+            For Each page As ModernPanel In PluginPages()
                 page.BackColor = Color.Transparent
                 page.BackColor1 = Color.Transparent
                 ' ModernPanel 默认带 1px 灰色边框；页面根节点属于 TabControl 内容面，必须显式关闭，
@@ -738,7 +764,7 @@ Namespace videoenhancer
             Dim titleLabel = CreateTextLabel(title, 12.0F, FontStyle.Regular, UiText)
             titleLabel.Margin = Padding.Empty
             titleLabel.TextAlign = ContentAlignment.MiddleLeft
-            Dim titleWidth = Math.Max(84, TextRenderer.MeasureText(title, titleLabel.Font).Width + 4)
+            Dim titleWidth = Math.Max(84, MeasureTextWidth96(title, titleLabel.Font) + 4)
             Dim row As ModernHorizontalPanel
             Dim halfLabel As LakeTextLabel = Nothing
             If halfSwitch Is Nothing Then
@@ -751,7 +777,7 @@ Namespace videoenhancer
                 halfLabel.TextAlign = ContentAlignment.MiddleCenter
                 halfLabel.Margin = Padding.Empty
                 Dim halfLabelWidth = Math.Max(108,
-                    TextRenderer.MeasureText(halfLabel.Text, halfLabel.Font).Width + 14)
+                    MeasureTextWidth96(halfLabel.Text, halfLabel.Font) + 14)
                 row = New ModernHorizontalPanel(
                     CSng(titleWidth), 10.0F, 42.0F, 18.0F, CSng(halfLabelWidth), 8.0F, 42.0F, -1.0F,
                     CSng(stateWidth))
@@ -811,7 +837,7 @@ Namespace videoenhancer
             Return row
         End Function
 
-        Private Shared Sub AddWorkbenchControl(root As ModernPanel, control As Control,
+        Private Shared Sub AddWorkbenchControl(root As DpiLayoutPanel, control As Control,
                                                top As Integer, height As Integer,
                                                leftRatio As Single, rightRatio As Single,
                                                Optional leftOffset As Integer = 0,
@@ -820,18 +846,48 @@ Namespace videoenhancer
             control.Anchor = AnchorStyles.Top Or AnchorStyles.Left
             Dim arrange =
                 Sub()
-                    Dim left = CInt(Math.Round(root.ClientSize.Width * leftRatio)) + leftOffset
-                    Dim right = CInt(Math.Round(root.ClientSize.Width * rightRatio)) + rightOffset
-                    control.SetBounds(left, top, Math.Max(0, right - left), height)
+                    Dim left = CInt(Math.Round(root.ClientSize.Width * leftRatio)) + root.ScaleX(leftOffset)
+                    Dim right = CInt(Math.Round(root.ClientSize.Width * rightRatio)) + root.ScaleX(rightOffset)
+                    control.SetBounds(left, root.ScaleY(top), Math.Max(0, right - left), root.ScaleY(height))
                 End Sub
             root.Controls.Add(control)
             AddHandler root.Layout, Sub(sender, e) arrange()
             arrange()
         End Sub
 
-        Private Shared Sub AddWorkbenchRow(root As ModernPanel, control As Control,
+        Private Shared Sub AddWorkbenchRow(root As DpiLayoutPanel, control As Control,
                                            top As Integer, height As Integer)
             AddWorkbenchControl(root, control, top, height, 0.0F, 1.0F)
+        End Sub
+
+        ''' <summary>参照 3FUI 编码队列：固定列按 DPI 换算，首列使用视口的剩余宽度。</summary>
+        Private Shared Sub ConfigureDpiListColumns(list As UltraDetailListView, minimumFirstWidth As Integer)
+            Dim lastScale As Double = 1.0R
+            Dim arrange As Action =
+                Sub()
+                    If list.IsDisposed OrElse list.Columns.Count = 0 Then Return
+                    Dim scale = If(list.IsHandleCreated, list.DeviceDpi / 96.0R, 1.0R)
+                    list.BeginUpdate()
+                    Try
+                        Dim fixedWidth = 0
+                        For index = 1 To list.Columns.Count - 1
+                            ' 保留用户拖动后的宽度，只在 DPI 改变时按比例换算。
+                            If Math.Abs(scale - lastScale) > 0.001R Then
+                                list.Columns(index).Width = CInt(Math.Round(list.Columns(index).Width * scale / lastScale))
+                            End If
+                            fixedWidth += list.Columns(index).Width
+                        Next
+                        lastScale = scale
+                        list.Columns(0).Width = Math.Max(CInt(Math.Round(minimumFirstWidth * scale)),
+                            list.ClientSize.Width - list.Padding.Horizontal - CInt(Math.Round(18 * scale)) - fixedWidth)
+                    Finally
+                        list.EndUpdate()
+                    End Try
+                End Sub
+            AddHandler list.HandleCreated, Sub(sender, e) arrange()
+            AddHandler list.ClientSizeChanged, Sub(sender, e) arrange()
+            AddHandler list.DpiChangedAfterParent, Sub(sender, e) arrange()
+            arrange()
         End Sub
 
         ''' <summary>
@@ -875,14 +931,16 @@ Namespace videoenhancer
             switchControl.BorderSize = 0
             Dim applySize As Action =
                 Sub()
-                    Dim dpi = 96
-                    If switchControl.FindForm() IsNot Nothing Then
-                        dpi = switchControl.FindForm().DeviceDpi
-                    ElseIf switchControl.IsHandleCreated Then
-                        dpi = switchControl.DeviceDpi
+                    Dim ancestor = switchControl.Parent
+                    While ancestor IsNot Nothing AndAlso Not TypeOf ancestor Is DpiLayoutPanel
+                        ancestor = ancestor.Parent
+                    End While
+                    Dim layout = TryCast(ancestor, DpiLayoutPanel)
+                    If layout IsNot Nothing Then
+                        switchControl.Size = New Size(layout.ScaleX(38), layout.ScaleY(20))
+                    Else
+                        switchControl.Size = New Size(38, 20)
                     End If
-                    Dim scale = Math.Max(1.0F, CSng(dpi) / 96.0F)
-                    switchControl.Size = New Size(CInt(Math.Round(38 * scale)), CInt(Math.Round(20 * scale)))
                 End Sub
             AddHandler switchControl.HandleCreated, Sub(sender, e) applySize()
             AddHandler switchControl.DpiChangedAfterParent, Sub(sender, e) applySize()

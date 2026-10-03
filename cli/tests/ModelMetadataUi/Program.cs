@@ -19,6 +19,8 @@ partial class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if (args.Length > 2 && args[2] == "--dpi")
+            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         if (args.Length > 2 && args[2] == "--tooltips" && Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
         {
             // STA 初始化占用窗口资源，先在新线程关联测试桌面再创建界面。
@@ -43,6 +45,11 @@ partial class Program
             return File.Exists(path) ? context.LoadFromAssemblyPath(path) : null;
         };
         var assembly = Assembly.LoadFrom(pluginPath);
+        if (args.Length > 2 && args[2] == "--dpi")
+        {
+            RunDpiLayoutChecks(assembly);
+            return;
+        }
         if (args.Length > 2 && args[2] == "--tooltips")
         {
             RunTooltipChecks(assembly);

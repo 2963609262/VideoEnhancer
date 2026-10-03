@@ -17,7 +17,7 @@ Namespace videoenhancer
     Public Partial Class PluginPanel
 
         Private ReadOnly _pageSegmented As New ModernPanel()
-        Private _segmentRoot As ModernPanel
+        Private _segmentRoot As DpiLayoutPanel
         Private ReadOnly _cmbSegmentVideo As New WheelLockedComboBox()
         Private ReadOnly _cmbSegmentMode As New WheelLockedComboBox()
         Private ReadOnly _switchSegmented As New LakeUI.BooleanSwitch()
@@ -26,7 +26,7 @@ Namespace videoenhancer
         Private ReadOnly _lblMixedSegmentBackends As New HtmlColorLabel()
         Private ReadOnly _btnSegmentRefresh As New ModernButton()
         Private ReadOnly _btnSegmentAdd As New ModernButton()
-        Private ReadOnly _segmentRowsPanel As New ModernPanel()
+        Private ReadOnly _segmentRowsPanel As New DpiLayoutPanel()
         Private ReadOnly _lblSegmentStatus As New HtmlColorLabel()
         Private ReadOnly _segmentVideoPaths As New List(Of String)()
         Private ReadOnly _segmentModelChoices As New List(Of SegmentModelChoice)()
@@ -100,7 +100,7 @@ Namespace videoenhancer
         Private Sub BuildOfficialSegmentedPage()
             _pageSegmented.Dock = DockStyle.Fill
             _pageSegmented.LayoutMode = ModernPanel.LayoutModeEnum.Absolute
-            Dim root As New ModernPanel With {
+            Dim root As New DpiLayoutPanel With {
                 .Dock = DockStyle.None,
                 .Anchor = AnchorStyles.Top Or AnchorStyles.Left,
                 .AutoSize = False,
@@ -128,7 +128,7 @@ Namespace videoenhancer
             _btnSegmentRefresh.Anchor = AnchorStyles.Left Or AnchorStyles.Right Or AnchorStyles.Bottom
             _btnSegmentRefresh.Margin = Padding.Empty
             AddHandler _btnSegmentRefresh.Click, Sub(sender, e) RefreshSegmentedVideos()
-            Dim refreshField As New ModernPanel With {
+            Dim refreshField As New DpiLayoutPanel With {
                 .Margin = Padding.Empty,
                 .Padding = Padding.Empty,
                 .BackColor = Color.Transparent,
@@ -139,8 +139,8 @@ Namespace videoenhancer
             Dim arrangeRefresh =
                 Sub()
                     ' 与左侧字段编辑器共用 31px 标题占位，确保按钮上下边缘和文件框对齐。
-                    _btnSegmentRefresh.SetBounds(0, 31, refreshField.ClientSize.Width,
-                        Math.Max(32, refreshField.ClientSize.Height - 34))
+                    _btnSegmentRefresh.SetBounds(0, refreshField.ScaleY(31), refreshField.ClientSize.Width,
+                        Math.Max(refreshField.ScaleY(32), refreshField.ClientSize.Height - refreshField.ScaleY(34)))
                 End Sub
             AddHandler refreshField.Layout, Sub(sender, e) arrangeRefresh()
             arrangeRefresh()
@@ -163,7 +163,7 @@ Namespace videoenhancer
             switchCaption.Dock = DockStyle.Fill
             switchCaption.TextAlign = ContentAlignment.MiddleLeft
             Dim switchCaptionWidth = Math.Max(132,
-                TextRenderer.MeasureText(switchCaption.Text, switchCaption.Font).Width + 12)
+                MeasureTextWidth96(switchCaption.Text, switchCaption.Font) + 12)
             Dim switchRow As New ModernHorizontalPanel(
                 CSng(switchCaptionWidth), 10.0F, 42.0F, 14.0F, -1.0F, 12.0F, 150.0F)
             _switchSegmented.Dock = DockStyle.None
@@ -192,7 +192,7 @@ Namespace videoenhancer
             mixedBackendCaption.Dock = DockStyle.Fill
             mixedBackendCaption.TextAlign = ContentAlignment.MiddleLeft
             Dim mixedBackendCaptionWidth = Math.Max(230,
-                TextRenderer.MeasureText(mixedBackendCaption.Text, mixedBackendCaption.Font).Width + 12)
+                MeasureTextWidth96(mixedBackendCaption.Text, mixedBackendCaption.Font) + 12)
             Dim mixedBackendRow As New ModernHorizontalPanel(
                 CSng(mixedBackendCaptionWidth), 10.0F, 42.0F, 14.0F, -1.0F)
             _switchMixedSegmentBackends.Dock = DockStyle.None
@@ -237,15 +237,12 @@ Namespace videoenhancer
             Dim root = _segmentRoot
             If root Is Nothing OrElse root.IsDisposed OrElse
                _pageSegmented Is Nothing OrElse _pageSegmented.IsDisposed Then Return
-            Dim availableWidth = Math.Max(_pageSegmented.Width, _pageSegmented.ClientSize.Width)
-            availableWidth = Math.Max(availableWidth, Math.Max(_tabs.Width, _tabs.ClientSize.Width))
-            If ModernPanel1 IsNot Nothing AndAlso Not ModernPanel1.IsDisposed Then
-                availableWidth = Math.Max(availableWidth,
-                    ModernPanel1.ClientSize.Width - ModernPanel1.Padding.Left - ModernPanel1.Padding.Right)
-            End If
-            Dim width = Math.Max(0, availableWidth - _pageSegmented.ScrollBarWidth - 2)
-            If root.Left <> 0 OrElse root.Top <> 0 OrElse root.Width <> width OrElse root.Height <> 884 Then
-                root.SetBounds(0, 0, width, 884)
+            Dim width = Math.Max(0, _pageSegmented.ClientSize.Width - root.ScaleX(_pageSegmented.ScrollBarWidth + 2))
+            Dim contentHeight = root.ScaleY(884)
+            Dim rootLeft = If(_pageSegmented.HorizontalScrollOffset > 0, root.Left, 0)
+            Dim rootTop = If(_pageSegmented.VerticalScrollOffset > 0, root.Top, 0)
+            If root.Left <> rootLeft OrElse root.Top <> rootTop OrElse root.Width <> width OrElse root.Height <> contentHeight Then
+                root.SetBounds(rootLeft, rootTop, width, contentHeight)
             End If
         End Sub
 
@@ -678,9 +675,6 @@ Namespace videoenhancer
                     AddHandler deleteButton.Click, AddressOf OnDeleteSegment
 
                     Dim rowPanel = CreateSegmentGridPanel()
-                    rowPanel.SetBounds(
-                        8, 8 + index * 58,
-                        Math.Max(720, _segmentRowsPanel.ClientSize.Width - 24), 54)
                     rowPanel.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
                     For Each textBox In New ModernTextBox() {row.StartBox, row.EndBox, row.WidthBox, row.HeightBox}
                         textBox.Dock = DockStyle.Fill
@@ -694,9 +688,15 @@ Namespace videoenhancer
                     rowPanel.AddColumn(row.WidthBox, 6)
                     rowPanel.AddColumn(row.HeightBox, 8)
                     rowPanel.AddColumn(deleteButton, 10)
+                    ' 懒加载创建的行不经过初始自动缩放，加入页面前按当前比例缩放一次。
+                    rowPanel.Scale(_segmentRowsPanel.LayoutScale)
+                    rowPanel.SetBounds(
+                        _segmentRowsPanel.ScaleX(8), _segmentRowsPanel.ScaleY(8 + index * 58),
+                        Math.Max(_segmentRowsPanel.ScaleX(720), _segmentRowsPanel.ClientSize.Width - _segmentRowsPanel.ScaleX(24)),
+                        _segmentRowsPanel.ScaleY(54))
                     _segmentRowsPanel.Controls.Add(rowPanel)
                 Next
-                _segmentRowsPanel.AutoScrollMinSize = New Size(0, 16 + config.Segments.Count * 58)
+                _segmentRowsPanel.AutoScrollMinSize = New Size(0, _segmentRowsPanel.ScaleY(16 + config.Segments.Count * 58))
             Finally
                 _segmentSync = False
             End Try
@@ -865,7 +865,7 @@ Namespace videoenhancer
 
         Private Sub OnSegmentRowsPanelResized(sender As Object, e As EventArgs)
             For Each control As Control In _segmentRowsPanel.Controls
-                control.Width = Math.Max(720, _segmentRowsPanel.ClientSize.Width - 24)
+                control.Width = Math.Max(_segmentRowsPanel.ScaleX(720), _segmentRowsPanel.ClientSize.Width - _segmentRowsPanel.ScaleX(24))
             Next
         End Sub
 

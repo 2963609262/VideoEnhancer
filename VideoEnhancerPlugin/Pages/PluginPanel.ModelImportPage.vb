@@ -79,9 +79,11 @@ Namespace videoenhancer
             AddHandler _btnPickImportFolder.Click, AddressOf OnPickImportFolder
             ' 按当前字体测量文字，给高 DPI 和宿主字体预留按钮两侧空间。
             Dim fitSourceButton As Action(Of ModernButton) =
-                Sub(button) button.Width = Math.Max(210, TextRenderer.MeasureText(button.Text, button.Font).Width + 48)
+                Sub(button) button.Width = root.ScaleX(Math.Max(210, MeasureTextWidth96(button.Text, button.Font) + 48))
             AddHandler _btnPickImportFile.FontChanged, Sub(sender, args) fitSourceButton(_btnPickImportFile)
             AddHandler _btnPickImportFolder.FontChanged, Sub(sender, args) fitSourceButton(_btnPickImportFolder)
+            AddHandler _btnPickImportFile.DpiChangedAfterParent, Sub(sender, args) fitSourceButton(_btnPickImportFile)
+            AddHandler _btnPickImportFolder.DpiChangedAfterParent, Sub(sender, args) fitSourceButton(_btnPickImportFolder)
             fitSourceButton(_btnPickImportFile)
             fitSourceButton(_btnPickImportFolder)
             _lblImportSource.Text = "<font color=#888888>尚未选择；也可以拖入文件、文件夹或压缩包</font>"
@@ -215,15 +217,7 @@ Namespace videoenhancer
             AddHandler _importModelList.KeyDown, AddressOf OnImportModelListKeyDown
             AddHandler _importModelList.PreviewKeyDown, AddressOf OnImportModelListPreviewKeyDown
             AddHandler _importModelList.MouseDown, AddressOf OnImportModelListMouseDown
-            AddHandler _importModelList.ClientSizeChanged,
-                Sub(sender, e)
-                    If _importModelList.Columns.Count = 0 Then Return
-                    Dim nameWidth = Math.Max(210, _importModelList.ClientSize.Width - 10 - 150 - 110 - 70 - 210 - 100)
-                    If _importModelList.Columns(0).Width <> nameWidth Then
-                        _importModelList.Columns(0).Width = nameWidth
-                        _importModelList.RefreshItems()
-                    End If
-                End Sub
+            ConfigureDpiListColumns(_importModelList, 210)
         End Sub
 
         Private Async Sub LoadUserModels()
@@ -478,6 +472,7 @@ Namespace videoenhancer
 
         Private Sub ShowUserModelCapabilityEditor(model As UserModelItem)
             Using dialog As New Form With {
+                .AutoScaleMode = AutoScaleMode.None,
                 .Text = "修正模型能力 - " & model.DisplayName,
                 .StartPosition = FormStartPosition.CenterParent,
                 .FormBorderStyle = FormBorderStyle.None,
@@ -489,6 +484,7 @@ Namespace videoenhancer
                 .ClientSize = New Size(820, 660),
                 .Font = New Font("Microsoft YaHei UI", 9.0F)
             }
+                dialog.SuspendLayout()
                 Dim chrome As New ThisIsYourWindow With {
                     .BorderColor = Color.FromArgb(72, 72, 72),
                     .BorderSize = 1,
@@ -673,10 +669,20 @@ Namespace videoenhancer
                 grid.Height = CInt(rowHeights.Sum()) + grid.Padding.Vertical
                 content.Controls.Add(grid)
                 dialog.Controls.Add(content)
+                dialog.AutoScaleMode = AutoScaleMode.Dpi
+                dialog.AutoScaleDimensions = New SizeF(96.0F, 96.0F)
+                dialog.ResumeLayout(True)
                 chrome.Attach(dialog)
-                Dim workingArea = Screen.FromControl(Me).WorkingArea
-                dialog.ClientSize = New Size(Math.Min(820, workingArea.Width - 16),
-                    Math.Min(grid.Height + chrome.CaptionHeight + chrome.BorderSize * 2, workingArea.Height - 16))
+                Dim fitDialog As Action =
+                    Sub()
+                        If dialog.IsDisposed OrElse dialog.Disposing Then Return
+                        Dim workingArea = Screen.FromControl(dialog).WorkingArea
+                        Dim chromeHeight = CInt(Math.Round((chrome.CaptionHeight + chrome.BorderSize * 2) * dialog.DeviceDpi / 96.0R))
+                        dialog.ClientSize = New Size(Math.Min(grid.ScaleX(820), workingArea.Width - grid.ScaleX(16)),
+                            Math.Min(grid.Height + Math.Max(chromeHeight, dialog.Padding.Vertical), workingArea.Height - grid.ScaleY(16)))
+                    End Sub
+                fitDialog()
+                AddHandler dialog.DpiChanged, Sub(sender, args) dialog.BeginInvoke(fitDialog)
                 Try
                     If dialog.ShowDialog(Me) = DialogResult.OK Then
                         LoadUserModels()

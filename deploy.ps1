@@ -39,10 +39,6 @@ New-Item -ItemType Directory -Force -Path (Join-Path $archive 'VideoEnhancerPlug
 Copy-Item -LiteralPath $installerArtifact -Destination (Join-Path $archive 'VideoEnhancerInstaller.exe') -Force
 Copy-Item -LiteralPath $manualArtifact -Destination (Join-Path $archive 'VideoEnhancer.zip') -Force
 Copy-Item -LiteralPath (Join-Path $base 'VideoEnhancer.slnx') -Destination (Join-Path $archive 'VideoEnhancer.slnx') -Force
-$layoutJson = Join-Path $base 'videoenhancer-layout.json'
-if (Test-Path -LiteralPath $layoutJson) {
-    Copy-Item -LiteralPath $layoutJson -Destination (Join-Path $archive 'videoenhancer-layout.json') -Force
-}
 
 # 2) CLI 源码（Program.cs / README / csproj）
 Copy-Item -LiteralPath (Join-Path $base 'cli\Program.cs') -Destination (Join-Path $archive 'cli\Program.cs') -Force
@@ -72,9 +68,6 @@ foreach ($t in $pluginTargets) {
     try {
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $t) | Out-Null
         Copy-Item -LiteralPath $pluginDll -Destination $t -Force
-        if (Test-Path -LiteralPath $layoutJson) {
-            Copy-Item -LiteralPath $layoutJson -Destination (Join-Path (Split-Path -Parent $t) 'videoenhancer-layout.json') -Force
-        }
         Write-Host "  已复制插件到 $t"
     } catch {
         Write-Host "  插件复制失败（跳过）：$t"

@@ -20,7 +20,7 @@ Namespace videoenhancer
 
         ' ── 图片超分页（独立选项卡，沿用超分工作台的超分引擎与模型）──
         Private ReadOnly _pageImage As New ModernPanel()
-        Private _imageRoot As ModernPanel
+        Private _imageRoot As DpiLayoutPanel
         Private ReadOnly _btnImageFiles As New ModernButton()
         Private ReadOnly _btnImageFolder As New ModernButton()
         Private ReadOnly _btnImageOutput As New ModernButton()
@@ -47,7 +47,7 @@ Namespace videoenhancer
         Private Sub BuildOfficialImagePage()
             _pageImage.Dock = DockStyle.Fill
             _pageImage.LayoutMode = ModernPanel.LayoutModeEnum.Absolute
-            Dim root As New ModernPanel With {
+            Dim root As New DpiLayoutPanel With {
                 .Dock = DockStyle.None,
                 .Anchor = AnchorStyles.Top Or AnchorStyles.Left,
                 .AutoSize = False,
@@ -188,15 +188,12 @@ Namespace videoenhancer
             Dim root = _imageRoot
             If root Is Nothing OrElse root.IsDisposed OrElse
                _pageImage Is Nothing OrElse _pageImage.IsDisposed Then Return
-            Dim availableWidth = Math.Max(_pageImage.Width, _pageImage.ClientSize.Width)
-            availableWidth = Math.Max(availableWidth, Math.Max(_tabs.Width, _tabs.ClientSize.Width))
-            If ModernPanel1 IsNot Nothing AndAlso Not ModernPanel1.IsDisposed Then
-                availableWidth = Math.Max(availableWidth,
-                    ModernPanel1.ClientSize.Width - ModernPanel1.Padding.Left - ModernPanel1.Padding.Right)
-            End If
-            Dim width = Math.Max(0, availableWidth - _pageImage.ScrollBarWidth - 2)
-            If root.Left <> 0 OrElse root.Top <> 0 OrElse root.Width <> width OrElse root.Height <> 336 Then
-                root.SetBounds(0, 0, width, 336)
+            Dim width = Math.Max(0, _pageImage.ClientSize.Width - root.ScaleX(_pageImage.ScrollBarWidth + 2))
+            Dim contentHeight = root.ScaleY(336)
+            Dim rootLeft = If(_pageImage.HorizontalScrollOffset > 0, root.Left, 0)
+            Dim rootTop = If(_pageImage.VerticalScrollOffset > 0, root.Top, 0)
+            If root.Left <> rootLeft OrElse root.Top <> rootTop OrElse root.Width <> width OrElse root.Height <> contentHeight Then
+                root.SetBounds(rootLeft, rootTop, width, contentHeight)
             End If
         End Sub
 

@@ -30,7 +30,7 @@ Namespace videoenhancer
         Private Sub BuildOfficialShellPage()
             _pageShell.Dock = DockStyle.Fill
             _pageShell.LayoutMode = ModernPanel.LayoutModeEnum.Absolute
-            Dim root As New ModernPanel With {
+            Dim root As New DpiLayoutPanel With {
                 .Dock = DockStyle.Fill, .BackColor = Color.Transparent, .BackColor1 = Color.Transparent,
                 .LayoutMode = ModernPanel.LayoutModeEnum.Absolute, .BorderSize = 0
             }
@@ -152,15 +152,7 @@ Namespace videoenhancer
                 New UltraDetailListView.ListColumn("操作", 100)
             })
             AddHandler _shellModelList.ItemClick, AddressOf OnShellModelItemClick
-            AddHandler _shellModelList.ClientSizeChanged,
-                Sub(sender, e)
-                    If _shellModelList.Columns.Count = 0 Then Return
-                    Dim modelWidth = Math.Max(260, _shellModelList.ClientSize.Width - 10 - 130 - 100)
-                    If _shellModelList.Columns(0).Width <> modelWidth Then
-                        _shellModelList.Columns(0).Width = modelWidth
-                        _shellModelList.RefreshItems()
-                    End If
-                End Sub
+            ConfigureDpiListColumns(_shellModelList, 260)
         End Sub
 
         Private Sub OnShellModelItemClick(sender As Object, e As UltraDetailListView.ListItemEventArgs)
