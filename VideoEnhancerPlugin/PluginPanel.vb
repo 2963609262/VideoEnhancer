@@ -385,7 +385,7 @@ Namespace videoenhancer
             SuspendLayout()
             AutoScaleMode = AutoScaleMode.None
             Try
-                If Not LakeUiV51Available() Then
+                If Not LakeUiScrollTransactionsAvailable() Then
                     InitializeCompatibilityErrorUi()
                     Return
                 End If
@@ -935,8 +935,8 @@ Namespace videoenhancer
 
         ''' <summary>
         ''' 按 LakeUI V5 的显式 BackgroundSource 语义，为滚动页内的每个 GPU 控件
-        ''' 注册同一个稳定背景源。LakeUI 的自动祖先取景不会注册坐标依赖，父级滚动
-        ''' 改变控件屏幕坐标后，子表面可能继续显示滚动前的背景采样。
+        ''' 注册同一个稳定背景源，减少嵌套层级之间的取景差异。滚动时仍需通过
+        ''' 渲染事务同步位置变化和子表面的背景提交。
         ''' </summary>
         Private Shared Sub BindScrollableGpuBackgroundSources(root As Control, source As Control)
             If root Is Nothing OrElse source Is Nothing Then Return

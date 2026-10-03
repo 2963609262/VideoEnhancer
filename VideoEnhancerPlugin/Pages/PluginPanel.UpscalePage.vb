@@ -466,11 +466,11 @@ Namespace videoenhancer
             End If
         End Sub
 
-        ''' <summary>LakeUI 5.1 是本插件的最低 GPU 控件基线，允许后续 5.x 宿主版本。</summary>
-        Private Shared Function LakeUiV51Available() As Boolean
+        ''' <summary>工作台滚动依赖 LakeUI 5.110 的公开渲染事务。</summary>
+        Private Shared Function LakeUiScrollTransactionsAvailable() As Boolean
             Try
                 Dim version = GetType(ModernPanel).Assembly.GetName().Version
-                Return version IsNot Nothing AndAlso version.Major = 5 AndAlso version.Minor >= 1
+                Return version IsNot Nothing AndAlso version.Major = 5 AndAlso version.Minor >= 110
             Catch
                 Return False
             End Try
@@ -495,7 +495,7 @@ Namespace videoenhancer
                 .ForeColor = UiDanger,
                 .TextAlign = HtmlColorLabel.TextAlignEnum.MiddleLeft,
                 .Text = "<font color=#EB5D5D><b>无法加载视频超分插件</b></font><br/>" &
-                        "<font color=#C0C0C0>需要升级 3FUI/LakeUI 5.1 或更高版本后才能继续使用。</font>"
+                        "<font color=#C0C0C0>需要升级 3FUI/LakeUI 5.110 或更新的 5.x 版本后才能继续使用。</font>"
             }
             ModernPanel1.Controls.Add(message)
             Controls.Add(ModernPanel1)
@@ -1348,9 +1348,8 @@ Namespace videoenhancer
 
             ' 根容器保持固定内容高度；窗口较小时由页面滚动承载。
             ' 横向由一次性的宿主布局同步，避免 LakeUI 自定义 Dock/Anchor 布局重入。
-            ' LakeUI 的自动祖先背景路径明确使用 registerDependency:=False；滚动改变
-            ' 父级坐标时，自动取景不会让子级 GPU 表面失效。滚动根及其所有 V5 子控件
-            ' 在页面构建完成后统一显式映射到 ModernPanel1，交给 LakeUI 注册坐标依赖。
+            ' 滚动根及其 V5 子控件使用稳定的 ModernPanel1 背景源。
+            ' 位置变化和透明背景重新取景由 SmoothScrollPanel 的渲染事务统一提交。
             ' 宽度由 SyncUpscaleRootBounds 明确提交；不使用 Anchor.Right，
             ' 避免 WinForms 默认布局恢复创建时的窄尺寸。
             Dim root As New GpuScrollContentPanel With {

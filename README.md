@@ -214,7 +214,7 @@ BasicVSR++ 不支持与补帧组合。切换到 TensorRT、CUDA、NCNN 或其他
 ## 从源码构建
 
 要求安装 .NET 10 SDK。插件还需要 3FUI 构建目录中的
-`FFmpegFreeUI.dll` 和 LakeUI 5.1+（仅支持 5.x）。
+`FFmpegFreeUI.dll` 和 LakeUI 5.110+（仅支持 5.x）。工作台滚动直接使用公开渲染事务接口。
 
 仓库根目录的 `VideoEnhancer.slnx` 包含插件与 CLI；CLI 对插件声明了构建依赖，
 因此不会再依赖预先存在的 `videoenhancer.3fui.dll`：

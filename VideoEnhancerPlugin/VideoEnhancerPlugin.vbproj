@@ -61,8 +61,8 @@
                          Condition="Exists('$(HostBin)\LakeUI.dll')">
       <Output TaskParameter="Assemblies" ItemName="_LakeUIIdentity" />
     </GetAssemblyIdentity>
-    <Error Condition="'@(_LakeUIIdentity)' != '' And ($([MSBuild]::VersionLessThan('%(_LakeUIIdentity.Version)', '5.1.0.0')) Or $([MSBuild]::VersionGreaterThanOrEquals('%(_LakeUIIdentity.Version)', '6.0.0.0')))"
-           Text="需要 LakeUI 5.1 或更新的 5.x 版本；当前为 %(_LakeUIIdentity.Version)：$(HostBin)\LakeUI.dll" />
+    <Error Condition="'@(_LakeUIIdentity)' != '' And ($([MSBuild]::VersionLessThan('%(_LakeUIIdentity.Version)', '5.110.0.0')) Or $([MSBuild]::VersionGreaterThanOrEquals('%(_LakeUIIdentity.Version)', '6.0.0.0')))"
+           Text="需要 LakeUI 5.110 或更新的 5.x 版本；当前为 %(_LakeUIIdentity.Version)：$(HostBin)\LakeUI.dll" />
     <Message Importance="high"
              Text="3FUI HostBin: $(HostBin)；LakeUI: %(_LakeUIIdentity.Version)" />
   </Target>

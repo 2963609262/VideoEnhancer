@@ -23,6 +23,13 @@ Namespace videoenhancer
             AddHandler _scrollTimer.Tick, AddressOf OnScrollTimerTick
         End Sub
 
+        Private Sub ApplyScrollPosition(horizontalOffset As Integer, verticalOffset As Integer)
+            ' 位置移动和透明子树重新取景在同一个提交中完成，避免下一拍沿用旧背景。
+            Using update = D3D_PaintBridge.BeginRenderUpdate(Me)
+                MyBase.ScrollTo(horizontalOffset, verticalOffset)
+            End Using
+        End Sub
+
         Friend Function MaximumVerticalOffset() As Integer
             Dim contentBottom = DisplayRectangle.Top
             For Each child As Control In Controls
@@ -65,7 +72,7 @@ Namespace videoenhancer
             Dim progress = Math.Clamp(elapsedMilliseconds / ScrollDurationMilliseconds, 0.0, 1.0)
             Dim eased = 1.0 - Math.Pow(1.0 - progress, 3.0)
             Dim position = Math.Clamp(CInt(Math.Round(_scrollStart + (_scrollTarget - _scrollStart) * eased)), 0, maximum)
-            If position <> VerticalScrollOffset Then MyBase.ScrollTo(HorizontalScrollOffset, position)
+            If position <> VerticalScrollOffset Then ApplyScrollPosition(HorizontalScrollOffset, position)
             If progress >= 1.0 OrElse position = _scrollTarget Then StopScrollAnimation(False)
         End Sub
 
@@ -82,13 +89,15 @@ Namespace videoenhancer
         Public Shadows Sub ScrollTo(horizontalOffset As Integer, verticalOffset As Integer)
             StopScrollAnimation()
             ' LakeUI 在计算滚动条几何后才钳制偏移，先限制输入以避免超范围计算。
-            MyBase.ScrollTo(Math.Max(0, horizontalOffset), Math.Clamp(verticalOffset, 0, MaximumVerticalOffset()))
+            ApplyScrollPosition(Math.Max(0, horizontalOffset), Math.Clamp(verticalOffset, 0, MaximumVerticalOffset()))
         End Sub
 
         Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
             If (ModifierKeys And Keys.Shift) = Keys.Shift OrElse MaximumVerticalOffset() <= 0 Then
                 StopScrollAnimation()
-                MyBase.OnMouseWheel(e)
+                Using update = D3D_PaintBridge.BeginRenderUpdate(Me)
+                    MyBase.OnMouseWheel(e)
+                End Using
                 Return
             End If
             BeginWheelScroll(e.Delta)
@@ -132,7 +141,20 @@ Namespace videoenhancer
 
         Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
             StopScrollAnimation()
-            MyBase.OnMouseDown(e)
+            Using update = D3D_PaintBridge.BeginRenderUpdate(Me)
+                MyBase.OnMouseDown(e)
+            End Using
+        End Sub
+
+        Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
+            If Capture AndAlso (e.Button And MouseButtons.Left) <> MouseButtons.None Then
+                ' 拖动滚动条同样会移动内容；普通悬停不触发整棵子树提交。
+                Using update = D3D_PaintBridge.BeginRenderUpdate(Me)
+                    MyBase.OnMouseMove(e)
+                End Using
+            Else
+                MyBase.OnMouseMove(e)
+            End If
         End Sub
 
         Protected Overrides Sub OnSizeChanged(e As EventArgs)
