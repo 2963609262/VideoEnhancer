@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-10-04 11:25
+Last updated: 2026-10-04 11:35
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 11:35：**1.3.10正式发布完成：[GitHub v1.3.10](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.10)、ModelScope Releases及Models备用EXE同步；源码/注释标签9bfba97已推送。PR9合并fb19abe，PR8仅aria2选择性提交5f1c9c0，原PR8已关闭。11远端实际下载hash、双源故障回退通过；本机正式升级1.3.10，配置/用户清单保持，aria2-next2.8.3。Backend继续2026.09.30.1、不动模型权重；发行收尾文档提交推送后核对干净工作树。**
 
 - 2026-10-04 11:25：1.3.10主线整合与最终门禁完成，五项资产已冻结。PR8仅aria2选择性提交5f1c9c0，PR9合并fb19abe；build/publish0警告0错误、六类插件UI/宿主契约、下载队列5场景、Python路径16项、发布5/后端更新6、内外层安装回滚/自更新通过。后端逐文件UNCHANGED，准备推送main/v1.3.10并发布双源。
 
@@ -72,6 +74,8 @@ Updated by: Codex
 
 ## Decisions
 
+- 2026-10-04 11:35：用户“功能合理，选择性安全合并并发布1.3.10”授权正式合并/推送/发行，取代此前仅本机试用限制。PR8保留aria2部分、排除倍率预设和控制台安装逻辑；PR9已合并。运行要求LakeUI5.110+（5.x），旧aria2自动更新时保持，需要安装器/手动包升级独立组件。
+
 - 2026-10-04 10:46：用户授权仅选择性移植PR8的aria2升级并部署PR9组合，不整包合并PR8、不正式合并PR9，版本保持1.3.9、不发布远端。
 
 - 2026-10-01 17:56：用户确认1.3.9刚发布，同版本替换影响小；旧1.3.9用户可等待下一版本正常更新，无需当前手动替换，不增加同版本自动更新机制。
@@ -93,6 +97,8 @@ Updated by: Codex
 - 旧清理拒绝和 GitHub CDN 验证限制见 Active TODO；不将历史注册残留推测当实测事实。
 
 ## Environment Notes
+
+- 2026-10-04 11:35当前本机正式1.3.10（3FUI6.2.35/LakeUI5.110），EXE hash `ac50014afde5b3e8f0181350f3c4f7ff079d72de15ec40de20d050b539516ac1`，DLL `c7f2fa9988d4941feb29a2b86e3977250c8f50e5032196c421261f96b953e1bd`，aria2-next2.8.3。备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-release-1.3.10-20261004-112800`；证据Artifacts/.refactor-tmp/release-1.3.10/local-deployment.json。以下旧试用/发行环境条目仅为历史参考。
 
 - 2026-10-04 10:46：当前实际宿主6.2.35/LakeUI5.110，本机部署为PR9+aria2-next2.8.3试用1.3.9；下述旧HostBin/发行hash仅为历史。PR9构建无需HostBin。备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-pr9-aria2-20261004-104341`，证据`Artifacts/pr9-review/Artifacts/local-deployment.json`。
 - 当前试用EXE SHA256 `2534d4fbb916374b68b262a87124af4c2a987a4264441e5cfdd7b21bb089108c`，DLL `139e74127b08518f3078eacb9c507098b7c9c121dd017e5be8074befb0c83bcb`，aria2 `08afaf2a44811d38e7ce538da719ab06d6925bcaad1231ee7b92c497f58e5aac`。
@@ -130,6 +136,8 @@ git diff --check
 文档整理仅验证归档字节/SHA256、UTF-8、链接和记录结构，不重跑程序测试。程序验收与发行详见 `release/发布流程.md`。
 
 ## Git Sync
+
+- 2026-10-04 11:35：PR8选择性5f1c9c0、PR9合并fb19abe、发行9bfba97及v1.3.10已推送。PR9状态MERGED，PR8选择性移植后CLOSED；不整包合并PR8。后续仅收尾文档提交，main与tag正常推送、无强推；冻结资产不纳入Git。
 
 - 2026-10-04 10:46：main=5942b48同步origin/main；aria2选择性代码/许可/发布流程及审核记录未提交，工作树非干净。PR9 detached ae94b26仅附加同样aria2改动；未推送。
 
@@ -358,3 +366,13 @@ git diff --check
 - build/publish0警告0错误；发布门禁5与后端更新6、内层安装/无效目录/回滚、自更新独立组件保留/回滚、最终WiX成功/无效目录/回滚及缓存/临时登记清理通过。ZIP15项，DLL/EXE/aria2/依赖许可hash一致，不含宿主/渲染DLL或外置布局JSON。不重跑完整GPU矩阵。
 - 独立后端按上一发行目录逐项SHA256审计UNCHANGED，继续2026.09.30.1。aria2源码下载遇EOF且停滞，终止自有dotnet发布进程，改为存在源码缓存时复用并始终锁定hash；发布脚本复用构建产物再hash，防止重复下载。缓存恢复自已验证41,412,730字节归档，最终hash420e3125…匹配。重新完整构建成功，首次失败日志保留。
 - 冻结五项资产hash在Artifacts/.refactor-tmp/release-1.3.10/asset-hashes.json；上传后不重包。接下来提交/推送/标签、GitHub及ModelScope同步、11文件实际hash和双源故障回退、本机正式升级。
+
+### 2026-10-04 11:35 - Codex：1.3.10双源发行与收尾
+
+- Git：main已推送5f1c9c0(aria2选择性)、fb19abe(PR9有祖先关系合并)、9bfba97(release1.3.10)，注释tagv1.3.10同指向9bfba97。PR9自动标记MERGED；PR8因排除其余行为仅关闭，不伪装整包合并，不发送评论。
+- GitHub正式latest五资产及逐行分类正文正确；ModelScope隔离上传只含新版本/README/Notes/stable，7项提交、0删除，Models备用EXE同路径--no-cache复用hash。冻结后未重包，旧发行/模型/Backend channel不变。
+- 验证：GitHub5/ModelScope5/Models1共11文件实际HTTP200、大小/SHA256与冻结资产一致，两份stable相同；模型96项，无PotPlayer/重复，备用EXE唯一且17,316,043字节。Backend线上2026.09.30.1与两条补丁保持，本地逐项审计UNCHANGED。
+- 网络：首次Python下载GitHub资产read-timeout、插件包回退TLS握手EOF；ModelScope六文件当时通过。只重试GitHub失败项，用Windows curl实际下载通过，结果remote-verification.json11/11；插件故障回退先临时进程IPv6关闭重试成功（DNS本无IPv6），随后撤掉该变量在默认环境再次通过。没有关闭TLS验证或修改产品网络逻辑，原失败日志保留。
+- 实际更新器：GitHub检查仓库404→ModelScope1.3.10；ModelScope包数据集404→GitHub1.3.10包且hash通过。夹具在项目Artifacts，不改真实配置。最终六类UI、队列5场景、Python16项、release5/backend6、内外层安装回滚/缓存清理与自更新通过；未重复GPU全矩阵，用户此前实际功能反馈合理。
+- 本机：确认宿主/CLI退出，备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-release-1.3.10-20261004-112800`后正式--apply-update返回UPDATE_COMPLETE|1.3.10；显式补齐aria2/许可，EXE/DLL/aria2hash匹配、插件配置及models/User/model-catalog.json保持。未自动启动宿主，版本记录/中文进度/审核报告更新。
+- 证据：Artifacts/.refactor-tmp/release-1.3.10中的asset-hashes、github-release、remote-verification、remote-models、remote-backend-channel、local-deployment、build-release、门禁/UI日志及updater-probe。长期TODO保持，不扩大本轮任务。完成收尾文档提交推送后核对干净工作树。
