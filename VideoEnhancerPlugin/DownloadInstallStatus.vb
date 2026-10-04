@@ -7,7 +7,7 @@ Imports System.Text.RegularExpressions
 
 Namespace videoenhancer
     Friend NotInheritable Class DownloadInstallStatus
-        Friend Shared Function IsDownloadInstalled(relativePath As String, coreRoot As String, resolvedExe As String) As Boolean
+        Friend Shared Function IsDownloadInstalled(relativePath As String, coreRoot As String, resolvedExe As String, Optional remoteSha256 As String = "") As Boolean
             If String.IsNullOrWhiteSpace(relativePath) Then Return False
             Try
                 Dim normalized = relativePath.Replace("\"c, "/"c).TrimStart("/"c)
@@ -28,22 +28,19 @@ Namespace videoenhancer
                     String.Equals(Path.GetExtension(suffix), ".zip", StringComparison.OrdinalIgnoreCase)
                 ' Bin 压缩包可能已下载但只解压了一部分，不能把归档文件存在当作安装完成。
                 If category.Equals("Bin", StringComparison.OrdinalIgnoreCase) AndAlso isArchive Then
-                    Dim archiveName = Path.GetFileNameWithoutExtension(suffix)
-                    If archiveName.StartsWith("RTXVideoRuntime_", StringComparison.OrdinalIgnoreCase) Then
-                        Dim marker = Path.Combine(coreRoot, "bin", "rtx-video", ".installed-version")
-                        Return File.Exists(Path.Combine(coreRoot, "bin", "rtx-video", "runtime", "vsr_backend.exe")) AndAlso
-                            File.Exists(marker) AndAlso
-                            File.ReadAllText(marker, Encoding.UTF8).Trim().Equals(normalized, StringComparison.OrdinalIgnoreCase)
+                    Dim coreFile = ComponentCoreFile(coreRoot, normalized)
+                    If String.IsNullOrEmpty(coreFile) OrElse Not File.Exists(coreFile) Then Return False
+                    Dim marker = ComponentArchiveMarkerPath(coreRoot, normalized)
+                    If File.Exists(marker) AndAlso Not String.IsNullOrWhiteSpace(remoteSha256) Then
+                        Return File.ReadAllText(marker, Encoding.UTF8).Trim().Equals(remoteSha256, StringComparison.OrdinalIgnoreCase)
                     End If
-                    If archiveName.Equals("ffmpeg", StringComparison.OrdinalIgnoreCase) Then
-                        Return File.Exists(Path.Combine(coreRoot, "bin", "ffmpeg", "ffmpeg.exe"))
+                    ' 兼容1.3.11已安装的RTX日期版本；其他无记录组件需核验更新。
+                    If IsRtxVideoRuntimeDownload(normalized) Then
+                        Dim versionMarker = Path.Combine(coreRoot, "bin", "rtx-video", ".installed-version")
+                        Return File.Exists(versionMarker) AndAlso
+                            File.ReadAllText(versionMarker, Encoding.UTF8).Trim().Equals(normalized, StringComparison.OrdinalIgnoreCase)
                     End If
-                    If archiveName.Equals("mkvtoolnix", StringComparison.OrdinalIgnoreCase) Then
-                        Return File.Exists(Path.Combine(coreRoot, "bin", "mkvtoolnix", "mkvmerge.exe"))
-                    End If
-                    If archiveName.Equals("PortableGit", StringComparison.OrdinalIgnoreCase) Then
-                        Return File.Exists(Path.Combine(coreRoot, "bin", "PortableGit", "cmd", "git.exe"))
-                    End If
+                    Return False
                 End If
                 If File.Exists(downloaded) Then Return True
 
@@ -88,6 +85,25 @@ Namespace videoenhancer
             Return Regex.IsMatch(normalized,
                 "^Bin/rtx-video/RTXVideoRuntime_\d{8}\.7z$",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+        End Function
+
+        Friend Shared Function ComponentCoreFile(coreRoot As String, relativePath As String) As String
+            Dim normalized = relativePath.Replace("\"c, "/"c).TrimStart("/"c)
+            If IsRtxVideoRuntimeDownload(normalized) Then
+                Return Path.Combine(coreRoot, "bin", "rtx-video", "runtime", "vsr_backend.exe")
+            End If
+            Select Case normalized.ToUpperInvariant()
+                Case "BIN/FFMPEG.7Z" : Return Path.Combine(coreRoot, "bin", "ffmpeg", "ffmpeg.exe")
+                Case "BIN/MKVTOOLNIX.7Z" : Return Path.Combine(coreRoot, "bin", "mkvtoolnix", "mkvmerge.exe")
+                Case "BIN/PORTABLEGIT.7Z" : Return Path.Combine(coreRoot, "bin", "PortableGit", "cmd", "git.exe")
+                Case Else : Return ""
+            End Select
+        End Function
+
+        Friend Shared Function ComponentArchiveMarkerPath(coreRoot As String, relativePath As String) As String
+            Dim normalized = relativePath.Replace("\"c, "/"c).ToUpperInvariant()
+            Dim hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalized)))
+            Return Path.Combine(coreRoot, "bin", ".downloads", hash & ".installed")
         End Function
 
         Friend Shared Function FrameInterpolationArchiveMarkerPath(coreRoot As String, relativePath As String) As String

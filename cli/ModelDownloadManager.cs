@@ -49,6 +49,7 @@ internal sealed class ModelDownloadManager
                         writer.WriteString("name", model.Name);
                         writer.WriteString("path", model.Path);
                         writer.WriteNumber("size", model.Size);
+                        writer.WriteString("sha256", model.Sha256);
                         writer.WriteEndObject();
                     }
                     writer.WriteEndArray();
@@ -104,7 +105,22 @@ internal sealed class ModelDownloadManager
         // 完成下载及解压后才移除标记，刷新列表不会把取消后的半成品认作已安装。
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         var pending = destination + ".pending";
-        File.WriteAllText(pending, model.Path, new UTF8Encoding(false));
+        var pendingIdentity = category.Equals("Bin", StringComparison.OrdinalIgnoreCase)
+            ? model.Path + "\n" + model.Sha256 : model.Path;
+        if (category.Equals("Bin", StringComparison.OrdinalIgnoreCase) && File.Exists(destination))
+        {
+            // 同路径组件换包后，不能续传旧内容或复用旧的完整归档。
+            var partial = File.Exists(destination + ".aria2");
+            var stale = partial
+                ? !File.Exists(pending) || File.ReadAllText(pending, Encoding.UTF8) != pendingIdentity
+                : !string.IsNullOrWhiteSpace(model.Sha256) && !ArchiveHashMatches(destination, model.Sha256);
+            if (stale)
+            {
+                File.Delete(destination);
+                File.Delete(destination + ".aria2");
+            }
+        }
+        File.WriteAllText(pending, pendingIdentity, new UTF8Encoding(false));
         Console.WriteLine("DOWNLOAD_START|" + model.Path);
         var code = _token is null
             ? _downloadWithAria(url, destination, false)
@@ -146,6 +162,16 @@ internal sealed class ModelDownloadManager
                 var marker = FrameInterpolationArchiveMarkerPath(model.Path);
                 Directory.CreateDirectory(Path.GetDirectoryName(marker)!);
                 File.WriteAllText(marker, model.Path, Encoding.UTF8);
+            }
+            if (category.Equals("Bin", StringComparison.OrdinalIgnoreCase))
+            {
+                // 组件同一路径也可能更新，完成校验和解压后保存远端内容哈希。
+                DownloadCancellation.Check();
+                var normalizedPath = model.Path.Replace('\\', '/').ToUpperInvariant();
+                var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalizedPath)));
+                var marker = Path.Combine(_coreRoot, "bin", ".downloads", key + ".installed");
+                Directory.CreateDirectory(Path.GetDirectoryName(marker)!);
+                File.WriteAllText(marker, model.Sha256, new UTF8Encoding(false));
             }
             if (IsRtxVideoRuntimeArchivePath(model.Path))
             {
@@ -238,6 +264,12 @@ internal sealed class ModelDownloadManager
         {
             return _fail("卸载 RTX 运行组件失败：" + ex.Message, 1);
         }
+    }
+
+    private static bool ArchiveHashMatches(string path, string expected)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream)).Equals(expected, StringComparison.OrdinalIgnoreCase);
     }
 
     private string FrameInterpolationArchiveMarkerPath(string relativePath)

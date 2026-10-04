@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-10-04 22:19
+Last updated: 2026-10-04 22:28
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 22:28：用户“这些做完后覆盖11”明确授权同版本修订1.3.11，取代临时1.3.12开发分流，版本源已恢复1.3.11。通用Bin组件SHA256安装标记、旧安装版本待核验、同路径旧完整包/旧续传缓存失效已实现。组件状态22场景、真实下载/标记及旧缓存替换通过；0警告0错误。先前1.3.11五资产留存Artifacts/release-1.3.11-before-component，WiX已clean避免同版本载荷缓存；修订发行构建/门禁进行中，随后覆盖源码标签/GitHub/MS及本机。RTX独立包仍2026.10.04.1，不覆盖其权重/运行库。
 
 - 2026-10-04 22:19：**1.3.11正式发布完成**：[GitHub v1.3.11](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.11)、ModelScope Releases及Models备用EXE同步；源码/标签7ffeea2。RTX2026.10.04.1同步Models，源码6afb9a8/tag已推送。11本体远端实际下载hash+RTX归档hash+最新包筛选通过，双源故障回退通过；真实CLI覆盖旧RTX并记录版本通过。本机正式升级1.3.11及RTX，配置/用户清单/aria2/7zip保持，宿主未启动。用户新增要求：其他组件也须更新识别，随后独立实现，不修改已发布1.3.11资产。
 
@@ -81,7 +83,7 @@ Updated by: Codex
 
 - [x] 全后端模型目标尺寸修复：TRT图内输出/缓存、CUDA/BasicVSR++原设备Lanczos4、CPU封装结果缩放、视频/图片/两种补帧顺序/跨后端/分块同步完成并定向验证。未做全模型逐项或旧新整链性能比较。
 - [x] 正式分发1.3.11：本体双源/RTX独立包、远端hash、更新回退、本机正式升级完成。
-- [ ] 用户要求其他可更新组件采用同类识别：Bin/ffmpeg、mkvtoolnix、PortableGit须比较远端归档SHA256；下一开发版本实施。
+- [ ] 通用组件更新识别已实现：待按明确授权覆盖1.3.11，并完成修订双源hash/本机升级。
 - [ ] 老视频入口后续工作：四宫格补.rm/.rmvb、RVE元数据改可靠FFmpeg探测；不属于已确认RTX MPEG-4 Visual解码修复，尚未实施。
 
 - [x] PR9+aria2组合已本机部署，用户反馈功能合理并授权合并/发布；不把该反馈扩大为全部GPU或历史专项验收。
@@ -513,3 +515,12 @@ git diff --check
 - 本机证据Artifacts/release-1.3.11/local-deployment.json，备份C:\Codex Program\3fui plugin\Artifacts\.refactor-tmp\backup-before-release-1.3.11-20261004-221638。远端与升级证据verify-remote.log/remote-verification.json/remote-rtx.json/fallback-probe.log/rtx-upgrade.log/local-rtx-update.log。
 - PythonBackend仍2026.09.30.1/channel历史2条补丁；GPU和RTX既有验证沿用。首个远端校验使用便携Python缺truststore，切换本机发布Python后11项通过。
 - Git：源码7ffeea2、v1.3.11及RTX6afb9a8/标签已推送；本条文档收尾提交后继续用户组件更新需求。
+
+
+### 2026-10-04 22:28 — Codex：通用组件更新识别及同版本覆盖授权
+
+- 2026-10-04 22:28：用户“这些做完后覆盖11”明确授权同版本修订1.3.11，取代临时1.3.12开发分流，版本源已恢复1.3.11。通用Bin组件SHA256安装标记、旧安装版本待核验、同路径旧完整包/旧续传缓存失效已实现。组件状态22场景、真实下载/标记及旧缓存替换通过；0警告0错误。先前1.3.11五资产留存Artifacts/release-1.3.11-before-component，WiX已clean避免同版本载荷缓存；修订发行构建/门禁进行中，随后覆盖源码标签/GitHub/MS及本机。RTX独立包仍2026.10.04.1，不覆盖其权重/运行库。
+
+- 修改DownloadInstallStatus/ModelDownloadPage/ModelDownloadManager：CLI列表包含sha256；组件只有核心文件+对应归档hash标记才认作最新，兼容初版1.3.11的RTX日期标记。失败/pending继续不认完成。旧组件无hash记录显示版本待核验，同路径hash改变显示可更新。下载前移除不同内容的完整旧包及旧身份续传缓存，当前身份继续断点。
+- 验证release/tests/ComponentInstallStatus/Probe.vbproj：4组件各5状态+RTX两兼容状态，共22场景；真实CLI归档hash标记和旧缓存替换通过。初次在未部署aria2的build目录下载报缺依赖，复制项目内测试所需便携aria2后通过，不修改安装目录。
+- 本体原版发布结果保留；本轮修订用户明确授权覆盖同版本，安装初版1.3.11的用户需安装器/ZIP手动覆盖，SemVer自动更新不触发。源码尚未提交修订。
