@@ -1,11 +1,17 @@
 # Project Status
 
-Last updated: 2026-10-04 22:28
+Last updated: 2026-10-05 00:00
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 23:49：**老视频 RTX 再排查修复完成，仅本地候选。**真实奇数尺寸 MPEG-4 Visual 343×259 复现 D3D11 上传缓冲失败（报 Cannot allocate memory）；内部 NV12/P010 缓冲偶数化+边缘补齐，保持可见尺寸，完整 CLI 4x 输出1372×1036/4帧通过。补 RGB/PAL/灰度/打包YUV软解帧转换，原BGR24/gray的 format_unsupported 已消除。11老视频样本、五解码及五黑边回归、19C++单元通过；RV40仅四包视频前缀，不含完整RMVB/COOK验收。报告 docs/rtx-legacy-decode-audit.md，综合候选 patch 基于6afb9a8并包含黑边修复，不能与 visible-rect patch 叠加。候选SHA 690b0801859eb625fb32b7706d378046777c6fe5363433983eac522413396983，替代上条黑边候选SHA；用户原片/日志/RTX是否更新未知。继续暂停上传、推送和本机部署。
+
+- 2026-10-04 23:01：**RTX黑边已构造复现并完成本地修复验证，未部署/发布。**342×258可见画面/384×288编码画布的合法crop样本，原组件4x输出右/底黑边283274像素，2x也复现70646像素；源片正常解码无黑边。根因D3D11源矩形禁用，采样隐藏编码填充；硬解需显式可见矩形+crop偏移，软解保留并完整应用crop避免对齐残边。修复后五裁剪/非对齐输入黑像素0，既有五解码及16C++测试通过。反馈原片未知，不能断言完全同根因。报告docs/rtx-black-border-audit.md；候选RTX hash04fd467035699b97022ef955d4e593c2fb37297ca03bc011dc8b48dcc4fca83f。
+
+- 用户“先不急发布”暂停后续发行；组件识别修订1.3.11源码/标签9989899及GitHub/两处MS资产在暂停到达前已上传，尚未回读修订11项远端hash/本机覆盖。暂停后未继续上传、推送或部署；黑边修复与同日期RTX严查SHA补充仍本地未提交。
 
 - 2026-10-04 22:28：用户“这些做完后覆盖11”明确授权同版本修订1.3.11，取代临时1.3.12开发分流，版本源已恢复1.3.11。通用Bin组件SHA256安装标记、旧安装版本待核验、同路径旧完整包/旧续传缓存失效已实现。组件状态22场景、真实下载/标记及旧缓存替换通过；0警告0错误。先前1.3.11五资产留存Artifacts/release-1.3.11-before-component，WiX已clean避免同版本载荷缓存；修订发行构建/门禁进行中，随后覆盖源码标签/GitHub/MS及本机。RTX独立包仍2026.10.04.1，不覆盖其权重/运行库。
 
@@ -83,7 +89,8 @@ Updated by: Codex
 
 - [x] 全后端模型目标尺寸修复：TRT图内输出/缓存、CUDA/BasicVSR++原设备Lanczos4、CPU封装结果缩放、视频/图片/两种补帧顺序/跨后端/分块同步完成并定向验证。未做全模型逐项或旧新整链性能比较。
 - [x] 正式分发1.3.11：本体双源/RTX独立包、远端hash、更新回退、本机正式升级完成。
-- [ ] 通用组件更新识别已实现：待按明确授权覆盖1.3.11，并完成修订双源hash/本机升级。
+- [ ] 发行后续由用户明确暂停：修订1.3.11（9989899）已上传，远端回读/本机覆盖待恢复；恢复前整合新RTX黑边组件与同日包SHA判断，重新完整验收，不以已上传旧修订包声称包含黑边修复。
+- [x] RTX黑边构造复现与本地修复：可见矩形/偏移/软解完整crop五样本通过；原用户片未知，继续保留实际反馈核对。
 - [ ] 老视频入口后续工作：四宫格补.rm/.rmvb、RVE元数据改可靠FFmpeg探测；不属于已确认RTX MPEG-4 Visual解码修复，尚未实施。
 
 - [x] PR9+aria2组合已本机部署，用户反馈功能合理并授权合并/发布；不把该反馈扩大为全部GPU或历史专项验收。
@@ -524,3 +531,32 @@ git diff --check
 - 修改DownloadInstallStatus/ModelDownloadPage/ModelDownloadManager：CLI列表包含sha256；组件只有核心文件+对应归档hash标记才认作最新，兼容初版1.3.11的RTX日期标记。失败/pending继续不认完成。旧组件无hash记录显示版本待核验，同路径hash改变显示可更新。下载前移除不同内容的完整旧包及旧身份续传缓存，当前身份继续断点。
 - 验证release/tests/ComponentInstallStatus/Probe.vbproj：4组件各5状态+RTX两兼容状态，共22场景；真实CLI归档hash标记和旧缓存替换通过。初次在未部署aria2的build目录下载报缺依赖，复制项目内测试所需便携aria2后通过，不修改安装目录。
 - 本体原版发布结果保留；本轮修订用户明确授权覆盖同版本，安装初版1.3.11的用户需安装器/ZIP手动覆盖，SemVer自动更新不触发。源码尚未提交修订。
+
+
+### 2026-10-04 23:01 — Codex：暂停发行，复现并修复RTX编码填充黑边
+
+- 2026-10-04 23:01：**RTX黑边已构造复现并完成本地修复验证，未部署/发布。**342×258可见画面/384×288编码画布的合法crop样本，原组件4x输出右/底黑边283274像素，2x也复现70646像素；源片正常解码无黑边。根因D3D11源矩形禁用，采样隐藏编码填充；硬解需显式可见矩形+crop偏移，软解保留并完整应用crop避免对齐残边。修复后五裁剪/非对齐输入黑像素0，既有五解码及16C++测试通过。反馈原片未知，不能断言完全同根因。报告docs/rtx-black-border-audit.md；候选RTX hash04fd467035699b97022ef955d4e593c2fb37297ca03bc011dc8b48dcc4fca83f。
+
+- 用户补充老视频可能非标准尺寸，暂无原片参数。先10普通/非标准/8K/非方形像素输入无新增黑边，再构造合法SPS crop复现；完整CLI普通342×258无黑边，定位落在sidecar处理区域。首个CLI探针带-y触发-y/-n冲突，移除诊断命令-y后通过，未将无关参数问题扩展为产品修复。
+- 源码Artifacts/rtx-backend-fix基于6afb9a8，修改ffmpeg_transcode_pipeline.cpp；主仓可审查patch release/patches/rtx-video-visible-rect.patch及验证cli/tests/verify_rtx_visible_rect.py、定位报告。保留原解码回退patch，不改已发布RTX2026.10.04.1。候选仅Artifacts/rtx-border-audit/runtime；修复首版左/上软解残10像素，通过禁用解码器自动crop并在CPU侧明确UNALIGNED应用后解决，最终五场景0黑像素。
+- 组件SHA补充：DownloadInstallStatus.vb有远端hash时不接受仅日期标记，避免同日换RTX包漏更新；对应ComponentInstallStatus验证改为23场景。补丁逆向apply --check及git diff --check通过。
+- 发行真实状态：9989899/v1.3.11修订GitHub资产已覆盖；gh release edit短SHA被422拒绝，改完整SHA后成功；ModelScope Releases与Models备用EXE均上传完成。用户暂停到达时上传已结束，暂停后无新的发布/部署。修订远端回读及本机覆盖未完成。当前本机仍初版1.3.11+原RTX2026.10.04.1（非本轮黑边候选）。
+- Git：main HEAD9989899已同步，当前DownloadInstallStatus/组件测试/patch README与本轮新报告/黑边验证/patch未提交；RTX源码独立工作树也未提交。建议将诊断与修复提交后再恢复发行，不继续挪动已发布标签或覆盖远端直到用户恢复。
+
+### 2026-10-04 23:49 Codex 同工具续接：老视频 RTX 再排查
+
+- 启动遵循 AGENTS/HandShake：读取 INDEX、STATUS 和技能；主线 git pull 已同步，HEAD9989899，保留上一轮未提交更改。当前本机环境沿用已核验 MSVC/CMake/RTX SDK/FFmpeg 与便携 Python，执行限定项目产物目录。
+- 源码修改：Artifacts/rtx-backend-fix/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp 及 backend/tests/unit/ffmpeg_transcode_pipeline_tests.cpp；新增可提交镜像 release/patches/rtx-video-legacy-upload.patch、cli/tests/verify_rtx_legacy_decode.py、docs/rtx-legacy-decode-audit.md；README 补应用基准与不叠加说明。
+- 对照复现：MPEG-4 343×259 为奇数尺寸上传失败；BGR24/灰度为未支持帧格式。改偶数内部纹理、保持GPU可见矩形，补整数RGB/PAL/灰度/打包YUV转换，不新增DLL。转换函数供定向单元验证调用。
+- 命令与验证：cmake --build Artifacts/rtx-backend-fix/build --config Release -j6；19 C++单元通过；verify_rtx_legacy_decode.py 11样本通过；verify_rtx_decode_fallback.py 五样本、verify_rtx_visible_rect.py 五样本通过；CLI奇数MPEG4 4x输出1372×1036/4帧通过。日志在 Artifacts/rtx-legacy-audit。前期常量指针/内部链接构建错误已修正；最终构建及回归通过。
+- TODO：原用户反馈无法确诊，待其组件更新情况/失败代码；恢复发行后打包独立RTX并验证下载更新、远端hash及本机安装。此前发布暂停保持，不覆盖当前安装或远端2026.10.04.1；新修复仅隔离runtime。
+- Git：主线9989899及独立源码6afb9a8均有未提交改动，未推送；主线含此前黑边/同日期SHA补充，本轮保留。建议在继续或切换工具前提交源码与记录。
+
+### 2026-10-05 00:00 Codex：1.3.12发行授权与准备
+
+- 用户明确发布1.3.12，解除暂停；读取HandShake/AGENTS/INDEX/STATUS，主仓及RTX git pull最新，保留预期修改。两版本源改1.3.12，分类说明与README组件路径同步。发行步骤：冻结RTX和本体、门禁、提交标签/双源上传、远端hash及旧安装更新验证；不重跑全模型GPU矩阵。
+
+### 2026-10-05 00:03 1.3.12候选冻结
+
+- build/publish、安装/回滚、自更新通过；组件23场景、队列及UI、Python11项通过，Python后端逐文件UNCHANGED。Burn/host/scroll及发布门禁执行中。RTX源码2db5b02/标签videoenhancer-runtime-2026.10.04.2已本地提交；归档c7d44d8f59f866b0f236b0bea46efe9e34e810a7aad5b300d77ebe04219f9064，EXE690b0801859eb625fb32b7706d378046777c6fe5363433983eac522413396983，包内其他运行库保持。
+- 本体五资产冻结于release/dist/modelscope/releases/1.3.12及stable.json；仅当前版本上传目录Artifacts/release-1.3.12/modelscope-publish，SHA清单asset-hashes.json。准备提交主线/标签，全部门禁通过后上传双源与RTX，实际下载hash和旧组件更新验收。

@@ -31,9 +31,10 @@ Module Program
             File.WriteAllText(rtxFile, "fixture")
             File.Delete(DownloadInstallStatus.ComponentArchiveMarkerPath(core, rtx))
             File.WriteAllText(Path.Combine(core, "bin", "rtx-video", ".installed-version"), rtx)
-            AssertInstalled(rtx, core, "new-hash", True, "兼容1.3.11日期记录")
+            AssertInstalled(rtx, core, "new-hash", False, "仅日期记录不能证明当前包内容")
+            AssertInstalled(rtx, core, "", True, "兼容未返回哈希的旧CLI")
             AssertInstalled("Bin/rtx-video/RTXVideoRuntime_20261005.7z", core, "next-hash", False, "RTX日期更新")
-            Console.WriteLine("COMPONENT_INSTALL_STATUS_PASS|4-components|20-content-checks|RTX-1.3.11-compatibility|RTX-new-date")
+            Console.WriteLine("COMPONENT_INSTALL_STATUS_PASS|23-scenarios|4-components|legacy-date-without-hash|same-date-content-change|RTX-new-date")
         Finally
             If Directory.Exists(core) Then Directory.Delete(core, True)
         End Try

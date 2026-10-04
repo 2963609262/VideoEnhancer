@@ -34,7 +34,9 @@ Namespace videoenhancer
                     If File.Exists(marker) AndAlso Not String.IsNullOrWhiteSpace(remoteSha256) Then
                         Return File.ReadAllText(marker, Encoding.UTF8).Trim().Equals(remoteSha256, StringComparison.OrdinalIgnoreCase)
                     End If
-                    ' 兼容1.3.11已安装的RTX日期版本；其他无记录组件需核验更新。
+                    ' 有远端哈希时不能只凭日期认作最新，同日修订包也必须识别。
+                    If Not String.IsNullOrWhiteSpace(remoteSha256) Then Return False
+                    ' 仅兼容未返回哈希的旧CLI日期记录。
                     If IsRtxVideoRuntimeDownload(normalized) Then
                         Dim versionMarker = Path.Combine(coreRoot, "bin", "rtx-video", ".installed-version")
                         Return File.Exists(versionMarker) AndAlso

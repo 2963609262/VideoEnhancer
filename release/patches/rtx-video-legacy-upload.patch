@@ -1,0 +1,351 @@
+diff --git a/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp b/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp
+index 96095d6..9db2d4d 100644
+--- a/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp
++++ b/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp
+@@ -184,6 +184,8 @@ static Error ffmpeg_error(const char* code, const char* message, int ffmpeg_code
+     return {code, message, buffer};
+ }
+ 
++} // namespace
++
+ Result<void> convert_software_frame_for_d3d11_upload(
+     const AVFrame* source,
+     AVFrame* destination,
+@@ -202,6 +204,14 @@ Result<void> convert_software_frame_for_d3d11_upload(
+     const int chroma_width = (width + 1) / 2;
+     const int chroma_height = (height + 1) / 2;
+ 
++    if (source_format == destination_format && (source_format == AV_PIX_FMT_NV12 || source_format == AV_PIX_FMT_P010LE)) {
++        const int bytes = source_format == AV_PIX_FMT_P010LE ? 2 : 1;
++        for (int y = 0; y < height; ++y)
++            std::memcpy(destination->data[0] + y * destination->linesize[0], source->data[0] + y * source->linesize[0], width * bytes);
++        for (int y = 0; y < chroma_height; ++y)
++            std::memcpy(destination->data[1] + y * destination->linesize[1], source->data[1] + y * source->linesize[1], chroma_width * 2 * bytes);
++        return Result<void>::Ok();
++    }
+     if (source_format == AV_PIX_FMT_YUV420P && destination_format == AV_PIX_FMT_NV12) {
+         for (int y = 0; y < height; ++y) {
+             std::memcpy(
+@@ -246,20 +256,110 @@ Result<void> convert_software_frame_for_d3d11_upload(
+         return Result<void>::Ok();
+     }
+ 
+-    // 兼容常见 planar YUV 的 4:2:2/4:4:4 及 8/10/12/16 位输入，避免增加 DLL 依赖。
+     const AVPixFmtDescriptor* descriptor = av_pix_fmt_desc_get(source_format);
+-    if (descriptor == nullptr || !(descriptor->flags & AV_PIX_FMT_FLAG_PLANAR) ||
+-        (descriptor->flags & (AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_BE)) ||
++    const std::uint8_t* input_planes[4] = {source->data[0], source->data[1], source->data[2], source->data[3]};
++    const bool ten_bit = destination_format == AV_PIX_FMT_P010LE;
++    auto put_sample = [&](int plane, int x, int y, unsigned int value) {
++        auto* row = destination->data[plane] + y * destination->linesize[plane];
++        if (ten_bit) reinterpret_cast<std::uint16_t*>(row)[x] = static_cast<std::uint16_t>(value << 6);
++        else row[x] = static_cast<std::uint8_t>(value);
++    };
++    // 灰度和单色视频补中性色度；通过FFmpeg描述符读取，不依赖指针对齐。
++    if (descriptor && descriptor->nb_components == 1 && !(descriptor->flags & (AV_PIX_FMT_FLAG_PAL | AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_FLOAT))
++        && descriptor->comp[0].depth <= 16) {
++        const int depth = descriptor->comp[0].depth;
++        const unsigned int maximum = (1U << depth) - 1;
++        const unsigned int target_maximum = ten_bit ? 1023 : 255;
++        std::vector<std::uint16_t> row(width);
++        for (int y = 0; y < height; ++y) {
++            av_read_image_line(row.data(), input_planes, source->linesize, descriptor, 0, y, 0, width, 0);
++            for (int x = 0; x < width; ++x) put_sample(0, x, y, (row[x] * target_maximum + maximum / 2) / maximum);
++        }
++        for (int y = 0; y < chroma_height; ++y)
++            for (int x = 0; x < chroma_width * 2; ++x) put_sample(1, x, y, ten_bit ? 512 : 128);
++        return Result<void>::Ok();
++    }
++    // 老AVI可能解为RGB或调色板，统一按现有D3D11输入矩阵转换，不另增DLL依赖。
++    if (descriptor && (descriptor->flags & (AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_PAL))
++        && !(descriptor->flags & AV_PIX_FMT_FLAG_FLOAT) && descriptor->comp[0].depth <= 16) {
++        const bool palette = descriptor->flags & AV_PIX_FMT_FLAG_PAL;
++        const bool full_range = source->color_range == AVCOL_RANGE_JPEG;
++        const bool bt2020 = source->colorspace == AVCOL_SPC_BT2020_NCL || source->color_primaries == AVCOL_PRI_BT2020;
++        const double kr = bt2020 ? 0.2627 : 0.2126;
++        const double kb = bt2020 ? 0.0593 : 0.0722;
++        const double kg = 1.0 - kr - kb;
++        const double factor = ten_bit ? 4.0 : 1.0;
++        const double full_range_scale = ten_bit ? 255.75 : 255.0;
++        const double channel_maximum[3] = {
++            palette ? 255.0 : static_cast<double>((1U << descriptor->comp[0].depth) - 1),
++            palette ? 255.0 : static_cast<double>((1U << descriptor->comp[1].depth) - 1),
++            palette ? 255.0 : static_cast<double>((1U << descriptor->comp[2].depth) - 1)};
++        auto quantize = [&](double value) -> unsigned int {
++            return static_cast<unsigned int>(std::clamp(std::lround(value * factor), 0L, ten_bit ? 1023L : 255L));
++        };
++        std::vector<std::uint16_t> components[2][3];
++        for (auto& rows : components) for (auto& channel : rows) channel.resize(width);
++        for (int cy = 0; cy < chroma_height; ++cy) {
++            const int row_count = std::min(2, height - cy * 2);
++            for (int dy = 0; dy < row_count; ++dy) {
++                const int y = cy * 2 + dy;
++                if (palette) {
++                    for (int x = 0; x < width; ++x) {
++                        const auto index = source->data[0][y * source->linesize[0] + x];
++                        std::uint32_t color;
++                        std::memcpy(&color, source->data[1] + index * 4, sizeof(color));
++                        components[dy][0][x] = (color >> 16) & 255;
++                        components[dy][1][x] = (color >> 8) & 255;
++                        components[dy][2][x] = color & 255;
++                    }
++                } else {
++                    for (int c = 0; c < 3; ++c) {
++                        av_read_image_line(components[dy][c].data(), input_planes, source->linesize, descriptor, 0, y, c, width, 0);
++                        // 保留高位深分量，直接量化到目标8/10位，不先降成8位。
++                    }
++                }
++            }
++            for (int cx = 0; cx < chroma_width; ++cx) {
++                double u = 0, v = 0;
++                int count = 0;
++                for (int dy = 0; dy < row_count; ++dy) for (int dx = 0; dx < 2 && cx * 2 + dx < width; ++dx) {
++                    const int x = cx * 2 + dx;
++                    const double r = components[dy][0][x] / channel_maximum[0];
++                    const double g = components[dy][1][x] / channel_maximum[1];
++                    const double blue = components[dy][2][x] / channel_maximum[2];
++                    const double luma = kr * r + kg * g + kb * blue;
++                    put_sample(0, x, cy * 2 + dy, quantize(full_range ? full_range_scale * luma : 16.0 + 219.0 * luma));
++                    u += (blue - luma) / (2 * (1 - kb));
++                    v += (r - luma) / (2 * (1 - kr));
++                    ++count;
++                }
++                put_sample(1, cx * 2, cy, quantize(128 + (full_range ? full_range_scale : 224.0) * u / count));
++                put_sample(1, cx * 2 + 1, cy, quantize(128 + (full_range ? full_range_scale : 224.0) * v / count));
++            }
++        }
++        return Result<void>::Ok();
++    }
++
++    // 兼容常见 planar YUV 的 4:2:2/4:4:4 及 8/10/12/16 位输入，避免增加 DLL 依赖。
++    if (descriptor == nullptr ||
++        (descriptor->flags & (AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_HWACCEL | AV_PIX_FMT_FLAG_FLOAT | AV_PIX_FMT_FLAG_BITSTREAM)) ||
+         descriptor->nb_components < 3 || descriptor->comp[0].depth > 16) {
+         return Result<void>::Fail({"software_decode_format_unsupported",
+             "Software decoder produced an unsupported pixel format.",
+             av_get_pix_fmt_name(source_format) ? av_get_pix_fmt_name(source_format) : "unknown"});
+     }
+     const int depth = descriptor->comp[0].depth;
+-    const bool ten_bit = destination_format == AV_PIX_FMT_P010LE;
+-    auto read_sample = [&](int plane, int x, int y) -> unsigned int {
+-        const std::uint8_t* row = source->data[plane] + y * source->linesize[plane];
+-        return depth > 8 ? reinterpret_cast<const std::uint16_t*>(row)[x] : row[x];
++    auto read_sample = [&](int component_index, int x, int y) -> unsigned int {
++        const auto& component = descriptor->comp[component_index];
++        const auto* sample = source->data[component.plane] + y * source->linesize[component.plane]
++            + x * component.step + component.offset;
++        unsigned int value = sample[0];
++        if (component.depth + component.shift > 8) {
++            value = descriptor->flags & AV_PIX_FMT_FLAG_BE
++                ? (static_cast<unsigned int>(sample[0]) << 8) | sample[1]
++                : sample[0] | (static_cast<unsigned int>(sample[1]) << 8);
++        }
++        return (value >> component.shift) & ((1U << component.depth) - 1);
+     };
+     auto convert_depth = [&](unsigned int value) -> unsigned int {
+         const int target_depth = ten_bit ? 10 : 8;
+@@ -296,6 +396,8 @@ Result<void> convert_software_frame_for_d3d11_upload(
+     return Result<void>::Ok();
+ }
+ 
++namespace {
++
+ Result<void> set_required_encoder_option(AVCodecContext* context, const char* name, const char* value) {
+     const int result = av_opt_set(context->priv_data, name, value, 0);
+     if (result < 0) {
+@@ -705,7 +807,9 @@ public:
+         int output_width,
+         int output_height,
+         DXGI_COLOR_SPACE_TYPE input_color_space,
+-        DXGI_COLOR_SPACE_TYPE output_color_space) {
++        DXGI_COLOR_SPACE_TYPE output_color_space,
++        int input_left = 0,
++        int input_top = 0) {
+         HRESULT result = device->QueryInterface(IID_PPV_ARGS(video_device_.GetAddressOf()));
+         if (FAILED(result)) {
+             return Result<void>::Fail(hresult_error("d3d11_video_device_required", "The D3D11 device does not expose video processing support.", result));
+@@ -749,7 +853,10 @@ public:
+         RECT output_rect = {0, 0, static_cast<LONG>(output_width), static_cast<LONG>(output_height)};
+         video_context_->VideoProcessorSetStreamFrameFormat(processor_.Get(), 0, D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE);
+         video_context_->VideoProcessorSetStreamOutputRate(processor_.Get(), 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, nullptr);
+-        video_context_->VideoProcessorSetStreamSourceRect(processor_.Get(), 0, FALSE, nullptr);
++        // 解码纹理可能保留编码填充区，必须只采样帧的可见区域。
++        RECT input_rect = {static_cast<LONG>(input_left), static_cast<LONG>(input_top),
++            static_cast<LONG>(input_left + input_width), static_cast<LONG>(input_top + input_height)};
++        video_context_->VideoProcessorSetStreamSourceRect(processor_.Get(), 0, TRUE, &input_rect);
+         video_context_->VideoProcessorSetStreamDestRect(processor_.Get(), 0, TRUE, &output_rect);
+         video_context_->VideoProcessorSetOutputTargetRect(processor_.Get(), TRUE, &output_rect);
+         Microsoft::WRL::ComPtr<ID3D11VideoContext1> video_context1;
+@@ -1111,6 +1218,8 @@ Result<void> FfmpegTranscodePipeline::run(
+         if (!decoder_context) return AVERROR(ENOMEM);
+         int opened = avcodec_parameters_to_context(decoder_context.get(), input_stream->codecpar);
+         if (opened < 0) return opened;
++        // 保留裁剪信息，硬解交给GPU矩形；软解明确应用完整偏移，避免默认对齐舍入。
++        decoder_context->apply_cropping = 0;
+         decoder_context->pkt_timebase = input_stream->time_base;
+         if (!software_decode_fallback) {
+             decoder_context->get_format = choose_d3d11_format;
+@@ -1172,8 +1281,8 @@ Result<void> FfmpegTranscodePipeline::run(
+         auto upload_frames = create_encoder_frames_context(
+             hw_device.value().get(),
+             decoder_upload_format,
+-            decoder_context->width,
+-            decoder_context->height);
++            (decoder_context->width + 1) & ~1,
++            (decoder_context->height + 1) & ~1);
+         if (!upload_frames.ok()) {
+             return Result<void>::Fail(upload_frames.error());
+         }
+@@ -1548,13 +1657,25 @@ Result<void> FfmpegTranscodePipeline::run(
+         }
+         AVFrame* d3d11_frame = frame;
+         if (software_decode_fallback) {
++            if (frames_done == 0) {
++                log_info("Software decoded input: codec=" + std::string(decoder->name)
++                    + ", pixel_format=" + std::string(av_get_pix_fmt_name(static_cast<AVPixelFormat>(frame->format)))
++                    + ", size=" + std::to_string(frame->width) + "x" + std::to_string(frame->height));
++            }
++            if (frame->crop_left || frame->crop_top || frame->crop_right || frame->crop_bottom) {
++                const int cropped = av_frame_apply_cropping(frame, AV_FRAME_CROP_UNALIGNED);
++                if (cropped < 0) {
++                    return Result<void>::Fail(ffmpeg_error("software_frame_crop_failed", "Could not crop software-decoded input.", cropped));
++                }
++            }
+             AVFrame* upload_source = frame;
+             const auto source_format = static_cast<AVPixelFormat>(frame->format);
+-            if (source_format != decoder_upload_format) {
++            // NV12/P010纹理边长必须为偶数，可见画面尺寸由后续源矩形保持。
++            if (source_format != decoder_upload_format || (frame->width & 1) || (frame->height & 1)) {
+                 av_frame_unref(converted_decoder_frame.get());
+                 converted_decoder_frame->format = decoder_upload_format;
+-                converted_decoder_frame->width = frame->width;
+-                converted_decoder_frame->height = frame->height;
++                converted_decoder_frame->width = (frame->width + 1) & ~1;
++                converted_decoder_frame->height = (frame->height + 1) & ~1;
+                 result = av_frame_get_buffer(converted_decoder_frame.get(), 32);
+                 if (result < 0) {
+                     return Result<void>::Fail(ffmpeg_error(
+@@ -1569,6 +1690,19 @@ Result<void> FfmpegTranscodePipeline::run(
+                 if (!converted.ok()) {
+                     return converted;
+                 }
++                // 仅补齐内部缓冲，以边缘像素填充，防止GPU边界采样读取未初始化内容。
++                const int bytes = decoder_upload_format == AV_PIX_FMT_P010LE ? 2 : 1;
++                if (frame->width & 1) {
++                    for (int y = 0; y < frame->height; ++y) {
++                        auto* row = converted_decoder_frame->data[0] + y * converted_decoder_frame->linesize[0];
++                        std::memcpy(row + frame->width * bytes, row + (frame->width - 1) * bytes, bytes);
++                    }
++                }
++                if (frame->height & 1) {
++                    std::memcpy(converted_decoder_frame->data[0] + frame->height * converted_decoder_frame->linesize[0],
++                        converted_decoder_frame->data[0] + (frame->height - 1) * converted_decoder_frame->linesize[0],
++                        converted_decoder_frame->width * bytes);
++                }
+                 upload_source = converted_decoder_frame.get();
+             }
+ 
+@@ -1626,6 +1760,13 @@ Result<void> FfmpegTranscodePipeline::run(
+                     return Result<void>::Fail(output_created.error());
+                 }
+             }
++            D3D11_TEXTURE2D_DESC decoded_desc = {};
++            decoded_texture->GetDesc(&decoded_desc);
++            log_info("RTX input geometry: visible=" + std::to_string(decoder_context->width) + "x" + std::to_string(decoder_context->height)
++                + ", frame=" + std::to_string(d3d11_frame->width) + "x" + std::to_string(d3d11_frame->height)
++                + ", crop(left,top,right,bottom)=" + std::to_string(d3d11_frame->crop_left) + "," + std::to_string(d3d11_frame->crop_top)
++                + "," + std::to_string(d3d11_frame->crop_right) + "," + std::to_string(d3d11_frame->crop_bottom)
++                + ", texture=" + std::to_string(decoded_desc.Width) + "x" + std::to_string(decoded_desc.Height));
+             const auto converter_initialized = decoder_to_rtx_converter.initialize(
+                 d3d11.value().device.Get(),
+                 d3d11.value().context.Get(),
+@@ -1636,7 +1777,9 @@ Result<void> FfmpegTranscodePipeline::run(
+                 decoder_context->width,
+                 decoder_context->height,
+                 video_processor_input_color,
+-                rtx_input_color);
++                rtx_input_color,
++                static_cast<int>(d3d11_frame->crop_left),
++                static_cast<int>(d3d11_frame->crop_top));
+             if (!converter_initialized.ok()) {
+                 return Result<void>::Fail(converter_initialized.error());
+             }
+diff --git a/backend/tests/unit/ffmpeg_transcode_pipeline_tests.cpp b/backend/tests/unit/ffmpeg_transcode_pipeline_tests.cpp
+index c5f538a..18741c7 100644
+--- a/backend/tests/unit/ffmpeg_transcode_pipeline_tests.cpp
++++ b/backend/tests/unit/ffmpeg_transcode_pipeline_tests.cpp
+@@ -332,3 +332,74 @@ TEST(FfmpegTranscodePipelineStreams, copiesInputDisplayMatrixToEncodedVideoParam
+ }
+ 
+ #endif
++
++#if defined(VSR_ENABLE_FFMPEG)
++extern "C" {
++#include <libavutil/frame.h>
++}
++namespace vsr {
++Result<void> convert_software_frame_for_d3d11_upload(const AVFrame*, AVFrame*, AVPixelFormat);
++}
++
++// 用已知颜色和灰阶验证转换，避免“能输出”掩盖通道或中性色度错误。
++TEST(FfmpegSoftwareUpload, convertsBgrAndPaletteRedWithCorrectChannels) {
++    std::array<std::uint8_t, 12> bgr = {0,0,255, 0,0,255, 0,0,255, 0,0,255};
++    std::array<std::uint8_t, 4> indices = {1,1,1,1};
++    std::array<std::uint32_t, 256> palette{};
++    palette[1] = 0xffff0000U;
++    for (const auto format : {AV_PIX_FMT_BGR24, AV_PIX_FMT_PAL8}) {
++        AVFrame source{};
++        source.width = source.height = 2;
++        source.format = format;
++        source.data[0] = format == AV_PIX_FMT_PAL8 ? indices.data() : bgr.data();
++        source.data[1] = reinterpret_cast<std::uint8_t*>(palette.data());
++        source.linesize[0] = format == AV_PIX_FMT_PAL8 ? 2 : 6;
++        std::array<std::uint8_t, 4> luma{};
++        std::array<std::uint8_t, 2> chroma{};
++        AVFrame destination{};
++        destination.data[0] = luma.data();
++        destination.data[1] = chroma.data();
++        destination.linesize[0] = destination.linesize[1] = 2;
++        ASSERT_TRUE(vsr::convert_software_frame_for_d3d11_upload(&source, &destination, AV_PIX_FMT_NV12).ok());
++        for (const auto value : luma) EXPECT_EQ(value, 63);
++        EXPECT_EQ(chroma[0], 102);
++        EXPECT_EQ(chroma[1], 240);
++    }
++}
++
++TEST(FfmpegSoftwareUpload, preservesGrayAndAddsNeutralChroma) {
++    std::array<std::uint8_t, 4> pixels = {0,85,170,255};
++    std::array<std::uint8_t, 4> luma{};
++    std::array<std::uint8_t, 2> chroma{};
++    AVFrame source{}, destination{};
++    source.width = source.height = 2;
++    source.format = AV_PIX_FMT_GRAY8;
++    source.data[0] = pixels.data();
++    source.linesize[0] = 2;
++    destination.data[0] = luma.data();
++    destination.data[1] = chroma.data();
++    destination.linesize[0] = destination.linesize[1] = 2;
++    ASSERT_TRUE(vsr::convert_software_frame_for_d3d11_upload(&source, &destination, AV_PIX_FMT_NV12).ok());
++    EXPECT_EQ(luma, pixels);
++    EXPECT_EQ(chroma[0], 128);
++    EXPECT_EQ(chroma[1], 128);
++}
++
++TEST(FfmpegSoftwareUpload, readsPackedYuyvAndAveragesVerticalChroma) {
++    std::array<std::uint8_t, 8> pixels = {10,30,20,40, 11,50,21,60};
++    std::array<std::uint8_t, 4> luma{};
++    std::array<std::uint8_t, 2> chroma{};
++    AVFrame source{}, destination{};
++    source.width = source.height = 2;
++    source.format = AV_PIX_FMT_YUYV422;
++    source.data[0] = pixels.data();
++    source.linesize[0] = 4;
++    destination.data[0] = luma.data();
++    destination.data[1] = chroma.data();
++    destination.linesize[0] = destination.linesize[1] = 2;
++    ASSERT_TRUE(vsr::convert_software_frame_for_d3d11_upload(&source, &destination, AV_PIX_FMT_NV12).ok());
++    EXPECT_EQ(luma, (std::array<std::uint8_t, 4>{10,20,11,21}));
++    EXPECT_EQ(chroma[0], 40);
++    EXPECT_EQ(chroma[1], 50);
++}
++#endif

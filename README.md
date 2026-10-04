@@ -44,7 +44,7 @@ stable.json
 - Windows 10 1809 或更高版本，64 位系统。`videoenhancer.exe` 是自包含单文件，不要求另外安装 .NET。
 - 安装 [Microsoft Visual C++ 2015–2022 x64 运行库](https://aka.ms/vc14/vc_redist.x64.exe)。便携 Python 及部分推理扩展仍依赖该运行库。
 - CUDA/PyTorch、TensorRT、FlashVSR 和 BasicVSR++ 需要 NVIDIA GPU。当前后端包含 CUDA 13.0，建议使用 580 或更高版本的 NVIDIA 驱动。
-- RTX VSR / RTX Video HDR 需要 NVIDIA RTX 20 系及以上显卡、555 或更高版本的驱动和 RTX Video sidecar 运行组件。运行组件包发布在模型仓库 `Bin/rtx-video/RTXVideoRuntime_20260914.7z`，解压到 `Plugin\videoenhancer\bin\` 并重启 3FUI 即可。sidecar 基于 [`Zennmn/RTXHDR-RTXVSR`](https://github.com/Zennmn/RTXHDR-RTXVSR)（MIT）定制；本项目修改源码发布在 [`maxzrb/RTXHDR-RTXVSR`](https://github.com/maxzrb/RTXHDR-RTXVSR)，包内 NVIDIA SDK 运行库为 NVIDIA 专有组件，按其许可随显卡环境使用。
+- RTX VSR / RTX Video HDR 需要 NVIDIA RTX 20 系及以上显卡、555 或更高版本的驱动和 RTX Video sidecar 运行组件。运行组件包发布在模型仓库 `Bin/rtx-video/RTXVideoRuntime_20261004.7z`，解压到 `Plugin\videoenhancer\bin\` 并重启 3FUI 即可。sidecar 基于 [`Zennmn/RTXHDR-RTXVSR`](https://github.com/Zennmn/RTXHDR-RTXVSR)（MIT）定制；本项目修改源码发布在 [`maxzrb/RTXHDR-RTXVSR`](https://github.com/maxzrb/RTXHDR-RTXVSR)，包内 NVIDIA SDK 运行库为 NVIDIA 专有组件，按其许可随显卡环境使用。
 - NCNN 使用显卡驱动提供的 Vulkan 运行时，不要求安装 Vulkan SDK；显卡和驱动至少需要支持 Vulkan 1.0。
 
 插件的环境检查会针对当前选择的后端实际导入关键模块并检查 GPU/执行提供程序，不会加载模型或 TensorRT Engine。若新机器不能运行，请先按检查结果处理 VC++ 运行库或显卡驱动问题。

@@ -1,0 +1,74 @@
+diff --git a/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp b/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp
+index 96095d6..b7f0f55 100644
+--- a/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp
++++ b/backend/src/video/ffmpeg/ffmpeg_transcode_pipeline.cpp
+@@ -705,7 +705,9 @@ public:
+         int output_width,
+         int output_height,
+         DXGI_COLOR_SPACE_TYPE input_color_space,
+-        DXGI_COLOR_SPACE_TYPE output_color_space) {
++        DXGI_COLOR_SPACE_TYPE output_color_space,
++        int input_left = 0,
++        int input_top = 0) {
+         HRESULT result = device->QueryInterface(IID_PPV_ARGS(video_device_.GetAddressOf()));
+         if (FAILED(result)) {
+             return Result<void>::Fail(hresult_error("d3d11_video_device_required", "The D3D11 device does not expose video processing support.", result));
+@@ -749,7 +751,10 @@ public:
+         RECT output_rect = {0, 0, static_cast<LONG>(output_width), static_cast<LONG>(output_height)};
+         video_context_->VideoProcessorSetStreamFrameFormat(processor_.Get(), 0, D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE);
+         video_context_->VideoProcessorSetStreamOutputRate(processor_.Get(), 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, nullptr);
+-        video_context_->VideoProcessorSetStreamSourceRect(processor_.Get(), 0, FALSE, nullptr);
++        // 解码纹理可能保留编码填充区，必须只采样帧的可见区域。
++        RECT input_rect = {static_cast<LONG>(input_left), static_cast<LONG>(input_top),
++            static_cast<LONG>(input_left + input_width), static_cast<LONG>(input_top + input_height)};
++        video_context_->VideoProcessorSetStreamSourceRect(processor_.Get(), 0, TRUE, &input_rect);
+         video_context_->VideoProcessorSetStreamDestRect(processor_.Get(), 0, TRUE, &output_rect);
+         video_context_->VideoProcessorSetOutputTargetRect(processor_.Get(), TRUE, &output_rect);
+         Microsoft::WRL::ComPtr<ID3D11VideoContext1> video_context1;
+@@ -1111,6 +1116,8 @@ Result<void> FfmpegTranscodePipeline::run(
+         if (!decoder_context) return AVERROR(ENOMEM);
+         int opened = avcodec_parameters_to_context(decoder_context.get(), input_stream->codecpar);
+         if (opened < 0) return opened;
++        // 保留裁剪信息，硬解交给GPU矩形；软解明确应用完整偏移，避免默认对齐舍入。
++        decoder_context->apply_cropping = 0;
+         decoder_context->pkt_timebase = input_stream->time_base;
+         if (!software_decode_fallback) {
+             decoder_context->get_format = choose_d3d11_format;
+@@ -1548,6 +1555,12 @@ Result<void> FfmpegTranscodePipeline::run(
+         }
+         AVFrame* d3d11_frame = frame;
+         if (software_decode_fallback) {
++            if (frame->crop_left || frame->crop_top || frame->crop_right || frame->crop_bottom) {
++                const int cropped = av_frame_apply_cropping(frame, AV_FRAME_CROP_UNALIGNED);
++                if (cropped < 0) {
++                    return Result<void>::Fail(ffmpeg_error("software_frame_crop_failed", "Could not crop software-decoded input.", cropped));
++                }
++            }
+             AVFrame* upload_source = frame;
+             const auto source_format = static_cast<AVPixelFormat>(frame->format);
+             if (source_format != decoder_upload_format) {
+@@ -1626,6 +1639,13 @@ Result<void> FfmpegTranscodePipeline::run(
+                     return Result<void>::Fail(output_created.error());
+                 }
+             }
++            D3D11_TEXTURE2D_DESC decoded_desc = {};
++            decoded_texture->GetDesc(&decoded_desc);
++            log_info("RTX input geometry: visible=" + std::to_string(decoder_context->width) + "x" + std::to_string(decoder_context->height)
++                + ", frame=" + std::to_string(d3d11_frame->width) + "x" + std::to_string(d3d11_frame->height)
++                + ", crop(left,top,right,bottom)=" + std::to_string(d3d11_frame->crop_left) + "," + std::to_string(d3d11_frame->crop_top)
++                + "," + std::to_string(d3d11_frame->crop_right) + "," + std::to_string(d3d11_frame->crop_bottom)
++                + ", texture=" + std::to_string(decoded_desc.Width) + "x" + std::to_string(decoded_desc.Height));
+             const auto converter_initialized = decoder_to_rtx_converter.initialize(
+                 d3d11.value().device.Get(),
+                 d3d11.value().context.Get(),
+@@ -1636,7 +1656,9 @@ Result<void> FfmpegTranscodePipeline::run(
+                 decoder_context->width,
+                 decoder_context->height,
+                 video_processor_input_color,
+-                rtx_input_color);
++                rtx_input_color,
++                static_cast<int>(d3d11_frame->crop_left),
++                static_cast<int>(d3d11_frame->crop_top));
+             if (!converter_initialized.ok()) {
+                 return Result<void>::Fail(converter_initialized.error());
+             }
