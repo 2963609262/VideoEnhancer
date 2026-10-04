@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-10-04 11:15
+Last updated: 2026-10-04 11:25
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 11:25：1.3.10主线整合与最终门禁完成，五项资产已冻结。PR8仅aria2选择性提交5f1c9c0，PR9合并fb19abe；build/publish0警告0错误、六类插件UI/宿主契约、下载队列5场景、Python路径16项、发布5/后端更新6、内外层安装回滚/自更新通过。后端逐文件UNCHANGED，准备推送main/v1.3.10并发布双源。
 
 - 2026-10-04 11:15：用户反馈试用功能合理，明确授权选择性合并PR8/PR9并发布1.3.10；覆盖先前不正式合并/不发布限制。PR8仅aria2提交5f1c9c0，PR9原版ae94b26无冲突合入；保留倍率语义和WiX。准备正式发行门禁、双源发布与本机升级。
 
@@ -349,3 +351,10 @@ git diff --check
 - 同工具续作，复读AGENTS/INDEX/STATUS和发布流程，沿用HandShake；git pull --ff-only已最新。用户授权提交推送、选择性整合、1.3.10双源正式发行及流程内本机升级。
 - PR8仅aria2相关代码/许可/记录提交5f1c9c0，未带入旧倍率和控制台安装。PR9合并ae94b26无冲突；比较已试用源码，仅aria2源码产物路径自动合并仍用旧变量，改ResolvedArtifactsDirectory恢复试用版本。PR9合并提交保留原分支 ancestry；PR8以选择性移植结案。
 - GitHub/ModelScope认证可用，v1.3.10不存在，SDK10.0.400及磁盘空间可用。继续构建/必须发行门禁→提交标签/上传冻结资产→双源哈希回读/故障回退及本机部署，不扩大GPU全矩阵。
+
+### 2026-10-04 11:25 - Codex：1.3.10本地门禁与冻结产物
+
+- Release与插件/CLI版本一致，六类插件检查（宿主契约/DPI/scroll/appearance/tooltips/倍率）、DownloadQueueUi5场景通过；Python16项路径/控制静态检查通过。旧测试仍要求外部宿主Private=false/ExternallyResolved，修正为LakeUI编译包/不带运行库和无宿主Reference，非产品代码故障。
+- build/publish0警告0错误；发布门禁5与后端更新6、内层安装/无效目录/回滚、自更新独立组件保留/回滚、最终WiX成功/无效目录/回滚及缓存/临时登记清理通过。ZIP15项，DLL/EXE/aria2/依赖许可hash一致，不含宿主/渲染DLL或外置布局JSON。不重跑完整GPU矩阵。
+- 独立后端按上一发行目录逐项SHA256审计UNCHANGED，继续2026.09.30.1。aria2源码下载遇EOF且停滞，终止自有dotnet发布进程，改为存在源码缓存时复用并始终锁定hash；发布脚本复用构建产物再hash，防止重复下载。缓存恢复自已验证41,412,730字节归档，最终hash420e3125…匹配。重新完整构建成功，首次失败日志保留。
+- 冻结五项资产hash在Artifacts/.refactor-tmp/release-1.3.10/asset-hashes.json；上传后不重包。接下来提交/推送/标签、GitHub及ModelScope同步、11文件实际hash和双源故障回退、本机正式升级。

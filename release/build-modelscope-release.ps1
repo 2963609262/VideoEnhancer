@@ -166,7 +166,13 @@ New-Item -ItemType Directory -Force -Path $versionRoot | Out-Null
 $aria2NextSourceName = "aria2-next-$aria2NextVersion-source.tar.gz"
 $aria2NextSourcePath = Join-Path $versionRoot $aria2NextSourceName
 $aria2NextSourceUrl = "https://github.com/AnInsomniacy/aria2-next/archive/refs/tags/v$aria2NextVersion.tar.gz"
-Invoke-WebRequest -UseBasicParsing -Uri $aria2NextSourceUrl -OutFile $aria2NextSourcePath
+# 复用构建已验证的源码归档，随后仍按发布锁定值重新核对哈希。
+$builtAria2NextSource = Join-Path $artifactsRoot $aria2NextSourceName
+if (Test-Path -LiteralPath $builtAria2NextSource -PathType Leaf) {
+    Copy-Item -LiteralPath $builtAria2NextSource -Destination $aria2NextSourcePath -Force
+} else {
+    Invoke-WebRequest -UseBasicParsing -Uri $aria2NextSourceUrl -OutFile $aria2NextSourcePath
+}
 $actualAria2NextSourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $aria2NextSourcePath).Hash
 if ($actualAria2NextSourceHash -ne $aria2NextSourceSha256) {
     throw "aria2-next 对应源码校验失败：期望 $aria2NextSourceSha256，实际 $actualAria2NextSourceHash"

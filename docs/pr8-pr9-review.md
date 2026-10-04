@@ -34,3 +34,7 @@
 官方2.8.3 tag与源码提交、二进制/源码hash核对通过；COPYING/AUTHORS原文及13项依赖许可通过（仅行末空白规范化差异），ZIP15项关键文件一致。aria2实际下载GitHub stable.json1665字节，SHA256与官方digest一致；组合publish0警告0错误，升级后真实宿主契约通过。
 
 通过正式自更新部署CLI/DLL，独立aria2及许可另行显式更新；配置/用户能力清单保持。备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-pr9-aria2-20261004-104341`，证据`Artifacts/pr9-review/Artifacts/local-deployment.json`；未自动启动宿主。main选择性升级及记录未提交，PR9是否合并等待本机反馈。
+
+## 2026-10-04 11:25 用户验收与1.3.10整合
+
+用户反馈目前功能合理并授权合并/发布。PR8仅aria2选择性提交5f1c9c0，PR9已验证改动通过合并fb19abe进入main；现有倍率、模型清单与WiX交互保留。最终门禁通过，准备正式发布1.3.10；不再等待PR9合并决定。最低运行LakeUI5.110在发行说明明确列出。

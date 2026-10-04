@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>videoenhancer</AssemblyName>
     <RootNamespace>VideoEnhancer</RootNamespace>
-    <Version>1.3.9</Version>
+    <Version>1.3.10</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -159,6 +159,7 @@
     <Error Condition="'%(_Aria2NextWithHash.FileHash)' != '$(Aria2NextSha256)'"
            Text="aria2-next v$(Aria2NextVersion) 校验失败：期望 $(Aria2NextSha256)，实际 %(_Aria2NextWithHash.FileHash)。" />
     <DownloadFile SourceUrl="https://github.com/AnInsomniacy/aria2-next/archive/refs/tags/v$(Aria2NextVersion).tar.gz"
+                  Condition="!Exists('$(Aria2NextSourceArchivePath)')"
                   DestinationFolder="$(Aria2NextCacheDirectory)"
                   DestinationFileName="aria2-next-$(Aria2NextVersion)-source.tar.gz"
                   SkipUnchangedFiles="true" Retries="3" />

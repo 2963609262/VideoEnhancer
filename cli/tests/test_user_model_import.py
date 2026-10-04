@@ -187,8 +187,10 @@ class UserModelImportContractTests(unittest.TestCase):
             self.assertNotIn(f"Private Sub {build_method}", panel)
         self.assertFalse((PLUGIN / "DesignerPages").exists())
         self.assertNotIn("Visual Studio designer pages", project)
-        self.assertGreaterEqual(project.count("<Private>false</Private>"), 2)
-        self.assertGreaterEqual(project.count("<ExternallyResolved>true</ExternallyResolved>"), 2)
+        # 宿主改为运行时适配；编译只引用 LakeUI，渲染库仍由宿主提供。
+        self.assertNotIn('<Reference Include="FFmpegFreeUI">', project)
+        self.assertIn('<PackageReference Include="LakeUI" Version="5.110.0"', project)
+        self.assertIn('ExcludeAssets="runtime"', project)
         self.assertNotIn("layoutOnly", panel)
         self.assertNotIn("AttachDesignerPage", panel)
         self.assertNotIn("RebindDesignerBackgroundSources", panel)
