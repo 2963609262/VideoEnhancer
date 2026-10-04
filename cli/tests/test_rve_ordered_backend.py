@@ -34,6 +34,9 @@ class DummyFrame:
     def get_dummy_frame(self):
         return DummyFrame(self.width, self.height, b"", self.hdr_mode)
 
+    def clone(self):
+        return DummyFrame(self.width, self.height, self._bytes, self.hdr_mode)
+
     def resize_frame(self, width, height):
         bytes_per_pixel = 6 if self.hdr_mode else 3
         self.width = width
@@ -145,6 +148,24 @@ def make_render(interpolate_result="frame", upscale_error=None):
 
 
 class OrderedBackendTests(unittest.TestCase):
+    def test_interp_first_repeated_transition_frame_is_not_upscaled_twice(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, VIDEOENHANCER_PROCESS_ORDER="interp-first"):
+            render, _, source = make_render()
+            render.interpolateOption = lambda img1, transition: iter((img1, img1))
+            seen = []
+
+            def upscale(frame):
+                seen.append((frame.width, frame.height))
+                frame.width, frame.height = 4, 2
+                return frame.set_frame_bytes(bytes(24))
+
+            render.upscaleOption = upscale
+            render.render()
+            self.assertIsNone(render._videoenhancer_render_error)
+            self.assertEqual(seen, [(2, 1)] * 3)
+            self.assertEqual((source.width, source.height), (2, 1))
+
     def test_combined_models_receive_independent_precisions_without_two_processes(self):
         previous = {
             name: os.environ.get(name)
@@ -199,7 +220,7 @@ class OrderedBackendTests(unittest.TestCase):
                 else:
                     os.environ[name] = value
 
-    def test_interp_first_keeps_native_render_and_uses_interp_input_precision(self):
+    def test_interp_first_uses_frame_pipeline_and_interp_input_precision(self):
         previous = {
             name: os.environ.get(name)
             for name in (
@@ -246,8 +267,7 @@ class OrderedBackendTests(unittest.TestCase):
             self.assertEqual("float32", render.initial_precision)
             self.assertEqual("float16", render.upscale_setup_precision)
             self.assertEqual("float32", render.interp_setup_precision)
-            self.assertIs(Render.render, original_render)
-            self.assertEqual("native", render.render())
+            self.assertIsNot(Render.render, original_render)
         finally:
             for name, value in previous.items():
                 if value is None:

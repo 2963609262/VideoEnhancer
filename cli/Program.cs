@@ -39,6 +39,10 @@ internal static class Program
     private const string EmbeddedThirdPartyNoticesResource = "VideoEnhancer.Embedded.THIRD-PARTY-NOTICES.txt";
     private const string EmbeddedProjectLicenseResource = "VideoEnhancer.Embedded.LICENSE.txt";
     private const string EmbeddedSharpCompressLicenseResource = "VideoEnhancer.Embedded.SharpCompress.LICENSE.txt";
+    private static int _jobOutputScale;
+    private const string EmbeddedOutputScaleResource = "VideoEnhancer.Embedded.rve_output_scale.py";
+    private const string EmbeddedFlashVsrResource = "VideoEnhancer.Embedded.rve-flashvsr-backend.py";
+    private const string EmbeddedBasicVsrResource = "VideoEnhancer.Embedded.rve-basicvsrpp-backend.py";
     private const string EmbeddedOrderedBackendResource = "VideoEnhancer.Embedded.rve-ordered-backend.py";
     private const string EmbeddedInterpolationInspectorResource = "VideoEnhancer.Embedded.inspect_interpolation_models.py";
     private const string EmbeddedUpscaleInspectorResource = "VideoEnhancer.Embedded.inspect_upscale_models.py";
@@ -937,7 +941,7 @@ internal static class Program
             o.InterpBackend = DefaultInterpBackend(o.Backend);
         }
         int targetOutputScale;
-        try { targetOutputScale = OutputScale.Parse(o.OutputScale); }
+        try { targetOutputScale = OutputScale.Parse(o.OutputScale); _jobOutputScale = targetOutputScale; }
         catch (ArgumentException ex) { return Fail(ex.Message); }
         o.ProcessOrder = o.ProcessOrder.Trim().ToLowerInvariant();
         if (o.ProcessOrder is not ("upscale-first" or "interp-first"))
@@ -1214,6 +1218,10 @@ internal static class Program
                     var engineScale = int.TryParse(requestedScale, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedScale)
                         ? parsedScale
                         : 0;
+                    // 低倍率输出编进 TRT 图，避免回传完整原生尺寸帧；高倍率在结果端放大。
+                    if (targetOutputScale > 0 && engineScale > targetOutputScale)
+                        engineScale = targetOutputScale;
+                    requestedScale = engineScale.ToString(CultureInfo.InvariantCulture);
                     var engineWidth = inputResolution.Item1;
                     var engineHeight = inputResolution.Item2;
                     if (ModelCapabilityCatalog.TryGet(model, ModelsDir, out var engineCapability)
@@ -1296,11 +1304,11 @@ internal static class Program
             if (!useUpscale || o.Backend == "rtxvsr" || segmentedUpscale)
                 return Fail("-output-scale 用于模型超分；RTX VSR 和分段模式请使用各自的输出规格");
             var sourceSize = GetInputResolution(input);
+            if (o.Backend is not ("flashvsr" or "basicvsrpp"))
+                scale = targetOutputScale.ToString(CultureInfo.InvariantCulture);
             try { customEncoder = OutputScale.Encoder(customEncoder, sourceSize.W, sourceSize.H, targetOutputScale); }
             catch (ArgumentException ex) { return Fail(ex.Message); }
-            Console.WriteLine(scale == targetOutputScale.ToString(CultureInfo.InvariantCulture)
-                ? $"[输出倍率] 直接推理 {scale}x，目标 {targetOutputScale}x"
-                : $"[输出倍率] 原生推理 {scale}x，目标 {targetOutputScale}x；最终编码前 Lanczos 缩放");
+            Console.WriteLine($"[输出倍率] 超分结果先调整到 {targetOutputScale}x，再进入补帧、预览和编码；TRT 低倍率沿用图内双三次，其余结果缩放使用 Lanczos。");
         }
 
         // 5.5 超大输出分辨率预警（ncnn 帧队列在高分辨率下容易内存不足）
@@ -1718,6 +1726,8 @@ internal static class Program
         var directory = PortablePaths.EmbeddedToolsRoot(ToolVersion);
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, fileName);
+        if (fileName == "rve-ordered-backend.py")
+            InstallEmbeddedBackendScript(EmbeddedOutputScaleResource, Path.Combine(directory, "rve_output_scale.py"));
         using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
             ?? throw new InvalidOperationException("内置工具资源不存在：" + fileName);
         var needsUpdate = !File.Exists(path);
@@ -1748,6 +1758,9 @@ internal static class Program
             InstallEmbeddedBackendScript(EmbeddedUpscaleInspectorResource, UpscaleInspectorScript);
             InstallEmbeddedBackendScript(EmbeddedRifeTensorRTPrepareResource, RifeTensorRTPrepareScript);
             InstallEmbeddedBackendScript(EmbeddedImageBackendResource, ImageBackendScript);
+            InstallEmbeddedBackendScript(EmbeddedOutputScaleResource, Path.Combine(backendDirectory, "rve_output_scale.py"));
+            InstallEmbeddedBackendScript(EmbeddedFlashVsrResource, Path.Combine(backendDirectory, "rve-flashvsr-backend.py"));
+            InstallEmbeddedBackendScript(EmbeddedBasicVsrResource, Path.Combine(backendDirectory, "rve-basicvsrpp-backend.py"));
             InstallEmbeddedBackendScript(EmbeddedSegmentedBackendResource, SegmentedBackendScript);
             EnsureGmfssModelTypeCompatibility();
             EnsureGimmModelCompatibility();
@@ -2285,6 +2298,8 @@ internal static class Program
             var imageScaleValue = int.TryParse(imageScale, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedImageScale)
                 ? parsedImageScale
                 : 0;
+            if (targetScale > 0 && imageScaleValue > targetScale) imageScaleValue = targetScale;
+            nativeScale = imageScaleValue.ToString(CultureInfo.InvariantCulture);
             model = EnsureTensorRtEngine(model, width, height, stopWatcher: null, outputScale: imageScaleValue,
                 requestedPrecision: o.UpscalePrecision);
             if (model.Length == 0) return 1;
@@ -2306,6 +2321,7 @@ internal static class Program
         start.Environment["PYTHONIOENCODING"] = "utf-8";
         start.Environment["VIDEOENHANCER_UPSCALE_PRECISION"] =
             ResolveUpscalePrecision(model, o.Backend, o.UpscalePrecision);
+        start.Environment["VIDEOENHANCER_OUTPUT_SCALE"] = targetScale.ToString(CultureInfo.InvariantCulture);
         start.ArgumentList.Add(ImageBackendScript);
         foreach (var input in o.ImageInputs)
         {
@@ -2715,6 +2731,9 @@ internal static class Program
         string? interpModel, string? interpFactor, string backend, string? backendScript = null, bool hdrMode = false,
         bool dynamicOpticalFlow = false, double sceneThreshold = 4.0, int tileSize = 0, string precision = "auto")
     {
+        if (string.IsNullOrWhiteSpace(backendScript) && !string.IsNullOrEmpty(modelFolder)
+            && backend is not ("flashvsr" or "basicvsrpp"))
+            backendScript = EnsureEmbeddedFile(EmbeddedOrderedBackendResource, "rve-ordered-backend.py");
         var args = new List<string>
         {
             string.IsNullOrWhiteSpace(backendScript) ? BackendScript : backendScript,
@@ -2766,6 +2785,9 @@ internal static class Program
             args.Add(interpFactor ?? "2");
         }
 
+        if (_jobOutputScale > 0 && !string.IsNullOrEmpty(modelFolder)
+            && backend is not ("flashvsr" or "basicvsrpp"))
+            scale = _jobOutputScale.ToString(CultureInfo.InvariantCulture);
         if (!string.IsNullOrEmpty(scale))
         {
             args.Add("--override_upscale_scale");
@@ -4956,6 +4978,7 @@ internal static class Program
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(model) && _jobOutputScale > 0) scale = _jobOutputScale;
         var factor = 1;
         if (!string.IsNullOrWhiteSpace(interpFactor)
             && (!int.TryParse(interpFactor, NumberStyles.Integer, CultureInfo.InvariantCulture, out factor)
@@ -5037,6 +5060,8 @@ internal static class Program
         psi.Environment["PYTHONIOENCODING"] = "utf-8";
         // 先超后补的同后端包装器需要导入核心后端目录中的 src 包。
         psi.Environment["VIDEOENHANCER_BACKEND_DIR"] = Path.GetDirectoryName(BackendScript)!;
+        psi.Environment["VIDEOENHANCER_OUTPUT_SCALE"] = !string.IsNullOrEmpty(model)
+            ? _jobOutputScale.ToString(CultureInfo.InvariantCulture) : "0";
         if (upscalePrecision is not null)
             psi.Environment["VIDEOENHANCER_UPSCALE_PRECISION"] = upscalePrecision;
         if (interpPrecision is not null)

@@ -1,11 +1,29 @@
 # Project Status
 
-Last updated: 2026-10-04 11:35
+Last updated: 2026-10-04 22:12
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 22:12：用户已授权发布1.3.11，覆盖之前仅本机试用限制。版本源与分类说明已更新；补RTX安装版本标记及下载页“可更新”入口，旧用户升级本体后刷新列表即可下载覆盖组件。RTX独立版本2026.10.04.1，源提交6afb9a8。发行五资产已冻结，本地publish/安装与回滚/自更新/Burn/队列/宿主/滚动/Python11项/组件状态4场景通过；Python独立归档仍2026.09.30.1，29,709文件审计UNCHANGED，尺寸脚本作为CLI内嵌资源同步，不上传新Python包。即将提交推送和发布双源，远端回读及本机正式升级尚待完成。
+
+- 2026-10-04 21:47：AVV3官方PTH确认网络4x，目标2x来自后缩放；官方示例用CPU Lanczos4，项目TRT沿用图内双三次。更正NCNN“原生2/3x”：本项目2/3x图仍48通道卷积+PixelShuffle4，末尾Interp0.5/0.75，属于2/3x输出图，不是独立2/3x训练网络；待复核界面/清单用词。仅文档纠正，不修改已部署修复。
+
+- 2026-10-04 21:30：**用户授权部署供3FUI测试，已备份并部署到本机Plugin目录。CLI/插件DLL/RTX组件与配套尺寸脚本共16项hash核对通过，配置/用户清单/aria2/7zip保持。真实安装CLI对FMP4样本RTX2x输出1280x720/4帧成功；宿主未启动，等待用户测试。仍1.3.10本地试用，不发布远端。**
+
+- 2026-10-04 21:21：**模型目标尺寸与RTX解码回退修复完成，隔离构建/实机定向验收通过。TRT低倍率恢复图内双三次，CUDA及BasicVSR++张量侧Lanczos4留在GPU；NCNN/ONNX/Flash现有CPU输出在下游前调整。六后端、图片、两种补帧顺序、跨后端及TRT分块/高倍率通过；RTX五输入和完整CLI FMP4输出4帧通过，双显卡能力探测同步选择NVIDIA。源码差异及候选资产可审查，未部署/发布/改版本/提交/推送。**
+
+- 2026-10-04 19:47：MPEG-4 Visual对照已复现RTX普通尺寸解码失败：FMP4 640x360 RTX首包Invalid argument/0帧；同源NCNN2x输出1280x720/4帧成功，低尺寸192x128 RTX软解输出384x256/4帧成功。三FourCC样本FFmpeg/OpenCV通过。sidecar仅按低尺寸软解，缺按编码能力回退；待确认用户失败后端/日志，详见[定位报告](../mpeg4-visual-decode-audit.md)，未实施修复。
+
+- 2026-10-04 19:40：全后端补查完成。CUDA/NCNN/ONNX低目标同样原生推理后FFmpeg缩小，相比旧RVE队列前OpenCV缩小改变管道量/算法；先超后补可一直按原生高尺寸运行。FlashVSR2/4x直接推理，BasicVSR++官方4x仍后缩放。统一方案扩大至全部后端，详见审计报告；未实施产品修复或测速。
+
+- 2026-10-04 19:37：全模型倍率路径审计完成，见[审计报告](../model-output-scale-path-audit.md)。98项清单中41项TRT（11项4x、28项2x、2项1x）共用通用转换入口，低倍率输出风险不限AVV3；视频/图片、分块及组合补帧须整体处理。FlashVSR显式2/4x保留，其他后端原生后缩放不能直接等同TRT旧版回归。尚未实施产品修复或逐模型速度测试。
+
+- 2026-10-04 19:33：用户确认AVV3为TRT。发现旧版按后缀传目标倍率到convert_tensorrt.py，FinalOutputScale将4x后bicubic缩小编入GPU引擎；新版固定4x Engine→4x帧回传/管道→FFmpeg Lanczos缩小，存在可解释的性能退化路径，尚未同参数计时。FFmpeg本机包含RM/RV10–40；官方RMVB样本前缀4帧RGB解码通过，OpenCV首帧可读，但帧数报告偏大。四宫格漏rm/rmvb扩展名，RVE元数据依赖OpenCV，需定向修复；本轮未改产品代码。
+
+- 2026-10-04 19:21：三条用户反馈完成代码核查：普通RVE由后端启动FFmpeg默认CPU解码并管道送帧，分段同样软解；RTX为独立sidecar，历史低分辨率软解已有专项修复，不能据此宣称所有编码都可回退。AVV3内置NCNN有原生2/3/4x，PTH登记4x；目标2x在固定4x模型后缩放。已询问失败后端/日志、模型格式及前后版本，未修改产品代码或发布。
 
 - 2026-10-04 11:35：**1.3.10正式发布完成：[GitHub v1.3.10](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.10)、ModelScope Releases及Models备用EXE同步；源码/注释标签9bfba97已推送。PR9合并fb19abe，PR8仅aria2选择性提交5f1c9c0，原PR8已关闭。11远端实际下载hash、双源故障回退通过；本机正式升级1.3.10，配置/用户清单保持，aria2-next2.8.3。Backend继续2026.09.30.1、不动模型权重；发行收尾文档提交推送后核对干净工作树。**
 
@@ -55,6 +73,14 @@ Updated by: Codex
 
 ## Active TODO
 
+- [ ] 倍率术语复核：区分学习网络倍率与已编译图输出倍率；AVV3 NCNN2/3x实际为4x网络+图内缩小，之前“原生2/3x”表述不准确。现有图输出尺寸/缓存行为保持，尚未改产品元数据或界面。
+
+- [x] 用户确认RTX超分；已修复解码能力判断、硬解初始化/首帧失败回退、平面YUV转换及双显卡能力误判。RTX五输入及完整CLI FMP4通过；用户原片仍未取得，不扩大为所有老编码变体验收。
+
+- [x] 全后端模型目标尺寸修复：TRT图内输出/缓存、CUDA/BasicVSR++原设备Lanczos4、CPU封装结果缩放、视频/图片/两种补帧顺序/跨后端/分块同步完成并定向验证。未做全模型逐项或旧新整链性能比较。
+- [ ] 正式分发1.3.11：用户已授权，五资产及RTX2026.10.04.1通过本地门禁，待双源发布/回读/本机升级。
+- [ ] 老视频入口后续工作：四宫格补.rm/.rmvb、RVE元数据改可靠FFmpeg探测；不属于已确认RTX MPEG-4 Visual解码修复，尚未实施。
+
 - [x] PR9+aria2组合已本机部署，用户反馈功能合理并授权合并/发布；不把该反馈扩大为全部GPU或历史专项验收。
 
 - [ ] 本机重启3FUI测试能力修正弹窗/导入按钮宽度和模型菜单重复打开/切换分组后的悬停介绍、模型选择恢复原生倍率及导入重新检测；本轮已部署且哈希核验通过，未自动启动宿主。
@@ -73,6 +99,10 @@ Updated by: Codex
 - 2026-10-01：正式发布1.3.8及1.3.9，均完成双源回读、故障回退和本机正式自更新；1.3.9包含模型能力/倍率/介绍与导入界面专项。
 
 ## Decisions
+
+- 2026-10-04 21:30：用户“部署到3fui我测试”明确授权本机覆盖部署，取代21:21未部署状态；不扩大为远端发布。先备份、检查进程退出，再部署并hash核对，保留配置/模型/独立下载组件。
+
+- 2026-10-04 21:21：用户授权执行全部模型后端与RTX修复，并明确尽可能保持GPU处理。GPU Lanczos通过张量运算实现，不将CUDA一概改成双三次；TRT低倍率沿用旧转换图内双三次。保留真实权重倍率、Flash真实2/4x及分段独立倍率语义。NCNN/ONNX封装、Flash分块合并现有CPU边界如实保留。
 
 - 2026-10-04 11:35：用户“功能合理，选择性安全合并并发布1.3.10”授权正式合并/推送/发行，取代此前仅本机试用限制。PR8保留aria2部分、排除倍率预设和控制台安装逻辑；PR9已合并。运行要求LakeUI5.110+（5.x），旧aria2自动更新时保持，需要安装器/手动包升级独立组件。
 
@@ -97,6 +127,10 @@ Updated by: Codex
 - 旧清理拒绝和 GitHub CDN 验证限制见 Active TODO；不将历史注册残留推测当实测事实。
 
 ## Environment Notes
+
+- 2026-10-04 21:30当前安装为1.3.10模型/RTX修复本地试用：CLI 25d20aba6475092b57fa267fbeab7aac873429f5f8ba63d54a390aecdb76b296，插件DLL 7398496759b5d9fa7eadff2b4fa4f5edec63281cce706c6f6a8afffc63eb5392，RTX b64761cd06f58517755964f5b6f797152c4abab14b31329057558028e0bcb844。备份 C:\Codex Program\3fui plugin\Artifacts\.refactor-tmp\backup-before-model-rtx-fix-20261004-212715；证据Artifacts/model-fix-build/local-deployment.json。下方正式版本hash为部署前历史。
+
+- 2026-10-04 21:21本轮继续同设备：.NET10.0.400、MSVC14.51、Visual Studio18生成器；RTX3060 Laptop实机。隔离运行目录Artifacts/model-audit/runtime的backend是实际副本，python解释器及models部分为已核查链接；只更改项目内backend/测试文件，不覆盖真实安装。独立RTX源码位于Artifacts/rtx-backend-fix，基准c83df0f；FFmpeg/RTXSDK/CMake依赖使用本机已有只读位置，下次换设备重查，不作为便携配置。
 
 - 2026-10-04 11:35当前本机正式1.3.10（3FUI6.2.35/LakeUI5.110），EXE hash `ac50014afde5b3e8f0181350f3c4f7ff079d72de15ec40de20d050b539516ac1`，DLL `c7f2fa9988d4941feb29a2b86e3977250c8f50e5032196c421261f96b953e1bd`，aria2-next2.8.3。备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-release-1.3.10-20261004-112800`；证据Artifacts/.refactor-tmp/release-1.3.10/local-deployment.json。以下旧试用/发行环境条目仅为历史参考。
 
@@ -136,6 +170,8 @@ git diff --check
 文档整理仅验证归档字节/SHA256、UTF-8、链接和记录结构，不重跑程序测试。程序验收与发行详见 `release/发布流程.md`。
 
 ## Git Sync
+
+- 2026-10-04 21:21：git pull --ff-only已最新，main=0664186跟踪origin/main；本轮源码/测试/两份审计报告/RTX补丁/记录未提交，工作树非干净，无push。Artifacts内构建/模型/测试夹具不纳入Git，切换工具或设备前建议考虑提交。
 
 - 2026-10-04 11:35：PR8选择性5f1c9c0、PR9合并fb19abe、发行9bfba97及v1.3.10已推送。PR9状态MERGED，PR8选择性移植后CLOSED；不整包合并PR8。后续仅收尾文档提交，main与tag正常推送、无强推；冻结资产不纳入Git。
 
@@ -376,3 +412,92 @@ git diff --check
 - 实际更新器：GitHub检查仓库404→ModelScope1.3.10；ModelScope包数据集404→GitHub1.3.10包且hash通过。夹具在项目Artifacts，不改真实配置。最终六类UI、队列5场景、Python16项、release5/backend6、内外层安装回滚/缓存清理与自更新通过；未重复GPU全矩阵，用户此前实际功能反馈合理。
 - 本机：确认宿主/CLI退出，备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-release-1.3.10-20261004-112800`后正式--apply-update返回UPDATE_COMPLETE|1.3.10；显式补齐aria2/许可，EXE/DLL/aria2hash匹配、插件配置及models/User/model-catalog.json保持。未自动启动宿主，版本记录/中文进度/审核报告更新。
 - 证据：Artifacts/.refactor-tmp/release-1.3.10中的asset-hashes、github-release、remote-verification、remote-models、remote-backend-channel、local-deployment、build-release、门禁/UI日志及updater-probe。长期TODO保持，不扩大本轮任务。完成收尾文档提交推送后核对干净工作树。
+
+### 2026-10-04 19:21 - Codex：解码与AVV3倍率反馈核查
+
+- 新会话，使用HandShake，读取AGENTS/INDEX/STATUS，git pull --ff-only已最新，起始main=0664186、工作树干净。
+- 核查：cli/Program.cs BuildBackendArgs将原视频路径与FFmpeg路径传给RVE；部署后端src/FFmpegBuffers.py与项目Artifacts/model-audit/runtime副本SHA256一致（a8077454…），FFmpeg读取命令无hwaccel，CPU解码为rawvideo并通过stdout供模型使用。分段桥同样使用无hwaccel的FFmpeg解码管道，不要求预先转码。
+- RTX与RVE分开：归档记录2026-09-14已对宽<320或高<240走软解/上传D3D11且边界专项通过，但本轮未检查sidecar完整源码或复现老视频，不能推断所有编码通用软解已支持。需用户失败后端、输入编码和错误日志再定位。
+- AVV3：cli/model-capabilities.json明确NCNN 2/3/4x三个条目，PTH realesr-animevideov3为4x；DetectScale优先能力清单/图结构/检测，固定模型目标倍率通过OutputScale.Encoder在编码前Lanczos缩放。本地Compact实现由末层权重形状推导PixelShuffle倍率；改名不改变该PTH结构。用户旧版仅改后缀的行为尚未复现，不能据此否定其性能反馈。
+- 下一步：待用户提供AVV3文件格式/模型名、旧新版本、软解失败时后端/日志，区分原生2x识别问题与4x后缩放性能问题，再形成定向实现方案；不恢复全局文件名覆盖权重倍率。
+- 验证仅源码检查/部署后端文件hash核对，未运行GPU/性能测试，不宣称速度下降原因已确证。更新STATUS和中文进度，版本记录不变；没有提交/推送/部署/发布。本轮只新增两份记录修改，建议切换工具前考虑Git提交。
+
+### 2026-10-04 19:33 - Codex：TRT图内缩放与旧编码兼容性核查
+
+- 同工具继续HandShake，复读STATUS快照/最近日志，沿用AGENTS/INDEX；git pull --ff-only已最新，main=0664186，保留上一轮两份未提交记录。
+- 用户澄清AVV3为TRT。核查v1.3.8 DetectScale文件名倍率解析、EnsureTensorRtEngine的outputScale参数以及现版模型检测/OutputScale.Encoder。部署convert_tensorrt.py与项目副本SHA256一致（db4d1187…），FinalOutputScale明确将模型输出用F.interpolate bicubic缩放后再导出；目标2x/3x的Engine可由同一原生4x权重构建，不是内嵌三套原生权重。
+- 性能解释：旧版改后缀可将2x传入转换脚本、生成GPU图内缩放的2x输出Engine；新版目标倍率与原生倍率分离后，固定4x权重默认生成4x Engine，再在FFmpeg Lanczos缩小，向CPU/编码管道输出4x帧，像素数为2x输出的4倍。该变化具有明确源码依据，尚未用用户旧新参数计时，不宣称模型卷积计算量变为4倍或性能根因已实测锁定。普通RVE覆盖倍率为CPU OpenCV INTER_AREA缩小；TRT转换特例不同，纠正中间GPU缩放泛化推测。
+- 在线主源：Real-ESRGAN官方inference_realesrgan.py明确AVV3 upscale=4；FFmpeg n7.1 allcodecs.c有RV10/20/30/40，allformats.c有RM解复用。实际本机兼容FFmpeg -decoders/-demuxers列出RM、RV10–40、MPEG1/2/4、WMV1/2/3及Cook。宿主Settings工作目录为空导致首次枚举命令失败，随后显式使用已知后备FFmpeg，未修改设置。
+- 定向样本：从https://samples.ffmpeg.org/real/VC-RV40/spygames-2MB.rmvb下载，45秒超时仅887800/2097152字节前缀；保留证据、不当完整文件。前缀ffprobe为rv40/yuv420p/576x320；FFmpeg成功解4帧rgb24共2211840字节，等于576*320*3*4；部署Python OpenCV打开/首帧成功、fps23.9760437、报告帧数174722，不能作为实际完整帧数。结果Artifacts/feedback-decode-audit/result.json，未进入Git。
+- 兼容性：模型接收RGB像素/张量而非RMVB压缩码流，编码支持取决于解码器。RVE RenderVideo实际使用OpenCVInfo读尺寸/fps/帧数，VideoInfo/RenderVideo部署文件hash与项目副本一致；老编码可能在此先失败或进度异常。QuadGridForm IsVideoFile和文件筛选漏.rm/.rmvb，SetVideo明确拒绝，因此该入口存在独立限制。没有用户原片，不能据此认定其具体报错原因。
+- 下一步方案：保留原生4x元数据，对TRT低倍率输出恢复显式目标倍率的图内缩放及按实际输出倍率缓存；兼顾分块、组合补帧和画质算法差异，不恢复全局改名倍率覆盖。老视频优先补入口扩展名并替换OpenCV元数据依赖为可靠FFmpeg探测；用用户原片日志验证。当前用户要求调查，未实施/发布/部署/改版本。
+- 记录：STATUS快照/待办及中文进度更新；验证仅上述源码/hash/4帧解码，未运行GPU矩阵/速度对比。本轮两份记录未提交，git diff --check通过，工作树非干净；建议考虑提交后切换工具。
+
+### 2026-10-04 19:37 - Codex：其他模型倍率风险扩展审计
+
+- 用户担心其他模型同类问题，同工具沿用HandShake/AGENTS/INDEX，复读STATUS快照和最近日志；git pull --ff-only已最新，保留两份记录修改，main=0664186。
+- 全清单机器统计98项，其中TRT41项=4x11/2x28/1x2。检查普通视频、图片、同后端/跨后端组合、分段、FlashVSR及RTX的入口和缩放位置；新增docs/model-output-scale-path-audit.md，列出全部41项TRT候选范围和条件。
+- 确认低目标倍率引擎构建/编码后缩放为通用路径，并非AVV3特判；TRT图片同类。先超后补目标只在编码时生效可导致补帧仍按原生高尺寸运行；需同步帧/预览/补帧缓存及分块拼接。FlashVSR声明2/4x已有直接推理选择；其他后端与TRT图内缩放回归区分，未宣称全部模型实际变慢。
+- 下一步为统一TRT原生/Engine输出/目标倍率管理、缓存隔离和视频图片同步，涵盖分块/组合补帧及算法差异，不做AVV3名称补丁。用户本轮为风险核查，未实施产品代码修复，不改版本或发布/部署。
+- 验证：清单JSON读取与逐项统计、源码路径核对及git diff --check；未进行GPU矩阵/逐模型性能测试。本轮报告与两份记录未提交，工作树非干净，建议考虑提交后切换工具。
+
+### 2026-10-04 19:40 - Codex：CUDA/NCNN/ONNX及时序后端倍率核查
+
+- 用户要求范围不限TRT，同工具沿用HandShake，复读STATUS/前序审计，git pull --ff-only已最新，保留已有三份文档修改，main=0664186。
+- 逐后端统计CUDA47(1x2/2x33/4x12)、NCNN21(1x2/2x13/3x1/4x5)、ONNX28(1x2/2x23/4x3)、FlashVSR1、BasicVSR++1；声明可重叠，不作为额外唯一模型总量。
+- 核对v1.3.8覆盖倍率参数、部署RenderVideo/Util普通CPU INTER_AREA缩放，以及主线目标只进FFmpeg滤镜，确认其他普通后端也存在位置/算法变化和原生高尺寸管道量。GPU→CPU是否增加须区分：普通旧路径也先回CPU，TRT旧版图内缩放单独支持；未泛化为全部旧版GPU缩放。
+- 核对FlashVSR dispatcher将override scale传给runner并传node.main，2/4x为直接推理；其他目标仍后缩放。BasicVSR++根据is_low_res_input确定4/1x，原生片段numpy输出后进入RawVideoWriter，官方4x低目标须后缩放。
+- 核对同后端先超后补按upscaleTimes初始化并在模型结果后执行override尺寸，跨后端先超后补中间视频无目标滤镜，当前低目标只最终编码生效，可增加补帧面积；先补后超不同。图片通用Pillow后缩放、时序桥原生输出也核查。
+- 更新审计报告全后端表与统一方案；修复范围扩大为模型原生倍率、处理链帧尺寸、目标尺寸统一管理，各后端在后续处理前缩放一次，尽可能GPU侧，否则至少减少管道量；保留真实多倍率和算法差异，不只修TRT。
+- 本轮源码审计/JSON统计，未改产品或运行GPU/性能测试；STATUS和中文进度已更新，git diff --check通过。报告与两份记录未提交，工作树非干净，建议考虑提交后切换工具。
+
+### 2026-10-04 19:47 - Codex：MPEG-4 Visual/FMP4实际解码对照
+
+- 用户提供失败源编码MPEG-4 Visual/XviD/DivX/FMP4，同工具沿用HandShake及AGENTS/INDEX；复读STATUS最新状态/日志，git pull --ff-only已最新，main=0664186，保留前序文档修改。
+- 三个4帧640x360合成样本，FFmpeg mpeg4+FMP4/XVID/DIVX FourCC、yuv420p。部署后备FFmpeg和实际宿主FFmpeg8.1.1软解均成功，各RGB24字节2764800，OpenCV均正常640x360/24fps/4帧并首帧成功；不是用户原片或全部XviD特性矩阵。
+- 实际安装CLI1.3.10：FMP4640x360普通NCNN AVV3-2x成功，输出1280x720/4帧；同源RTX VSR2x处理0帧、退出1、decoder send packet Invalid argument。192x128 FMP4低尺寸RTX成功，输出384x256/4帧。首次NCNN后端已完成渲染、CLI对既有Vulkan退出阶段异常有提示，未将其误认成此次解码失败，最终输出帧数完整。
+- 读取对应已发行sidecar源码c83df0f：回退仅width<320或height<240，普通尺寸choose_d3d11_format无D3D11格式时返回NONE，没有编码能力回退。在线主源与本机对照支持RTX路由问题；用户失败后端尚未确认，已询问是否RTX/HDR及错误日志，不把样本复现直接等同用户原片。
+- 网络：raw源码下载502，用gh contents API获取base64源码副本成功，未更改远端。诊断捕获CLI含混合控制台编码，保存UTF-8日志；关键英文错误/JSON与输出探测可读，不据乱码推断业务失败。
+- 来源/证据：docs/mpeg4-visual-decode-audit.md；Artifacts/feedback-decode-audit的源码副本、mpeg4-decode-results.json、mpeg4-pipeline-results.json、三项实际处理日志与输出；产物不入Git。直接FFmpeg/模型验证与CLI输出均使用项目Artifacts，不修改用户配置或视频；CLI自身沿用已安装运行日志机制。
+- 方案：独立RTX runtime按解码器硬解能力选择软解/上传，不仅按尺寸；初始化失败需明确重开软件解码边界，像素格式转换范围另检查。普通后端有问题则先看原片/日志而非添加模型编码限制。
+- STATUS/中文进度和新增报告已更新；无产品修改、版本/发行/部署，不重跑完整模型矩阵。git diff --check通过，当前四份文档未提交，工作树非干净，建议考虑Git提交后切换工具。
+
+
+### 2026-10-04 21:21 - Codex：模型结果端尺寸与RTX软解回退实施、实机验收
+
+- 同工具继续HandShake，已复读AGENTS/INDEX/STATUS/skill，git pull --ff-only已最新，main=0664186；保留前序审计和未提交改动。用户明确授权执行修复，随后要求Lanczos尽可能留GPU。未请求重复批准，不扩展到发布或真实安装部署。
+- 模型链：Program.cs把低目标输出传给TRT Engine构建/缓存，图片同步；普通模型统一走rve-ordered包装器，在结果进入插帧/预览/写队列前落实尺寸；独立精度对齐保留。新增rve_output_scale.py原设备Lanczos4，逐瓣累加限制临时显存；NCNN/ONNX的CPU输出用cv2 Lanczos4。Flash/Basic runner以内嵌脚本随CLI同步，Flash2/4x真实推理保持，Basic在回CPU前缩放。OutputScale.Encoder保留编码端最终尺寸兜底支持用户滤镜。
+- 先补后超修复转场重复Frame共享导致原地改写，逐帧clone并按生成器顺序处理；新增共享帧回归。模型原生能力清单/权重不变，分段模式不套普通-output-scale。Flash原有CPU分块合并、NCNN/ONNX原生回传没有伪称消除。
+- RTX：Artifacts/rtx-backend-fix中cpp枚举AVCodecHWConfig，硬解初始化或首帧失败重开软解；保留首帧探测所有流packet重放，软件帧转NV12/P010上传D3D11；补常见平面422/444/高位深。完整CLI最后发现双显卡capabilities探测默认集显误判，已对RTX/NVENC探测优先选择NVIDIA，与实际处理一致。可审查两文件diff存release/patches/rtx-video-decode-fallback.patch，reverse apply --check通过，README注明rve-patches/c83df0f。
+- 验证：solution Release build/publish0警告0错误；GPU Lanczos2项（含4种目标尺寸、FP16设备/常量）通过，9项顺序/精度/错误退出测试通过（错误夹具traceback为预期），ModelMetadata参数/最终滤镜验证通过。RTX已有16项FfmpegTranscodePipeline单测通过。Python脚本语法编译通过，git diff --check通过。
+- 实机模型：verify_model_catalog_runtime.py --scale-fix-only共17场景记录通过，六后端/图像/两顺序/跨后端/2x Engine；追加TRT32分块2x及目标6x、最终两顺序、完整RTX CLI共5项通过。测试先把2倍RIFE输出误预期8帧，源码与实际对照是4源帧+3间隙=7帧，已改断言，不改产品尾帧语义。新断言检查精确帧数。
+- RTX新构建5种输入通过：FMP4 640x360、H264 high10/444/低尺寸软解上传；普通H264保持D3D11VA。输出均4帧、音频帧数不丢；能力JSON VSR/TrueHDR/H264NVENC/HEVCMain10为true（3060不支持AV1 NVENC）。最终CLI原调查FMP4输出1280x720/4帧成功。证据Artifacts/rtx-decode-fix-verification及model-audit/verification。不是所有历史XviD/DivX变体或用户原片验收。
+- GPU缩放单步测速：3060 Laptop 4K FP16→1080p预热3/测10次平均11.793ms，峰值分配314154496字节，FP16相对CPU FP32最大误差0.0004884；只测缩放，未承诺整链提速比例或恢复用户旧版全部速度。Lanczos4不等同FFmpeg/Pillow参数/抗锯齿逐像素结果。
+- 交付：Artifacts/model-fix-build内CLI、插件ZIP、安装器及rtx-video-runtime.zip，hash清单model-rtx-fix-assets.json。RTX源码补丁含在组件ZIP，相关报告更新；版本仍1.3.10，版本迭代记录不变。无提交/推送/部署/发布，实际安装保持原样。完成本轮授权修复，后续发布或部署再沿用这些可审查产物；建议考虑Git提交。
+
+
+### 2026-10-04 21:30 - Codex：按用户授权部署3FUI试用
+
+- 同工具续做，已复读AGENTS/INDEX/STATUS/HandShake启动规则；git pull --ff-only已最新，main=0664186，保留已有源码/测试/文档未提交改动。用户明确要求部署，无需另行确认。
+- 本机进程检查：部署前后均未发现FFmpegFreeUI/3FUI/videoenhancer/vsr_backend运行。实际Plugin目录 C:/Program portable/3FUI/3FUI/Plugin，python/backend为实际目录。候选4资产逐项SHA256匹配model-rtx-fix-assets.json，手动ZIP内CLI与候选EXE一致。
+- 备份：C:\Codex Program\3fui plugin\Artifacts\.refactor-tmp\backup-before-model-rtx-fix-20261004-212715。保存16项目标部署前文件及用户配置/模型清单/下载组件，deployment-before.json记录原hash和原不存在文件。项目内deploy-local.py只写明确Plugin目录内目标，未删除/搬动原目录。
+- 部署：ZIP中的CLI及plugin/videoenhancer.3fui.dll；独立RTX包中的runtime EXE/DLL（DLL既有hash相同）；image/Flash/Basic/尺寸模块及1.3.10 embedded-tools下ordered/尺寸模块。16项目标hash匹配，用户videoenhancer.plugin.json、models/User/model-catalog.json、aria2-next和7za hash不变，权重不修改，未自动启动宿主。
+- 验证：部署CLI -h为1.3.10；使用已部署CLI和RTX组件对项目FMP4 640x360样本运行2x、FFV1最终编码，成功输出1280x720、完整4帧。日志deployment-rtx-smoke.log、输出及local-deployment.json在Artifacts/model-fix-build；部署后再次逐项hash和保护文件核对通过。不重跑六后端GPU矩阵。
+- 状态：本机试用已落实，等待用户从3FUI测试实际素材。项目/Backend远端版本和发布资产不变，无push/发布；STATUS、中文进度和两份审计的部署说明同步。工作树非干净、改动未提交，建议测试反馈后考虑Git提交。
+
+
+### 2026-10-04 21:47 - Codex：AVV3官方倍率与NCNN图结构再核对
+
+- 用户询问官方是否没有原生2x可选。沿用HandShake/当前部署状态，git pull --ff-only已最新、工作树保留既有未提交改动。仅查源和文档，不重跑GPU或修改部署。
+- 在线主源：Real-ESRGAN docs/anime_video_model.md标X4（可用于1/2/3x）；inference_realesrgan.py的AVV3明确upscale4/netscale4；utils.py的outscale不同则cv2.INTER_LANCZOS4。确认官方这份PTH为4x网络+输出缩放；项目TRT GPU双三次不是官方具体算法指定。
+- 实际读取项目隔离模型2x/3x/4x.param尾部：2/3x均Conv48通道、PixelShuffle4、Nearest残差4x相加后Interp0.5/0.75，4x无末端Interp。纠正先前把NCNN2/3x输出图称为原生2/3x网络的说法；官方NCNN README及src/main.cpp仅证明2/3/4x输出模型选择。没有证据把同一4x权重改后缀变成独立2x训练网络。
+- 审计报告新增官方来源和图结构说明，STATUS快照/TODO与中文进度同步。当前模型图输出倍率检测及已部署TRT低倍率修复仍有效；新增术语复核TODO，不擅自改产品行为。无版本/发布/部署变更，无提交/推送；建议试用反馈后考虑Git提交。
+
+
+### 2026-10-04 22:12 — Codex继续：1.3.11发行门禁与RTX组件更新入口
+
+- 2026-10-04 22:12：用户已授权发布1.3.11，覆盖之前仅本机试用限制。版本源与分类说明已更新；补RTX安装版本标记及下载页“可更新”入口，旧用户升级本体后刷新列表即可下载覆盖组件。RTX独立版本2026.10.04.1，源提交6afb9a8。发行五资产已冻结，本地publish/安装与回滚/自更新/Burn/队列/宿主/滚动/Python11项/组件状态4场景通过；Python独立归档仍2026.09.30.1，29,709文件审计UNCHANGED，尺寸脚本作为CLI内嵌资源同步，不上传新Python包。即将提交推送和发布双源，远端回读及本机正式升级尚待完成。
+
+- 修改：两版本源、release-notes.txt、DownloadInstallStatus.vb、ModelDownloadPage.vb、ModelDownloadManager.cs；保留本轮全后端/RTX修复。旧版无标记视作可更新，仅成功校验解压后记录版本；pending继续阻止误判。
+- 验证：Artifacts/release-1.3.11内package/burn/release-gates/backend-updater/queue/queue-ui/host-runtime/scroll/python日志；组件状态probe通过旧无标记/旧版本/新版本/pending四场景。既有真实GPU和RTX五输入结果沿用，不重复全矩阵。
+- Git：main同步0664186，工作树仅本轮预期修改；准备发行提交及标签。下一步上传RTX及本体双源、实际下载校验和本机正式更新。

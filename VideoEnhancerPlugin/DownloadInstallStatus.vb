@@ -30,7 +30,10 @@ Namespace videoenhancer
                 If category.Equals("Bin", StringComparison.OrdinalIgnoreCase) AndAlso isArchive Then
                     Dim archiveName = Path.GetFileNameWithoutExtension(suffix)
                     If archiveName.StartsWith("RTXVideoRuntime_", StringComparison.OrdinalIgnoreCase) Then
-                        Return File.Exists(Path.Combine(coreRoot, "bin", "rtx-video", "runtime", "vsr_backend.exe"))
+                        Dim marker = Path.Combine(coreRoot, "bin", "rtx-video", ".installed-version")
+                        Return File.Exists(Path.Combine(coreRoot, "bin", "rtx-video", "runtime", "vsr_backend.exe")) AndAlso
+                            File.Exists(marker) AndAlso
+                            File.ReadAllText(marker, Encoding.UTF8).Trim().Equals(normalized, StringComparison.OrdinalIgnoreCase)
                     End If
                     If archiveName.Equals("ffmpeg", StringComparison.OrdinalIgnoreCase) Then
                         Return File.Exists(Path.Combine(coreRoot, "bin", "ffmpeg", "ffmpeg.exe"))

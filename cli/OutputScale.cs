@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace VideoEnhancer;
 
-/// <summary>输出倍率独立于推理倍率；编码前缩放，不修改权重或 Engine。</summary>
+/// <summary>输出倍率独立于推理倍率；超分结果先落实尺寸，编码滤镜兜底最终尺寸。</summary>
 internal static class OutputScale
 {
     internal static int Parse(string value)
@@ -21,7 +21,7 @@ internal static class OutputScale
         // 显式目标倍率决定输出尺寸，避免预设里的 -s 再次覆盖 Lanczos 的结果。
         encoder = Regex.Replace(encoder, "(?:^|\\s)-s(?::v(?::0)?)?\\s+(?:\"[^\"]*\"|[^\\s]+)", "").Trim();
         var filter = $"scale={checked(width * targetScale)}:{checked(height * targetScale)}:flags=lanczos";
-        // 在已有普通视频滤镜之后确定目标尺寸，保证最终输出符合选择的倍率。
+        // 结果已是目标尺寸时无需缩放；保留兜底以支持用户裁剪等编码滤镜。
         var match = Regex.Match(encoder, "(?:^|\\s)(?:-vf|-filter:v(?::0)?)\\s+(?<filter>\"[^\"]*\"|[^\\s]+)");
         if (match.Success)
         {

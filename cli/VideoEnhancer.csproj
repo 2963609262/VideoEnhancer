@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>videoenhancer</AssemblyName>
     <RootNamespace>VideoEnhancer</RootNamespace>
-    <Version>1.3.10</Version>
+    <Version>1.3.11</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -105,6 +105,9 @@
                       LogicalName="VideoEnhancer.Embedded.LICENSE.txt" />
     <EmbeddedResource Include="$(SharpCompressLicensePath)"
                       LogicalName="VideoEnhancer.Embedded.SharpCompress.LICENSE.txt" />
+    <EmbeddedResource Include="embedded-tools\rve_output_scale.py" LogicalName="VideoEnhancer.Embedded.rve_output_scale.py" />
+    <EmbeddedResource Include="embedded-tools\rve-flashvsr-backend.py" LogicalName="VideoEnhancer.Embedded.rve-flashvsr-backend.py" />
+    <EmbeddedResource Include="embedded-tools\rve-basicvsrpp-backend.py" LogicalName="VideoEnhancer.Embedded.rve-basicvsrpp-backend.py" />
     <EmbeddedResource Include="embedded-tools\rve-ordered-backend.py"
                       LogicalName="VideoEnhancer.Embedded.rve-ordered-backend.py" />
     <EmbeddedResource Include="embedded-tools\inspect_interpolation_models.py"

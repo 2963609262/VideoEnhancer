@@ -147,6 +147,9 @@ class NCNNImageUpscaler:
         return tiled_rgb(self._run, rgb, self.scale, tile=256, pad=10)
 
 
+from rve_output_scale import resize_frame
+
+
 class ImageUpscaler:
     def __init__(
         self,
@@ -157,9 +160,11 @@ class ImageUpscaler:
         tile_size: int = 0,
         use_rve_ncnn: bool = False,
         native_scale: int = 0,
+        output_scale: int = 0,
     ):
         self.backend, self.model_path = backend, model
         self.width, self.height = width, height
+        self.output_scale = output_scale
         self.tile_size = max(0, int(tile_size))
         self.use_rve_ncnn = bool(use_rve_ncnn)
         try:
@@ -222,8 +227,10 @@ class ImageUpscaler:
         internal = "pytorch" if self.backend == "cuda" else self.backend
         frame = Frame(internal, self.width, self.height, "cuda", 0, False, self.frame_precision).set_frame_bytes(rgb.tobytes())
         result = self.model(frame)
+        if self.output_scale:
+            result = resize_frame(result, self.width * self.output_scale, self.height * self.output_scale)
         return np.frombuffer(result.get_frame_bytes(), dtype=np.uint8).reshape(
-            self.height * self.scale, self.width * self.scale, 3)
+            result.height, result.width, 3)
 
     def process_bytes(self, payload: bytes) -> bytes:
         if self.backend != "ncnn" or not self.use_rve_ncnn:
@@ -251,6 +258,7 @@ def temporal_upscale(source: Path, backend: str, model: Path, ffmpeg: Path, work
     with Image.open(source) as opened:
         source_width, source_height = opened.size
     scale = native_scale or model_scale(model)
+    target_scale = int(os.environ.get("VIDEOENHANCER_OUTPUT_SCALE", "0")) or scale
     print(f"IMAGE_STAGE|{source}|构造 {frames} 帧无损输入", flush=True)
     run_checked([str(ffmpeg), "-y", "-hide_banner", "-loglevel", "error", "-loop", "1", "-framerate", "1",
                  "-i", str(source), "-vf", "pad=max(iw\\,64):max(ih\\,64):0:0", "-frames:v", str(frames), "-c:v", "ffv1", "-level", "3",
@@ -270,7 +278,7 @@ def temporal_upscale(source: Path, backend: str, model: Path, ffmpeg: Path, work
     run_checked(command, f"{backend} 图片超分")
     print(f"IMAGE_STAGE|{source}|提取目标第一帧", flush=True)
     run_checked([str(ffmpeg), "-y", "-hide_banner", "-loglevel", "error", "-i", str(output_video),
-                 "-vf", f"crop={source_width * scale}:{source_height * scale}:0:0",
+                 "-vf", f"crop={source_width * target_scale}:{source_height * target_scale}:0:0",
                  "-frames:v", "1", str(output_png)], "提取超分结果")
     with Image.open(output_png) as opened:
         return np.asarray(opened.convert("RGB"))
@@ -348,7 +356,7 @@ def main() -> int:
             else:
                 key = (width, height)
                 if key not in cache:
-                    cache[key] = ImageUpscaler(args.backend, model_path, width, height, native_scale=args.native_scale)
+                    cache[key] = ImageUpscaler(args.backend, model_path, width, height, native_scale=args.native_scale, output_scale=args.output_scale)
                 upscaler = cache[key]
                 value = upscaler(rgb)
                 if args.backend in ("cuda", "tensorrt") and float(rgb.std()) > 5.0:

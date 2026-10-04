@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--runtime", required=True)
     parser.add_argument("--extra-only", action="store_true")
     parser.add_argument("--final-only", action="store_true")
+    parser.add_argument("--scale-fix-only", action="store_true")
     args = parser.parse_args()
     runtime = Path(args.runtime).resolve()
     work = runtime.parent / "verification"
@@ -31,7 +32,7 @@ def main():
 
     def record(name):
         results.append(name)
-        result_name = "results-final.json" if args.final_only else "results-extra.json" if args.extra_only else "results.json"
+        result_name = "results-scale-fix.json" if args.scale_fix_only else "results-final.json" if args.final_only else "results-extra.json" if args.extra_only else "results.json"
         (work / result_name).write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
         print("PASS", name, flush=True)
 
@@ -86,8 +87,40 @@ def main():
         metadata = probe(output)
         effective = target or native
         assert (metadata["width"], metadata["height"]) == (96 * effective, 64 * effective), metadata
-        assert int(metadata["nb_read_frames"]) >= 4, metadata
+        # RIFE 在相邻源帧间补一帧：四个源帧和三个间隙，共七帧。
+        expected_frames = 7 if "-interp-factor" in extra else 4
+        assert int(metadata["nb_read_frames"]) == expected_frames, metadata
         record(name)
+
+    if args.scale_fix_only:
+        for backend, model, target, native in (
+            ("cuda", "PTH/realesr-animevideov3", 2, 4),
+            ("tensorrt", "PTH/realesr-animevideov3", 2, 4),
+            ("ncnn", "Param-Bin/RealESRGAN-AnimeVideoV3-2x", 1, 2),
+            ("onnx", "ONNX/AniSD-AC-G6i2a-Compact-72500-fp32-2x", 3, 2),
+            ("basicvsrpp", "BasicVSR++/basicvsr_plusplus_c64n7_8x1_600k_reds4_20210217-db622b2f", 2, 4),
+            ("flashvsr", "FlashVSR", 2, 4),
+            ("flashvsr", "FlashVSR", 3, 4),
+        ):
+            video_case(f"fix-{backend}-{target}", backend, model, target, native)
+        interp = ["-interp-model", "Frame-Interpolation/RIFE/rife4.25.pkl", "-interp-backend", "cuda", "-interp-factor", "2"]
+        for order in ("upscale-first", "interp-first"):
+            video_case("fix-combined-" + order, "cuda", "PTH/realesr-animevideov3", 2, 4,
+                [*interp, "-process-order", order])
+        video_case("fix-cross-backend", "ncnn", "Param-Bin/RealESRGAN-AnimeVideoV3-2x", 3, 2, interp)
+        for backend in ("cuda", "tensorrt"):
+            output = work / ("fix-image-" + backend)
+            output.mkdir(exist_ok=True)
+            run(output.name, ["--image-input", image, "--image-output", output,
+                "-modelpath", "PTH/realesr-animevideov3", "-backend", backend, "-output-scale", "2"])
+            metadata = probe(next(output.glob("*.png")))
+            assert (metadata["width"], metadata["height"]) == (192, 128), metadata
+            record(output.name)
+        engines = list((runtime / "models/TensorRT-Cache").rglob("*__scale-2*.engine"))
+        assert engines, "缺少实际输出倍率为 2x 的 TRT Engine"
+        record("fix-trt-cache-output-scale-2")
+        print(f"Verified {len(results)} scale fix scenarios", flush=True)
+        return
 
     if args.final_only:
         restoration = work / "renamed-restoration.pth"
@@ -134,7 +167,7 @@ def main():
         assert inspected["architecture"] == "Compact" and inspected["scale"] == 2, inspected
         record("onnx-renamed-structure-and-scale")
         video_case("restoration-tensorrt-1x-to-2x", "tensorrt", "PTH/AniScale2-Refiner-10K-1x", 2, 1)
-        # 两种同后端顺序以及跨后端两阶段均在最终编码处应用输出倍率。
+        # 两种同后端顺序及跨后端均在结果进入下游前落实目标尺寸。
         interp = ["-interp-model", "Frame-Interpolation/RIFE/rife4.25.pkl", "-interp-backend", "cuda", "-interp-factor", "2"]
         for order in ("upscale-first", "interp-first"):
             video_case("combined-cuda-" + order, "cuda", "PTH/realesr-animevideov3", 3, 4,
@@ -142,7 +175,8 @@ def main():
         video_case("combined-ncnn-cuda", "ncnn", "Param-Bin/RealESRGAN-AnimeVideoV3-2x", 3, 2, interp)
         video_case("flashvsr-direct-2x", "flashvsr", "FlashVSR", 2, 4)
         text = (work / "flashvsr-direct-2x.log").read_text(encoding="utf-8")
-        assert "直接推理 2x" in text, text[-1500:]
+        progress = next(line for line in text.splitlines() if line.startswith("FLASHVSR_PROCESS|"))
+        assert progress.split("|")[3] == "2", progress
         print(f"Verified {len(results)} extra scenarios", flush=True)
         return
 
@@ -161,14 +195,14 @@ def main():
             effective = target or 4
             assert (metadata["width"], metadata["height"]) == (96 * effective, 64 * effective), metadata
             record(directory.name)
-    # 输出倍率不生成新的固定倍率 Engine。
+    # 缓存按实际输出倍率隔离；低目标倍率应生成图内缩放的 Engine。
     engines = list((runtime / "models/TensorRT-Cache").rglob("*.engine"))
-    assert engines and all("__scale-4" in item.name for item in engines), [item.name for item in engines]
-    record("tensorrt-cache-native-scale-only")
+    assert engines and all(any(f"__scale-{scale}" in item.name for scale in (2, 3, 4)) for item in engines), [item.name for item in engines]
+    record("tensorrt-cache-output-scale-isolated")
     video_case("ncnn-compiled-2x-to-3x", "ncnn", "Param-Bin/RealESRGAN-AnimeVideoV3-2x", 3, 2)
     video_case("onnx-fixed-2x-to-3x", "onnx", "ONNX/AniSD-AC-G6i2a-Compact-72500-fp32-2x", 3, 2)
     video_case("restoration-native-1x-to-2x", "cuda", "PTH/AniScale2-Refiner-10K-1x", 2, 1)
-    # 专用时序后端使用同一个最终编码滤镜。
+    # 专用时序后端也在写入编码器前调整目标尺寸。
     video_case("basicvsrpp-4x-to-2x", "basicvsrpp", "BasicVSR++/basicvsr_plusplus_c64n7_8x1_600k_reds4_20210217-db622b2f", 2, 4)
     print(f"Verified {len(results)} scenarios", flush=True)
 

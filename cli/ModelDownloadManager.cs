@@ -152,6 +152,10 @@ internal sealed class ModelDownloadManager
                 // runtime 已完整解压并通过下载哈希校验，日期归档不再参与运行；
                 // 清掉所有历史归档，避免每次更新都在本地累积一份约 22MB 的包。
                 DeleteRtxVideoRuntimeArchives();
+                // 成功解压后记录归档版本，旧组件不能冒充远端最新版。
+                DownloadCancellation.Check();
+                File.WriteAllText(Path.Combine(_coreRoot, "bin", "rtx-video", ".installed-version"),
+                    model.Path, new UTF8Encoding(false));
             }
         }
         DownloadCancellation.Check();

@@ -320,6 +320,11 @@ Namespace videoenhancer
                             }
                             entry.IsBackend = DownloadCategory(entry.RelativePath).Equals("Backend", StringComparison.OrdinalIgnoreCase)
                             If entry.IsBackend Then ApplyBackendDownloadStatus(entry, backendStatus)
+                            If DownloadInstallStatus.IsRtxVideoRuntimeDownload(entry.RelativePath) AndAlso Not entry.Installed AndAlso
+                                File.Exists(Path.Combine(ResolveCoreRoot(), "bin", "rtx-video", "runtime", "vsr_backend.exe")) Then
+                                entry.StatusText = "可更新"
+                                entry.ActionText = "更新组件"
+                            End If
                             entries.Add(entry)
                         Next
                     End Using
