@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-10-04 22:12
+Last updated: 2026-10-04 22:19
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 22:19：**1.3.11正式发布完成**：[GitHub v1.3.11](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.11)、ModelScope Releases及Models备用EXE同步；源码/标签7ffeea2。RTX2026.10.04.1同步Models，源码6afb9a8/tag已推送。11本体远端实际下载hash+RTX归档hash+最新包筛选通过，双源故障回退通过；真实CLI覆盖旧RTX并记录版本通过。本机正式升级1.3.11及RTX，配置/用户清单/aria2/7zip保持，宿主未启动。用户新增要求：其他组件也须更新识别，随后独立实现，不修改已发布1.3.11资产。
 
 - 2026-10-04 22:12：用户已授权发布1.3.11，覆盖之前仅本机试用限制。版本源与分类说明已更新；补RTX安装版本标记及下载页“可更新”入口，旧用户升级本体后刷新列表即可下载覆盖组件。RTX独立版本2026.10.04.1，源提交6afb9a8。发行五资产已冻结，本地publish/安装与回滚/自更新/Burn/队列/宿主/滚动/Python11项/组件状态4场景通过；Python独立归档仍2026.09.30.1，29,709文件审计UNCHANGED，尺寸脚本作为CLI内嵌资源同步，不上传新Python包。即将提交推送和发布双源，远端回读及本机正式升级尚待完成。
 
@@ -78,7 +80,8 @@ Updated by: Codex
 - [x] 用户确认RTX超分；已修复解码能力判断、硬解初始化/首帧失败回退、平面YUV转换及双显卡能力误判。RTX五输入及完整CLI FMP4通过；用户原片仍未取得，不扩大为所有老编码变体验收。
 
 - [x] 全后端模型目标尺寸修复：TRT图内输出/缓存、CUDA/BasicVSR++原设备Lanczos4、CPU封装结果缩放、视频/图片/两种补帧顺序/跨后端/分块同步完成并定向验证。未做全模型逐项或旧新整链性能比较。
-- [ ] 正式分发1.3.11：用户已授权，五资产及RTX2026.10.04.1通过本地门禁，待双源发布/回读/本机升级。
+- [x] 正式分发1.3.11：本体双源/RTX独立包、远端hash、更新回退、本机正式升级完成。
+- [ ] 用户要求其他可更新组件采用同类识别：Bin/ffmpeg、mkvtoolnix、PortableGit须比较远端归档SHA256；下一开发版本实施。
 - [ ] 老视频入口后续工作：四宫格补.rm/.rmvb、RVE元数据改可靠FFmpeg探测；不属于已确认RTX MPEG-4 Visual解码修复，尚未实施。
 
 - [x] PR9+aria2组合已本机部署，用户反馈功能合理并授权合并/发布；不把该反馈扩大为全部GPU或历史专项验收。
@@ -501,3 +504,12 @@ git diff --check
 - 修改：两版本源、release-notes.txt、DownloadInstallStatus.vb、ModelDownloadPage.vb、ModelDownloadManager.cs；保留本轮全后端/RTX修复。旧版无标记视作可更新，仅成功校验解压后记录版本；pending继续阻止误判。
 - 验证：Artifacts/release-1.3.11内package/burn/release-gates/backend-updater/queue/queue-ui/host-runtime/scroll/python日志；组件状态probe通过旧无标记/旧版本/新版本/pending四场景。既有真实GPU和RTX五输入结果沿用，不重复全矩阵。
 - Git：main同步0664186，工作树仅本轮预期修改；准备发行提交及标签。下一步上传RTX及本体双源、实际下载校验和本机正式更新。
+
+
+### 2026-10-04 22:19 — Codex：1.3.11正式发行收尾
+
+- 2026-10-04 22:19：**1.3.11正式发布完成**：[GitHub v1.3.11](https://github.com/maxzrb/VideoEnhancer/releases/tag/v1.3.11)、ModelScope Releases及Models备用EXE同步；源码/标签7ffeea2。RTX2026.10.04.1同步Models，源码6afb9a8/tag已推送。11本体远端实际下载hash+RTX归档hash+最新包筛选通过，双源故障回退通过；真实CLI覆盖旧RTX并记录版本通过。本机正式升级1.3.11及RTX，配置/用户清单/aria2/7zip保持，宿主未启动。用户新增要求：其他组件也须更新识别，随后独立实现，不修改已发布1.3.11资产。
+
+- 本机证据Artifacts/release-1.3.11/local-deployment.json，备份C:\Codex Program\3fui plugin\Artifacts\.refactor-tmp\backup-before-release-1.3.11-20261004-221638。远端与升级证据verify-remote.log/remote-verification.json/remote-rtx.json/fallback-probe.log/rtx-upgrade.log/local-rtx-update.log。
+- PythonBackend仍2026.09.30.1/channel历史2条补丁；GPU和RTX既有验证沿用。首个远端校验使用便携Python缺truststore，切换本机发布Python后11项通过。
+- Git：源码7ffeea2、v1.3.11及RTX6afb9a8/标签已推送；本条文档收尾提交后继续用户组件更新需求。
