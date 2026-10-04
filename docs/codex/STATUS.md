@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-10-04 10:46
+Last updated: 2026-10-04 11:15
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 11:15：用户反馈试用功能合理，明确授权选择性合并PR8/PR9并发布1.3.10；覆盖先前不正式合并/不发布限制。PR8仅aria2提交5f1c9c0，PR9原版ae94b26无冲突合入；保留倍率语义和WiX。准备正式发行门禁、双源发布与本机升级。
 
 - 2026-10-04 10:46：用户已升级3FUI至6.2.35/LakeUI5.110；PR8仅aria2-next2.8.3版本/固定哈希/源码与许可打包选择性移植到main，不合并倍率或安装交互。PR9精确ae94b26在Artifacts/pr9-review隔离组合publish通过，已备份后部署；EXE/DLL/aria2哈希一致，配置/用户能力清单保持。PR9未合并，未发布/提交，等待实际试用反馈。详见[审核报告](../pr8-pr9-review.md)。
 
@@ -49,7 +51,7 @@ Updated by: Codex
 
 ## Active TODO
 
-- [ ] 本机试用PR9+aria2组合：工作台/四宫格DPI、透明背景滚动、下载，以及新宿主适配层真实编码/暂停停止/预览整链；反馈后决定是否合并PR9。
+- [x] PR9+aria2组合已本机部署，用户反馈功能合理并授权合并/发布；不把该反馈扩大为全部GPU或历史专项验收。
 
 - [ ] 本机重启3FUI测试能力修正弹窗/导入按钮宽度和模型菜单重复打开/切换分组后的悬停介绍、模型选择恢复原生倍率及导入重新检测；本轮已部署且哈希核验通过，未自动启动宿主。
 - [ ] 维护清理：本机旧版三份载荷缓存约 59 MB；项目三份完整解压验证输出约 18 GB。后者曾两次被自动审批以 blocked by policy 拒绝，未绕过。确认归属与路径后再单独处理，勿清系统共享缓存。
@@ -341,3 +343,9 @@ git diff --check
 - 实施纠正：首个移植脚本在试用树工作目录执行，仅改试用树后第二路径不存在，改在项目根明确同步main；初次依赖许可严格比较失败原因仅行末空白，检查后规范比较通过；记录脚本初次JSON路径键使用正斜杠而证据含反斜杠，规范键后更新成功。均未影响安装结果。
 - 宿主/CLI退出后备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-pr9-aria2-20261004-104341`，最终EXE正式--apply-update返回UPDATE_COMPLETE|1.3.9；自更新保留独立组件，随后显式替换aria2及随附许可。EXE/DLL/aria2哈希一致，配置及models/User/model-catalog.json哈希保持；证据Artifacts/pr9-review/Artifacts/local-deployment.json。未启动宿主、不动模型/Backend、不发布或变更版本。
 - 收尾记录更新；main选择性代码和文档未提交，工作树非干净，PR9未合并。等待用户实际界面/真实任务反馈，建议考虑提交aria2选择性升级。
+
+### 2026-10-04 11:15 - Codex：1.3.10整合与发行启动
+
+- 同工具续作，复读AGENTS/INDEX/STATUS和发布流程，沿用HandShake；git pull --ff-only已最新。用户授权提交推送、选择性整合、1.3.10双源正式发行及流程内本机升级。
+- PR8仅aria2相关代码/许可/记录提交5f1c9c0，未带入旧倍率和控制台安装。PR9合并ae94b26无冲突；比较已试用源码，仅aria2源码产物路径自动合并仍用旧变量，改ResolvedArtifactsDirectory恢复试用版本。PR9合并提交保留原分支 ancestry；PR8以选择性移植结案。
+- GitHub/ModelScope认证可用，v1.3.10不存在，SDK10.0.400及磁盘空间可用。继续构建/必须发行门禁→提交标签/上传冻结资产→双源哈希回读/故障回退及本机部署，不扩大GPU全矩阵。
