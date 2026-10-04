@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-05 00:00
+Last updated: 2026-10-05 00:12
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
@@ -89,7 +89,7 @@ Updated by: Codex
 
 - [x] 全后端模型目标尺寸修复：TRT图内输出/缓存、CUDA/BasicVSR++原设备Lanczos4、CPU封装结果缩放、视频/图片/两种补帧顺序/跨后端/分块同步完成并定向验证。未做全模型逐项或旧新整链性能比较。
 - [x] 正式分发1.3.11：本体双源/RTX独立包、远端hash、更新回退、本机正式升级完成。
-- [ ] 发行后续由用户明确暂停：修订1.3.11（9989899）已上传，远端回读/本机覆盖待恢复；恢复前整合新RTX黑边组件与同日包SHA判断，重新完整验收，不以已上传旧修订包声称包含黑边修复。
+- [x] 暂停已由用户发布1.3.12授权解除：黑边/老视频上传及SHA识别整合1.3.12，双源回读与本机更新通过；1.3.11修订不再另行覆盖或挪动标签。
 - [x] RTX黑边构造复现与本地修复：可见矩形/偏移/软解完整crop五样本通过；原用户片未知，继续保留实际反馈核对。
 - [ ] 老视频入口后续工作：四宫格补.rm/.rmvb、RVE元数据改可靠FFmpeg探测；不属于已确认RTX MPEG-4 Visual解码修复，尚未实施。
 
@@ -560,3 +560,13 @@ git diff --check
 
 - build/publish、安装/回滚、自更新通过；组件23场景、队列及UI、Python11项通过，Python后端逐文件UNCHANGED。Burn/host/scroll及发布门禁执行中。RTX源码2db5b02/标签videoenhancer-runtime-2026.10.04.2已本地提交；归档c7d44d8f59f866b0f236b0bea46efe9e34e810a7aad5b300d77ebe04219f9064，EXE690b0801859eb625fb32b7706d378046777c6fe5363433983eac522413396983，包内其他运行库保持。
 - 本体五资产冻结于release/dist/modelscope/releases/1.3.12及stable.json；仅当前版本上传目录Artifacts/release-1.3.12/modelscope-publish，SHA清单asset-hashes.json。准备提交主线/标签，全部门禁通过后上传双源与RTX，实际下载hash和旧组件更新验收。
+
+### 2026-10-05 00:12 Codex：1.3.12正式发行收尾
+
+- 本体源码1b442ea/v1.3.12、RTX源码2db5b02/videoenhancer-runtime-2026.10.04.2均已提交推送；GitHub五资产/分类正文、ModelScope Releases当前版本五资产+stable/README、Models备用EXE及RTX独立包同步。不修改Python后端channel/模型权重，不覆盖1.3.11标签。
+- 检查：build/publish0警告0错误；安装/自更新/回滚及Burn清理通过；组件23、队列5/UI5、host/scroll、Python11、release门禁5/backend updater6通过；前轮已通过RTX11老视频+五解码+五黑边+19C++验证沿用。Python后端逐文件审计UNCHANGED。
+- 远端实际下载：五本体资产双源+Models备用EXE共11项SHA/大小一致，RTX包22777585字节/hash一致；GitHub发布正文、稳定清单和Backend历史两补丁保持核对通过。故障注入验证GitHub版本检查失败→ModelScope及ModelScope下载失败→GitHub通过。
+- 本机更新：宿主/任务退出检查后备份，正式--apply-update安装1.3.12，真实--download-model覆盖旧RTX并写新归档SHA标记，配置/用户模型清单/aria2/7zip哈希不变。记录local-deployment.json、备份Artifacts/.refactor-tmp/backup-before-release-1.3.12-20261005-000807；模型列表仅一个最新RTX且SHA正确、单备用EXE、无PotPlayer。未启动宿主。
+- 安装后RTX完整CLI MPEG4 343×259做4x输出1372×1036/4帧成功（installed-odd-4x.log/json）；首个探针误写样本文件名，纠正为mpeg4-odd.avi后通过，无产品额外修改。
+- 证据：Artifacts/release-1.3.12/asset-hashes.json、verify-remote.log/remote-verification.json/remote-rtx.json、fallback-probe.log、local-update.log/local-rtx-update.log/model-list.json；新补丁保留可审查来源。反馈原片/日志仍未知，不宣称所有老视频均保证可用。
+- Git：发布源码和标签已同步，主线及RTX工作树在收尾记录前干净；本条记录提交推送后复核。建议切换设备/工具前维持当前已提交状态。
