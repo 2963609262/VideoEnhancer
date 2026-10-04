@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-10-01 17:56
+Last updated: 2026-10-04 10:46
 Updated by: Codex
 
 本文件是唯一 AI 操作状态来源。历史原文已冻结归档至 [记录归档](../archive/records-2026-10-01/README.md)，仅查历史时读取；归档中的版本、远端、环境和 TODO 不代表当前状态。
 
 ## Current Snapshot
+
+- 2026-10-04 10:46：用户已升级3FUI至6.2.35/LakeUI5.110；PR8仅aria2-next2.8.3版本/固定哈希/源码与许可打包选择性移植到main，不合并倍率或安装交互。PR9精确ae94b26在Artifacts/pr9-review隔离组合publish通过，已备份后部署；EXE/DLL/aria2哈希一致，配置/用户能力清单保持。PR9未合并，未发布/提交，等待实际试用反馈。详见[审核报告](../pr8-pr9-review.md)。
 
 - 2026-10-01 17:54：**1.3.9已按授权替换为8x修订版**。目标范围1–8，旧9–16x配置载入为8；源码与v1.3.9标签`b1cebcb`已推送，五资产/稳定清单/分类正文及两处ModelScope同步。11项实际下载哈希、故障回退通过，本机同版本替换成功且配置/用户能力清单/aria2保持。已安装旧1.3.9可等后续版本正常更新；修订及收尾记录已推送，工作树干净。
 
@@ -47,6 +49,8 @@ Updated by: Codex
 
 ## Active TODO
 
+- [ ] 本机试用PR9+aria2组合：工作台/四宫格DPI、透明背景滚动、下载，以及新宿主适配层真实编码/暂停停止/预览整链；反馈后决定是否合并PR9。
+
 - [ ] 本机重启3FUI测试能力修正弹窗/导入按钮宽度和模型菜单重复打开/切换分组后的悬停介绍、模型选择恢复原生倍率及导入重新检测；本轮已部署且哈希核验通过，未自动启动宿主。
 - [ ] 维护清理：本机旧版三份载荷缓存约 59 MB；项目三份完整解压验证输出约 18 GB。后者曾两次被自动审批以 blocked by policy 拒绝，未绕过。确认归属与路径后再单独处理，勿清系统共享缓存。
 - [ ] 历史发布验证补充：1.3.7 的 GitHub 大资产此前 CDN 下载超时，仅 API digest/大小核对；ModelScope 实际下载哈希通过。网络恢复后可补 GitHub 大资产实际下载校验。
@@ -63,6 +67,8 @@ Updated by: Codex
 - 2026-10-01：正式发布1.3.8及1.3.9，均完成双源回读、故障回退和本机正式自更新；1.3.9包含模型能力/倍率/介绍与导入界面专项。
 
 ## Decisions
+
+- 2026-10-04 10:46：用户授权仅选择性移植PR8的aria2升级并部署PR9组合，不整包合并PR8、不正式合并PR9，版本保持1.3.9、不发布远端。
 
 - 2026-10-01 17:56：用户确认1.3.9刚发布，同版本替换影响小；旧1.3.9用户可等待下一版本正常更新，无需当前手动替换，不增加同版本自动更新机制。
 
@@ -83,6 +89,9 @@ Updated by: Codex
 - 旧清理拒绝和 GitHub CDN 验证限制见 Active TODO；不将历史注册残留推测当实测事实。
 
 ## Environment Notes
+
+- 2026-10-04 10:46：当前实际宿主6.2.35/LakeUI5.110，本机部署为PR9+aria2-next2.8.3试用1.3.9；下述旧HostBin/发行hash仅为历史。PR9构建无需HostBin。备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-pr9-aria2-20261004-104341`，证据`Artifacts/pr9-review/Artifacts/local-deployment.json`。
+- 当前试用EXE SHA256 `2534d4fbb916374b68b262a87124af4c2a987a4264441e5cfdd7b21bb089108c`，DLL `139e74127b08518f3078eacb9c507098b7c9c121dd017e5be8074befb0c83bcb`，aria2 `08afaf2a44811d38e7ce538da719ab06d6925bcaad1231ee7b92c497f58e5aac`。
 
 以下仅为本机已验证路径，不能当作跨设备配置。
 
@@ -117,6 +126,8 @@ git diff --check
 文档整理仅验证归档字节/SHA256、UTF-8、链接和记录结构，不重跑程序测试。程序验收与发行详见 `release/发布流程.md`。
 
 ## Git Sync
+
+- 2026-10-04 10:46：main=5942b48同步origin/main；aria2选择性代码/许可/发布流程及审核记录未提交，工作树非干净。PR9 detached ae94b26仅附加同样aria2改动；未推送。
 
 - Repository: 当前根目录；branch main 跟踪 origin/main。
 - 最新发行修订提交：`b1cebcb fix: cap output scale at 8x for 1.3.9`，main及注释标签v1.3.9已同步origin；用户明确同版本替换授权，tag以精确lease更新，main未强推。首次发行0f38b64仍保留历史，收尾文档另作提交。
@@ -314,3 +325,19 @@ git diff --check
 
 - 用户说明1.3.9刚发布，直接替换影响小；旧1.3.9等下一版即可。更新当前快照、持久决策及版本迁移说明，撤回前述要求立即手动更新的建议；保留历史日志说明当时记录。
 - 仅文档修改，不改程序/资产/标签，不重跑构建或发布；git pull已最新，起始main干净。UTF-8和原换行保留，diff检查后提交推送文档，结束核对工作树。
+
+### 2026-10-04 10:32 - Codex：PR #8/#9 审核与原版构建
+
+- 读取AGENTS/INDEX/STATUS及HandShake，新会话；git pull --ff-only已最新，main=5942b48。gh默认识别upstream，发现后显式-R maxzrb/VideoEnhancer并核对URL，最终审核本仓库PR。
+- 获取origin/pr-8及pr-9，项目Artifacts/pr9-review隔离检出ae94b26；原版publish成功，host-runtime（含真实宿主契约）、DPI、scroll通过；不重复GPU/下载/安装器全矩阵。
+- 从实际单文件宿主只读提取FFmpegFreeUI/LakeUI到Artifacts/pr9-host-check，版本6.2.33/5.109；PR要求5.110，已向用户询问试用策略，未部署。PR8倍率方案被当前输出倍率覆盖、安装交互违背已确认方向；aria2可单独考虑。只读merge-tree检出5处冲突。
+- 新增docs/pr8-pr9-review.md；main仅审核和状态记录变化，无源码合并、版本/远端发布或GitHub评论。待用户选择后完成本机备份部署和收尾。
+
+### 2026-10-04 10:46 - Codex：aria2选择性移植及PR9本机部署
+
+- 同工具续作，复读AGENTS/INDEX/STATUS并沿用HandShake；git pull --ff-only已最新，保留审核记录。用户明确授权只合aria2并试用PR9。只读提取升级宿主确认6.2.35/5.110，原兼容阻碍解除；GitHub API核对aria2 tag653e070b→f58a2d9和Windows官方digest。
+- main与隔离PR9移植csproj的aria2版本/固定二进制与源码hash、源码下载/产物、依赖许可验证及两种安装载荷打包；SOURCE、THIRD-PARTY-NOTICES和DEPENDENCY-LICENSES同步，发布流程示例源码名更新。未引入倍率预设、convert_tensorrt、InstallerManager/InstallerBundle变化或移除WiX。
+- 组合dotnet publish成功，插件/安装器0警告0错误；二进制和源码SHA256匹配，COPYING/AUTHORS与源码一致，13项依赖许可规范行末空白后相同；ZIP15项中的DLL/EXE/aria2/依赖许可与最终文件一致。aria2 --version2.8.3，实际下载GitHub stable.json1665字节/hash9bbe3253…与官方digest一致。升级后真实宿主契约通过，前轮DPI/scroll仍有效，未重跑GPU/全量安装器矩阵。
+- 实施纠正：首个移植脚本在试用树工作目录执行，仅改试用树后第二路径不存在，改在项目根明确同步main；初次依赖许可严格比较失败原因仅行末空白，检查后规范比较通过；记录脚本初次JSON路径键使用正斜杠而证据含反斜杠，规范键后更新成功。均未影响安装结果。
+- 宿主/CLI退出后备份`C:/Codex Program/3fui plugin/Artifacts/.refactor-tmp/backup-before-pr9-aria2-20261004-104341`，最终EXE正式--apply-update返回UPDATE_COMPLETE|1.3.9；自更新保留独立组件，随后显式替换aria2及随附许可。EXE/DLL/aria2哈希一致，配置及models/User/model-catalog.json哈希保持；证据Artifacts/pr9-review/Artifacts/local-deployment.json。未启动宿主、不动模型/Backend、不发布或变更版本。
+- 收尾记录更新；main选择性代码和文档未提交，工作树非干净，PR9未合并。等待用户实际界面/真实任务反馈，建议考虑提交aria2选择性升级。
